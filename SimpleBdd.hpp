@@ -11,7 +11,6 @@
 
 namespace SimpleBdd
 {
-template<typename LIT = unsigned>
 class SimpleBdd
 {
 /**Function*************************************************************
@@ -263,8 +262,7 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline unsigned SimpleBdd<LIT>::UniqueCreateInt( int v, unsigned x1, unsigned x0 )
+inline unsigned SimpleBdd::UniqueCreateInt( int v, unsigned x1, unsigned x0 )
 {
   int * q = pUnique + ( Hash( v, x1, x0 ) & nUniqueMask );
   for ( ; *q; q = pNexts + *q )
@@ -294,8 +292,7 @@ inline unsigned SimpleBdd<LIT>::UniqueCreateInt( int v, unsigned x1, unsigned x0
   return Bvar2Lit( *q, 0 );
 }
   
-template<typename LIT>
-inline unsigned SimpleBdd<LIT>::UniqueCreate( int v, unsigned x1, unsigned x0 )
+inline unsigned SimpleBdd::UniqueCreate( int v, unsigned x1, unsigned x0 )
 {
   if ( LitIsEq( x1, x0 ) )
     return x0;
@@ -315,8 +312,7 @@ inline unsigned SimpleBdd<LIT>::UniqueCreate( int v, unsigned x1, unsigned x0 )
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-SimpleBdd<LIT>::SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vector<int> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nVerbose(nVerbose)
+SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vector<int> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nVerbose(nVerbose)
 {
   while ( nObjsAlloc < nVars + 1 )
     {
@@ -375,8 +371,7 @@ SimpleBdd<LIT>::SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::
   }
 }
 
-template<typename LIT>
-SimpleBdd<LIT>::~SimpleBdd()
+SimpleBdd::~SimpleBdd()
 {
   if ( nVerbose )
     std::cout << "Free : Var = " << nVars << " Obj = " << nObjs << " Alloc = " << nObjsAlloc - 1 << std::endl;
@@ -406,16 +401,14 @@ SimpleBdd<LIT>::~SimpleBdd()
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline unsigned SimpleBdd<LIT>::CacheLookup( unsigned Arg1, unsigned Arg2 )
+inline unsigned SimpleBdd::CacheLookup( unsigned Arg1, unsigned Arg2 )
 {
   unsigned * p = pCache + 3 * (long long)( Hash( 0, Arg1, Arg2 ) & nCacheMask );
   if ( p[0] == Arg1 && p[1] == Arg2 )
     return p[2];
   return LitInvalid();
 }
-template<typename LIT>
-inline unsigned SimpleBdd<LIT>::CacheInsert( unsigned Arg1, unsigned Arg2, unsigned Res )
+inline unsigned SimpleBdd::CacheInsert( unsigned Arg1, unsigned Arg2, unsigned Res )
 {
   if ( LitIsInvalid( Res ) )
     return Res;
@@ -425,8 +418,7 @@ inline unsigned SimpleBdd<LIT>::CacheInsert( unsigned Arg1, unsigned Arg2, unsig
   p[2] = Res;
   return Res;
 }
-template<typename LIT>
-inline void SimpleBdd<LIT>::CacheClear() {
+inline void SimpleBdd::CacheClear() {
   free( pCache );
   pCache = (unsigned *)calloc( 3 * (long long)( nCacheMask + 1 ), sizeof(unsigned) );
 }
@@ -442,8 +434,7 @@ inline void SimpleBdd<LIT>::CacheClear() {
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline void SimpleBdd<LIT>::Rehash()
+inline void SimpleBdd::Rehash()
 {
   unsigned nUniqueMaskOld = nUniqueMask >> 1; // assuming it has been doubled
   for ( unsigned i = 0; i < nUniqueMaskOld + 1; i++ )
@@ -472,8 +463,7 @@ inline void SimpleBdd<LIT>::Rehash()
 	}
     }
 }
-template<typename LIT>
-inline void SimpleBdd<LIT>::Realloc()
+inline void SimpleBdd::Realloc()
 {
   unsigned nObjsAllocOld = nObjsAlloc;
   unsigned nUniqueMaskOld = nUniqueMask;
@@ -525,8 +515,7 @@ inline void SimpleBdd<LIT>::Realloc()
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-unsigned SimpleBdd<LIT>::And_rec( unsigned x, unsigned y )
+unsigned SimpleBdd::And_rec( unsigned x, unsigned y )
 {
   if ( LitIsConst0( x ) )
     return x;
@@ -574,8 +563,7 @@ unsigned SimpleBdd<LIT>::And_rec( unsigned x, unsigned y )
   z = UniqueCreate( std::min( Var( x ), Var( y ) ), z1, z0 );
   return CacheInsert( x, y, z );
 }
-template<typename LIT>
-inline unsigned SimpleBdd<LIT>::And( unsigned x, unsigned y )
+inline unsigned SimpleBdd::And( unsigned x, unsigned y )
 {
   if ( LitIsInvalid( x ) )
     return x;
@@ -583,8 +571,7 @@ inline unsigned SimpleBdd<LIT>::And( unsigned x, unsigned y )
     return y;
   return And_rec( x, y );
 }
-template<typename LIT>
-inline unsigned SimpleBdd<LIT>::Or( unsigned x, unsigned y )
+inline unsigned SimpleBdd::Or( unsigned x, unsigned y )
 {
   if ( LitIsInvalid( x ) )
     return x;
@@ -592,8 +579,7 @@ inline unsigned SimpleBdd<LIT>::Or( unsigned x, unsigned y )
     return y;
   return LitNot( And_rec( LitNot( x ), LitNot( y ) ) );
 }
-template<typename LIT>
-inline unsigned SimpleBdd<LIT>::Xnor( unsigned x, unsigned y )
+inline unsigned SimpleBdd::Xnor( unsigned x, unsigned y )
 {
   unsigned z0 = And( LitNot( x ), LitNot( y ) );
   if ( LitIsInvalid( z0 ) )
@@ -615,16 +601,14 @@ inline unsigned SimpleBdd<LIT>::Xnor( unsigned x, unsigned y )
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-int SimpleBdd<LIT>::Count_rec( unsigned x )
+int SimpleBdd::Count_rec( unsigned x )
 {
   if ( LitIsConst( x ) || Mark( x ) )
     return 0;
   SetMark( x, 1 );
   return 1 + Count_rec( Else( x ) ) + Count_rec( Then( x ) );
 }
-template<typename LIT>
-void SimpleBdd<LIT>::Mark_rec( unsigned x )
+void SimpleBdd::Mark_rec( unsigned x )
 {
   if ( LitIsConst( x ) || Mark( x ) )
     return;
@@ -632,8 +616,7 @@ void SimpleBdd<LIT>::Mark_rec( unsigned x )
   Mark_rec( Else( x ) );
   Mark_rec( Then( x ) );
 }
-template<typename LIT>
-void SimpleBdd<LIT>::Unmark_rec( unsigned x )
+void SimpleBdd::Unmark_rec( unsigned x )
 {
   if ( LitIsConst( x ) || !Mark( x ) )
     return;
@@ -641,15 +624,13 @@ void SimpleBdd<LIT>::Unmark_rec( unsigned x )
   Unmark_rec( Else( x ) );
   Unmark_rec( Then( x ) );
 }
-template<typename LIT>
-inline int SimpleBdd<LIT>::CountNodes( unsigned x )
+inline int SimpleBdd::CountNodes( unsigned x )
 {
   int count = Count_rec( x );
   Unmark_rec( x );
   return count;
 }
-template<typename LIT>
-inline int SimpleBdd<LIT>::CountNodesArrayShared( std::vector<int> & vNodes )
+inline int SimpleBdd::CountNodesArrayShared( std::vector<int> & vNodes )
 {
   unsigned x;
   int count = 0;
@@ -663,8 +644,7 @@ inline int SimpleBdd<LIT>::CountNodesArrayShared( std::vector<int> & vNodes )
     Unmark_rec( LitIthVar( i ) );
   return count + 4; // add 4 to make the number comparable to command "collapse -v"
 }
-template<typename LIT>
-inline int SimpleBdd<LIT>::CountNodesArrayIndependent( std::vector<int> & vNodes )
+inline int SimpleBdd::CountNodesArrayIndependent( std::vector<int> & vNodes )
 {
   int count = 0;
   for ( unsigned x : vNodes )
@@ -689,8 +669,7 @@ inline int SimpleBdd<LIT>::CountNodesArrayIndependent( std::vector<int> & vNodes
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline void SimpleBdd<LIT>::RemoveNodeByBvar( int a )
+inline void SimpleBdd::RemoveNodeByBvar( int a )
 {
   int * q = pUnique + ( Hash( VarOfBvar( a ), ThenOfBvar( a ), ElseOfBvar( a ) ) & nUniqueMask );
   for ( ; *q; q = pNexts + *q )
@@ -703,8 +682,7 @@ inline void SimpleBdd<LIT>::RemoveNodeByBvar( int a )
   if ( nMinRemoved > a )
     nMinRemoved = a;
 }
-template<typename LIT>
-inline void SimpleBdd<LIT>::GarbageCollect( std::vector<int> & vNodes )
+inline void SimpleBdd::GarbageCollect( std::vector<int> & vNodes )
 {
   unsigned x;
   if ( nVerbose )
@@ -730,8 +708,7 @@ inline void SimpleBdd<LIT>::GarbageCollect( std::vector<int> & vNodes )
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline void SimpleBdd<LIT>::RefreshConfig( int fRealloc_, int fGC_, int nReoThold )
+inline void SimpleBdd::RefreshConfig( int fRealloc_, int fGC_, int nReoThold )
 {
   fRealloc = fRealloc_;
   fGC = fGC_;
@@ -741,8 +718,7 @@ inline void SimpleBdd<LIT>::RefreshConfig( int fRealloc_, int fGC_, int nReoThol
     pvFrontiers = new std::vector<int>;
   ReorderConfig( nReoThold );
 }
-template<typename LIT>
-inline int SimpleBdd<LIT>::Refresh()
+inline int SimpleBdd::Refresh()
 {
   nRefresh += 1;
   if ( nVerbose )
@@ -777,8 +753,7 @@ inline int SimpleBdd<LIT>::Refresh()
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-void SimpleBdd<LIT>::CountEdge_rec( unsigned x )
+void SimpleBdd::CountEdge_rec( unsigned x )
 {
   if ( LitIsConst( x ) )
     return;
@@ -789,16 +764,14 @@ void SimpleBdd<LIT>::CountEdge_rec( unsigned x )
   CountEdge_rec( Else( x ) );
   CountEdge_rec( Then( x ) );
 }
-template<typename LIT>
-inline void SimpleBdd<LIT>::CountEdge( std::vector<int> & vNodes )
+inline void SimpleBdd::CountEdge( std::vector<int> & vNodes )
 {
   for ( unsigned x : vNodes )
     CountEdge_rec( x );
   for ( unsigned x : vNodes )
     Unmark_rec( x );
 }
-template<typename LIT>
-void SimpleBdd<LIT>::UncountEdge_rec( unsigned x )
+void SimpleBdd::UncountEdge_rec( unsigned x )
 {
   if ( LitIsConst( x ) )
     return;
@@ -809,8 +782,7 @@ void SimpleBdd<LIT>::UncountEdge_rec( unsigned x )
   UncountEdge_rec( Else( x ) );
   UncountEdge_rec( Then( x ) );
 }
-template<typename LIT>
-inline void SimpleBdd<LIT>::UncountEdge( std::vector<int> & vNodes )
+inline void SimpleBdd::UncountEdge( std::vector<int> & vNodes )
 {
   for ( unsigned x : vNodes )
     UncountEdge_rec( x );
@@ -822,8 +794,7 @@ inline void SimpleBdd<LIT>::UncountEdge( std::vector<int> & vNodes )
     Unmark_rec( LitIthVar( i ) );
 }
 
-template<typename LIT>
-void SimpleBdd<LIT>::CountEdgeAndBvar_rec( unsigned x )
+void SimpleBdd::CountEdgeAndBvar_rec( unsigned x )
 {
   if ( LitIsConst( x ) )
     return;
@@ -835,8 +806,7 @@ void SimpleBdd<LIT>::CountEdgeAndBvar_rec( unsigned x )
   CountEdgeAndBvar_rec( Else( x ) );
   CountEdgeAndBvar_rec( Then( x ) );
 }
-template<typename LIT>
-inline void SimpleBdd<LIT>::CountEdgeAndBvar( std::vector<int> & vNodes )
+inline void SimpleBdd::CountEdgeAndBvar( std::vector<int> & vNodes )
 {
   for ( unsigned x : vNodes )
     CountEdgeAndBvar_rec( x );
@@ -859,8 +829,7 @@ inline void SimpleBdd<LIT>::CountEdgeAndBvar( std::vector<int> & vNodes )
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline void SimpleBdd<LIT>::PrintOrdering( std::vector<int> & new2old )
+inline void SimpleBdd::PrintOrdering( std::vector<int> & new2old )
 {
   std::cout << "Ordering :" << std::endl;
   for ( int i : new2old )
@@ -879,8 +848,7 @@ inline void SimpleBdd<LIT>::PrintOrdering( std::vector<int> & new2old )
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-void SimpleBdd<LIT>::ReorderConfig( int nReoThold )
+void SimpleBdd::ReorderConfig( int nReoThold )
 {
   ReoThold = 0.01 * nReoThold;
   if ( pEdges )
@@ -907,8 +875,7 @@ void SimpleBdd<LIT>::ReorderConfig( int nReoThold )
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline void SimpleBdd<LIT>::ShiftBvar( int a, int d )
+inline void SimpleBdd::ShiftBvar( int a, int d )
 {
   int v = VarOfBvar( a );
   unsigned x1 = ThenOfBvar( a );
@@ -932,8 +899,7 @@ inline void SimpleBdd<LIT>::ShiftBvar( int a, int d )
   *next = *q;
   *q = a;
 }
-template<typename LIT>
-inline int SimpleBdd<LIT>::SwapBvar( int a, int fRestore )
+inline int SimpleBdd::SwapBvar( int a, int fRestore )
 {
   int v = VarOfBvar( a );
   unsigned x1 = ThenOfBvar( a );
@@ -1014,8 +980,7 @@ inline int SimpleBdd<LIT>::SwapBvar( int a, int fRestore )
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-inline int SimpleBdd<LIT>::Swap( int v, int & nNodes, int dLimit )
+inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
 {
   liveBvars[nVars].clear();
   liveBvars[nVars + 1].clear();
@@ -1137,8 +1102,7 @@ inline int SimpleBdd<LIT>::Swap( int v, int & nNodes, int dLimit )
     return -1;
   return 1; // if ( fOutOfLimit );
 }
-template<typename LIT>
-inline void SimpleBdd<LIT>::Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<int> & vNodes, int nLimit )
+inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<int> & vNodes, int nLimit )
 {
   int fRefresh = 0;
   for ( int i = 0; i < nSwap; i++ )
@@ -1197,8 +1161,7 @@ inline void SimpleBdd<LIT>::Shift( int & pos, int & nNodes, int nSwap, int fUp, 
    SeeAlso     []
 
 ***********************************************************************/
-template<typename LIT>
-void SimpleBdd<LIT>::Reorder( std::vector<int> & vNodes )
+void SimpleBdd::Reorder( std::vector<int> & vNodes )
 {
   std::vector<int> descendingOrder;
   std::vector<int> new2old;
