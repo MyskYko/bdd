@@ -50,7 +50,7 @@ private:
   std::vector<std::vector<int> > liveBvars; // array of live Bvars for each layer
 
 public:
-  std::vector<int> * pvFrontiers;   // vector of frontier nodes
+  std::vector<unsigned> * pvFrontiers;   // vector of frontier nodes
 
   int get_nVars() { return nVars; }
   int get_order( int v ) { return vOrdering[v]; }
@@ -220,15 +220,15 @@ private:
   void     Unmark_rec( unsigned x );
   void     RemoveNodeByBvar( int a );
   void     CountEdge_rec( unsigned x );
-  void     CountEdge( std::vector<int> & vNodes );
+  void     CountEdge( std::vector<unsigned> & vNodes );
   void     UncountEdge_rec( unsigned x );
-  void     UncountEdge( std::vector<int> & vNodes );
+  void     UncountEdge( std::vector<unsigned> & vNodes );
   void     CountEdgeAndBvar_rec( unsigned x );
-  void     CountEdgeAndBvar( std::vector<int> & vNodes );
+  void     CountEdgeAndBvar( std::vector<unsigned> & vNodes );
   void     ShiftBvar( int a, int d );
   int      SwapBvar( int a, int fRestore );
   int      Swap( int v, int & nNodes, int dLimit );
-  void     Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<int> & vNodes, int nLimit );
+  void     Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<unsigned> & vNodes, int nLimit );
   
 public:
   SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vector<int> * pvOrdering, int nVerbose );
@@ -241,14 +241,14 @@ public:
   unsigned Or( unsigned x, unsigned y );
   unsigned Xnor( unsigned x, unsigned y );
   int      CountNodes( unsigned x );
-  int      CountNodesArrayShared( std::vector<int> & vNodes );
-  int      CountNodesArrayIndependent( std::vector<int> & vNodes );
-  void     GarbageCollect( std::vector<int> & vNodes );
+  int      CountNodesArrayShared( std::vector<unsigned> & vNodes );
+  int      CountNodesArrayIndependent( std::vector<unsigned> & vNodes );
+  void     GarbageCollect( std::vector<unsigned> & vNodes );
   void     RefreshConfig( int fRealloc_, int fGC_, int nReoThold );
   int      Refresh();
   void     PrintOrdering( std::vector<int> & new2old );
   void     ReorderConfig( int nReoThold );
-  void     Reorder( std::vector<int> & vNodes );
+  void     Reorder( std::vector<unsigned> & vNodes );
 };
 
 /**Function*************************************************************
@@ -630,7 +630,7 @@ inline int SimpleBdd::CountNodes( unsigned x )
   Unmark_rec( x );
   return count;
 }
-inline int SimpleBdd::CountNodesArrayShared( std::vector<int> & vNodes )
+inline int SimpleBdd::CountNodesArrayShared( std::vector<unsigned> & vNodes )
 {
   unsigned x;
   int count = 0;
@@ -644,7 +644,7 @@ inline int SimpleBdd::CountNodesArrayShared( std::vector<int> & vNodes )
     Unmark_rec( LitIthVar( i ) );
   return count + 4; // add 4 to make the number comparable to command "collapse -v"
 }
-inline int SimpleBdd::CountNodesArrayIndependent( std::vector<int> & vNodes )
+inline int SimpleBdd::CountNodesArrayIndependent( std::vector<unsigned> & vNodes )
 {
   int count = 0;
   for ( unsigned x : vNodes )
@@ -682,7 +682,7 @@ inline void SimpleBdd::RemoveNodeByBvar( int a )
   if ( nMinRemoved > a )
     nMinRemoved = a;
 }
-inline void SimpleBdd::GarbageCollect( std::vector<int> & vNodes )
+inline void SimpleBdd::GarbageCollect( std::vector<unsigned> & vNodes )
 {
   unsigned x;
   if ( nVerbose )
@@ -715,7 +715,7 @@ inline void SimpleBdd::RefreshConfig( int fRealloc_, int fGC_, int nReoThold )
   if ( pvFrontiers )
     delete pvFrontiers;
   if ( fGC || nReoThold )
-    pvFrontiers = new std::vector<int>;
+    pvFrontiers = new std::vector<unsigned>;
   ReorderConfig( nReoThold );
 }
 inline int SimpleBdd::Refresh()
@@ -764,7 +764,7 @@ void SimpleBdd::CountEdge_rec( unsigned x )
   CountEdge_rec( Else( x ) );
   CountEdge_rec( Then( x ) );
 }
-inline void SimpleBdd::CountEdge( std::vector<int> & vNodes )
+inline void SimpleBdd::CountEdge( std::vector<unsigned> & vNodes )
 {
   for ( unsigned x : vNodes )
     CountEdge_rec( x );
@@ -782,7 +782,7 @@ void SimpleBdd::UncountEdge_rec( unsigned x )
   UncountEdge_rec( Else( x ) );
   UncountEdge_rec( Then( x ) );
 }
-inline void SimpleBdd::UncountEdge( std::vector<int> & vNodes )
+inline void SimpleBdd::UncountEdge( std::vector<unsigned> & vNodes )
 {
   for ( unsigned x : vNodes )
     UncountEdge_rec( x );
@@ -806,7 +806,7 @@ void SimpleBdd::CountEdgeAndBvar_rec( unsigned x )
   CountEdgeAndBvar_rec( Else( x ) );
   CountEdgeAndBvar_rec( Then( x ) );
 }
-inline void SimpleBdd::CountEdgeAndBvar( std::vector<int> & vNodes )
+inline void SimpleBdd::CountEdgeAndBvar( std::vector<unsigned> & vNodes )
 {
   for ( unsigned x : vNodes )
     CountEdgeAndBvar_rec( x );
@@ -1102,7 +1102,7 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
     return -1;
   return 1; // if ( fOutOfLimit );
 }
-inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<int> & vNodes, int nLimit )
+inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<unsigned> & vNodes, int nLimit )
 {
   int fRefresh = 0;
   for ( int i = 0; i < nSwap; i++ )
@@ -1161,7 +1161,7 @@ inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int &
    SeeAlso     []
 
 ***********************************************************************/
-void SimpleBdd::Reorder( std::vector<int> & vNodes )
+void SimpleBdd::Reorder( std::vector<unsigned> & vNodes )
 {
   std::vector<int> descendingOrder;
   std::vector<int> new2old;
@@ -1169,7 +1169,10 @@ void SimpleBdd::Reorder( std::vector<int> & vNodes )
     std::cout << "\tReordering" << std::endl;
   // initialize
   for ( int i = 0; i < nVars + 2; i++ )
-    liveBvars[i].clear();
+    {
+      liveBvars[i].clear();
+      liveBvars[i].reserve( nObjs / nVars );
+    }
   CountEdgeAndBvar( vNodes );
   for ( int i = 0; i < nVars; i++ )
     {

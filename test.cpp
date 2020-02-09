@@ -1,8 +1,9 @@
 #include "SimpleBdd.hpp"
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
+#include <cudd.h>
 
-std::vector<int> BuildBdd( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man )
+std::vector<unsigned> BuildBdd( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man )
 {
   int * pFanouts = NULL;
   if ( man.pvFrontiers )
@@ -15,6 +16,7 @@ std::vector<int> BuildBdd( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd &
 	  pFanouts[aig.node_to_index( gate )] = aig.fanout_size( gate );
 	});
     }
+  aig.clear_values();
   aig.set_value( aig.get_node( aig.get_constant( 0 ) ), man.LitConst0() );
   aig.foreach_pi( [&]( auto pi, int i )
     {
@@ -62,13 +64,65 @@ std::vector<int> BuildBdd( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd &
     });
   if ( pFanouts )
     free( pFanouts );
-  std::vector<int> vNodes;
+  std::vector<unsigned> vNodes;
   aig.foreach_po( [&]( auto po )
     {
       vNodes.push_back( man.LitNotCond( aig.value( aig.get_node( po ) ), aig.is_complemented( po ) ) );
     });
   return vNodes;
 }
+
+std::vector<int> BuildBdd( mockturtle::aig_network & aig, DdManager * pMan )
+{
+  std::map<uint32_t, DdNode *> m;
+  m[aig.node_to_index( aig.get_node( aig.get_constant( 0 ) ) )] = Cudd_Not( Cudd_ReadOne( pMan ) );
+  aig.foreach_pi( [&]( auto pi, int i )
+    {
+      m[aig.node_to_index( pi )] = Cudd_bddIthVar( pMan, i );
+    });
+  aig.foreach_gate( [&]( auto gate, int i )
+    {
+      DdNode * x;
+      x = Cudd_ReadOne( pMan );
+      aig.foreach_fanin( gate, [&]( auto fanin )
+        {
+	  x = Cudd_bddAnd( pMan, x, Cudd_NotCond( m[aig.node_to_index( aig.get_node( fanin ) )], aig.is_complemented( fanin ) ) );
+	  if ( x == NULL )
+	    throw "Node overflow";
+	});
+      
+    });
+  /*
+      aig.set_value( gate, x );
+      if ( man.pvFrontiers )
+	{
+	  man.pvFrontiers->push_back( x );
+	  aig.foreach_fanin( gate, [&]( auto fanin )
+	    {
+	      auto node = aig.get_node( fanin );
+	      pFanouts[aig.node_to_index( node )] -= 1;
+	      if ( pFanouts[aig.node_to_index( node )] == 0 )
+		{
+		  auto it = std::find( man.pvFrontiers->begin(), man.pvFrontiers->end(), aig.value( node ) );
+		  assert( it != man.pvFrontiers->end() );
+		  man.pvFrontiers->erase( it );
+		}
+	    });
+	}
+    });
+  if ( pFanouts )
+    free( pFanouts );
+  std::vector<int> vNodes;
+  aig.foreach_po( [&]( auto po )
+    {
+      vNodes.push_back( man.LitNotCond( aig.value( aig.get_node( po ) ), aig.is_complemented( po ) ) );
+    });
+  return vNodes;
+  */
+  std::vector<int> vNodes;
+  return vNodes;
+}
+
 
 /*
 void GiaTest( Gia_Man_t * pGia, int nVerbose, int nMem, char * pFileName, int fSort, int fRealloc, int fGC, int nReoThold, int nFinalReo )
@@ -126,12 +180,12 @@ void GiaTest( Gia_Man_t * pGia, int nVerbose, int nMem, char * pFileName, int fS
 }
 */
 
-auto Bdd2Aig_rec( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, int a, std::map<int, mockturtle::aig_network::signal> & m )
+auto Bdd2Aig_rec( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, int a, std::map<int, uint32_t> & m )
 {
   if ( man.BvarIsConst( a ) )
     return aig.get_constant( 0 );
   if ( m.count( a ) )
-    return m[a];
+    return aig.make_signal( aig.index_to_node( m[a] ) );
   int v = man.VarOfBvar( a );
   unsigned x1 = man.ThenOfBvar( a );
   unsigned x0 = man.ElseOfBvar( a );
@@ -143,15 +197,15 @@ auto Bdd2Aig_rec( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, int
     f0 = aig.create_not( f0 );
   auto c = aig.make_signal( aig.pi_at( man.get_order( v ) ) );
   auto f = aig.create_ite( c, f1, f0 );
-  m[a] = f;
+  m[a] = aig.node_to_index( aig.get_node( f ) );
   return f;
 }
 
-void Bdd2Aig( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, std::vector<int> & vNodes )
+void Bdd2Aig( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, std::vector<unsigned> & vNodes )
 {
   for ( int i = 0; i < man.get_nVars(); i++ )
     aig.create_pi();
-  std::map<int, mockturtle::aig_network::signal> m;
+  std::map<int, uint32_t> m;
   for ( unsigned x : vNodes )
     {
       auto f = Bdd2Aig_rec( aig, man, man.Lit2Bvar( x ), m );
@@ -166,11 +220,17 @@ int main()
   mockturtle::aig_network aig;
   lorina::read_aiger( "file.aig", mockturtle::aiger_reader( aig ) );
   mockturtle::topo_view aig_topo{aig};
+
+  DdManager * pMan = Cudd_Init(aig.num_pis(),0,CUDD_UNIQUE_SLOTS,CUDD_CACHE_SLOTS,0);
+  BuildBdd( aig, pMan );
+    
+  
+  return 0;
   
   try {
     SimpleBdd::SimpleBdd man(aig.num_pis(), 1, 1, NULL, 2);
     man.RefreshConfig( 1, 1, 10 );
-    std::vector<int> vNodes = BuildBdd( aig_topo, man );
+    std::vector<unsigned> vNodes = BuildBdd( aig_topo, man );
     std::cout << "Shared BDD nodes = " << man.CountNodesArrayShared( vNodes ) << std::endl;
     std::cout << "Sum of BDD nodes = " << man.CountNodesArrayIndependent( vNodes ) << std::endl;
     
