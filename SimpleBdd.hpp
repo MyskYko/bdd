@@ -43,17 +43,28 @@ private:
   int                nRefresh;      // the number of refresh tried
   int                fGC;           // flag of garbage collection
   int                fRealloc;      // flag of reallocation
+  int                nReo;          // threshold to run reordering
   
   std::vector<int>   vOrdering;     // variable ordering : new 2 old
   float              ReoThold;      // threshold to terminate reordering. 0=off
   unsigned *         pEdges;        // array of number of incoming edges for nodes
   std::vector<std::vector<int> > liveBvars; // array of live Bvars for each layer
+  std::vector<unsigned> * pvNodes;  // vector of live nodes (only top of tree)
 
 public:
-  std::vector<unsigned> * pvFrontiers;   // vector of frontier nodes
-
   int get_nVars() { return nVars; }
   int get_order( int v ) { return vOrdering[v]; }
+  int get_pvNodesExists() { return pvNodes != NULL; }
+  void Ref( unsigned x ) { if ( pvNodes ) pvNodes->push_back( x ); }
+  void Pop() { if ( pvNodes ) pvNodes->pop_back(); }
+  void Deref( unsigned x ) {
+    if ( pvNodes )
+      {
+	auto it = std::find( pvNodes->begin(), pvNodes->end(), x );
+	assert( it != pvNodes->end() );
+	pvNodes->erase( it );
+      }
+  }
   
 /**Function*************************************************************
    
@@ -140,7 +151,7 @@ public:
   int      LitIsConst1( unsigned x )         { return LitIsEq( x, LitConst1() );      }
   int      LitIsConst( unsigned x )          { return BvarIsConst( Lit2Bvar( x ) );   }
   int      LitIsInvalid( unsigned x )        { return BvarIsInvalid( Lit2Bvar( x ) ); }
-  
+  int      LitIsRemoved( unsigned x )        { return Var( x ) == VarRemoved();       }  
 /**Function*************************************************************
    
    Synopsis    [Utilities for Lit]
@@ -165,8 +176,8 @@ public:
 
   void     IncEdge( unsigned x ) { if ( ++pEdges[Lit2Bvar( x )] == EdgeInvalid() ) throw "Edge overflow"; }
   void     DecEdge( unsigned x ) { assert( --pEdges[Lit2Bvar( x )] != EdgeInvalid() ); }
-  void     IncEdgeNonConst( unsigned x) { if ( !LitIsConst( x ) ) IncEdge( x ); }
-  void     DecEdgeNonConst( unsigned x) { if ( !LitIsConst( x ) ) DecEdge( x ); }
+  void     IncEdgeNonConst( unsigned x ) { if ( !LitIsConst( x ) ) IncEdge( x ); }
+  void     DecEdgeNonConst( unsigned x ) { if ( !LitIsConst( x ) ) DecEdge( x ); }
 
 /**Function*************************************************************
    
@@ -226,9 +237,11 @@ private:
   void     CountEdgeAndBvar_rec( unsigned x );
   void     CountEdgeAndBvar( std::vector<unsigned> & vNodes );
   void     ShiftBvar( int a, int d );
-  int      SwapBvar( int a, int fRestore );
+  void     SwapBvar( int a, int fRestore );
   int      Swap( int v, int & nNodes, int dLimit );
-  void     Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<unsigned> & vNodes, int nLimit );
+  void     Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, int nLimit );
+  void     CheckLiveBvar_rec( unsigned x );
+  void     CheckLiveBvar();
   
 public:
   SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vector<int> * pvOrdering, int nVerbose );
@@ -243,12 +256,12 @@ public:
   int      CountNodes( unsigned x );
   int      CountNodesArrayShared( std::vector<unsigned> & vNodes );
   int      CountNodesArrayIndependent( std::vector<unsigned> & vNodes );
-  void     GarbageCollect( std::vector<unsigned> & vNodes );
+  void     GarbageCollect();
   void     RefreshConfig( int fRealloc_, int fGC_, int nReoThold );
   int      Refresh();
   void     PrintOrdering( std::vector<int> & new2old );
   void     ReorderConfig( int nReoThold );
-  void     Reorder( std::vector<unsigned> & vNodes );
+  void     Reorder();
 };
 
 /**Function*************************************************************
@@ -296,9 +309,22 @@ inline unsigned SimpleBdd::UniqueCreate( int v, unsigned x1, unsigned x0 )
 {
   if ( LitIsEq( x1, x0 ) )
     return x0;
-  if ( !LitIsCompl( x0 ) )
-    return UniqueCreateInt( v, x1, x0 );
-  return LitNot( UniqueCreateInt( v, LitNot( x1 ), LitNot( x0 ) ) );
+  unsigned x;
+  while ( 1 )
+    {
+      if ( !LitIsCompl( x0 ) )
+	x = UniqueCreateInt( v, x1, x0 );
+      else
+	x = LitNot( UniqueCreateInt( v, LitNot( x1 ), LitNot( x0 ) ) );
+      if ( LitIsInvalid( x ) )
+	{
+	  if ( Refresh() )
+	    throw "Node overflow";
+	}
+      else
+	break;
+    }
+  return x;
 }
 
 /**Function*************************************************************
@@ -334,7 +360,8 @@ SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vecto
   fRealloc    = 0;
   fGC         = 0;
   ReoThold    = 0;
-  pvFrontiers = NULL;
+  nReo        = 4000;
+  pvNodes     = NULL;
   pEdges      = NULL;
   if ( nVars < 0xff )
     {
@@ -383,8 +410,8 @@ SimpleBdd::~SimpleBdd()
     free( pVars );
   if ( pSVars )
     free( pSVars );
-  if ( pvFrontiers )
-    delete pvFrontiers;
+  if ( pvNodes )
+    delete pvNodes;
   if ( pEdges )
     free( pEdges );
 }
@@ -554,40 +581,42 @@ unsigned SimpleBdd::And_rec( unsigned x, unsigned y )
       y0 = Else( y );
       y1 = Then( y );
     }
-  unsigned z0 = And_rec( x0, y0 );
-  if ( LitIsInvalid( z0 ) )
-    return z0;
   unsigned z1 = And_rec( x1, y1 );
-  if ( LitIsInvalid( z1 ) )
-    return z1;
+  Ref( z1 );
+  unsigned z0 = And_rec( x0, y0 );
+  Ref( z0 );
   z = UniqueCreate( std::min( Var( x ), Var( y ) ), z1, z0 );
+  Pop();
+  Pop();
   return CacheInsert( x, y, z );
 }
 inline unsigned SimpleBdd::And( unsigned x, unsigned y )
 {
-  if ( LitIsInvalid( x ) )
-    return x;
-  if ( LitIsInvalid( y ) )
-    return y;
-  return And_rec( x, y );
+  InitRefresh();
+  unsigned z = And_rec( x, y );
+  if ( ReoThold && nObjs > nReo )
+    {
+      Ref( z );
+      Reorder();
+      nReo = nReo + nReo;
+      Pop();
+    }
+  return z;
 }
 inline unsigned SimpleBdd::Or( unsigned x, unsigned y )
 {
-  if ( LitIsInvalid( x ) )
-    return x;
-  if ( LitIsInvalid( y ) )
-    return y;
   return LitNot( And_rec( LitNot( x ), LitNot( y ) ) );
 }
 inline unsigned SimpleBdd::Xnor( unsigned x, unsigned y )
 {
-  unsigned z0 = And( LitNot( x ), LitNot( y ) );
-  if ( LitIsInvalid( z0 ) )
-    return z0;
   unsigned z1 = And( x, y );
-  if ( LitIsInvalid( z1 ) )
-    return z1;
-  return Or( z0, z1 );
+  Ref( z1 );
+  unsigned z0 = And( LitNot( x ), LitNot( y ) );
+  Ref( z0 );
+  unsigned z = Or( z0, z1 );
+  Pop();
+  Pop();
+  return z;
 }
 
 /**Function*************************************************************
@@ -682,17 +711,17 @@ inline void SimpleBdd::RemoveNodeByBvar( int a )
   if ( nMinRemoved > a )
     nMinRemoved = a;
 }
-inline void SimpleBdd::GarbageCollect( std::vector<unsigned> & vNodes )
+inline void SimpleBdd::GarbageCollect()
 {
   unsigned x;
   if ( nVerbose )
     std::cout <<  "\tGarbage collect" << std::endl;
-  for ( unsigned x : vNodes )
+  for ( unsigned x : *pvNodes )
     Mark_rec( x );
   for ( int i = nVars + 1; i < nObjs; i++ )
     if ( !MarkOfBvar( i ) && !BvarIsRemoved( i ) )
       RemoveNodeByBvar( i );
-  for ( unsigned x : vNodes )
+  for ( unsigned x : *pvNodes )
     Unmark_rec( x );
   CacheClear();
 }
@@ -712,10 +741,10 @@ inline void SimpleBdd::RefreshConfig( int fRealloc_, int fGC_, int nReoThold )
 {
   fRealloc = fRealloc_;
   fGC = fGC_;
-  if ( pvFrontiers )
-    delete pvFrontiers;
+  if ( pvNodes )
+    delete pvNodes;
   if ( fGC || nReoThold )
-    pvFrontiers = new std::vector<unsigned>;
+    pvNodes = new std::vector<unsigned>;
   ReorderConfig( nReoThold );
 }
 inline int SimpleBdd::Refresh()
@@ -725,13 +754,7 @@ inline int SimpleBdd::Refresh()
     std::cout << "Refresh " << nRefresh << std::endl;
   if ( nRefresh <= 1 && fGC )
     {
-      GarbageCollect( *pvFrontiers );
-      return 0;
-    }
-  if ( nRefresh <= 2 && ReoThold && nObjsAlloc > 4000 )
-    {
-      Reorder( *pvFrontiers );
-      GarbageCollect( *pvFrontiers );
+      GarbageCollect();
       return 0;
     }
   if ( fRealloc && nObjsAlloc < 1 << 31 )
@@ -768,8 +791,12 @@ inline void SimpleBdd::CountEdge( std::vector<unsigned> & vNodes )
 {
   for ( unsigned x : vNodes )
     CountEdge_rec( x );
+  for ( int i = 0; i < nVars; i++ )
+    CountEdge_rec( LitIthVar( i ) );
   for ( unsigned x : vNodes )
     Unmark_rec( x );
+  for ( int i = 0; i < nVars; i++ )
+    Unmark_rec( LitIthVar( i ) );
 }
 void SimpleBdd::UncountEdge_rec( unsigned x )
 {
@@ -880,10 +907,10 @@ inline void SimpleBdd::ShiftBvar( int a, int d )
   int v = VarOfBvar( a );
   unsigned x1 = ThenOfBvar( a );
   unsigned x0 = ElseOfBvar( a );
-  int * next = pNexts + a;
   // remove
   unsigned hash = Hash( v, x1, x0 ) & nUniqueMask;
   int * q = pUnique + hash;
+  int * next = pNexts + a;
   for ( ; *q; q = pNexts + *q )
     if ( *q == a )
       {
@@ -899,12 +926,11 @@ inline void SimpleBdd::ShiftBvar( int a, int d )
   *next = *q;
   *q = a;
 }
-inline int SimpleBdd::SwapBvar( int a, int fRestore )
+inline void SimpleBdd::SwapBvar( int a, int fRestore )
 {
   int v = VarOfBvar( a );
   unsigned x1 = ThenOfBvar( a );
   unsigned x0 = ElseOfBvar( a );
-  int * next = pNexts + a;
   // new chlidren
   unsigned f00, f01, f10, f11;
   if ( Var( x1 ) == v || Var( x1 ) == v + 1 )
@@ -928,23 +954,25 @@ inline int SimpleBdd::SwapBvar( int a, int fRestore )
       f00 = x0;
     }
   unsigned y1 = UniqueCreate( v + 1, f11, f01 );
-  if ( LitIsInvalid( y1 ) )
-    return 1;
-  unsigned y0 = UniqueCreate( v + 1, f10, f00 );
-  if ( LitIsInvalid( y0 ) )
-    return 1;
+  Ref( y1 );
   if ( !Edge( y1 ) && Var( y1 ) == v + 1 )
     {
       if ( !fRestore )
 	liveBvars[nVars + 1].push_back( Lit2Bvar( y1 ) );
+      else
+	liveBvars[v + 1].push_back( Lit2Bvar( y1 ) );
       IncEdgeNonConst( f11 );
       IncEdgeNonConst( f01 );
     }
   IncEdgeNonConst( y1 );
+  unsigned y0 = UniqueCreate( v + 1, f10, f00 );
+  Pop();
   if ( !Edge( y0 ) && Var( y0 ) == v + 1 )
     {
       if ( !fRestore )
 	liveBvars[nVars + 1].push_back( Lit2Bvar( y0 ) );
+      else
+	liveBvars[v + 1].push_back( Lit2Bvar( y0 ) );
       IncEdgeNonConst( f10 );
       IncEdgeNonConst( f00 );
     }
@@ -952,6 +980,7 @@ inline int SimpleBdd::SwapBvar( int a, int fRestore )
   // remove
   unsigned hash = Hash( v, x1, x0 ) & nUniqueMask;
   int * q = pUnique + hash;
+  int * next = pNexts + a;
   for ( ; *q; q = pNexts + *q )
     if ( *q == a )
       {
@@ -966,7 +995,6 @@ inline int SimpleBdd::SwapBvar( int a, int fRestore )
   q = pUnique + hash;
   *next = *q;
   *q = a;
-  return 0;
 }
 
 /**Function*************************************************************
@@ -1010,7 +1038,6 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
 	liveBvars[nVars].push_back( a );
       }
   int nSwapHead = liveBvars[nVars].size();
-  int fOutOfNodes = 0;
   int fOutOfLimit = 0;
   int nOut;
   // walk upper level again
@@ -1019,12 +1046,7 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
       int a = liveBvars[v][i];
       if ( VarOfBvar( a ) == v )
 	{
-	  if ( SwapBvar( a, 0 ) )
-	    {
-	      nOut = i;
-	      fOutOfNodes = 1;
-	      break;
-	    }
+	  SwapBvar( a, 0 );
 	  liveBvars[nVars].push_back( a );
 	  if ( (int)liveBvars[nVars].size()
 	       + (int)liveBvars[nVars + 1].size()
@@ -1038,7 +1060,7 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
 	    }
 	}
     }
-  if ( !fOutOfNodes && !fOutOfLimit )
+  if ( !fOutOfLimit )
     {
       // swap liveBvars
       nNodes += (int)liveBvars[nVars].size() + (int)liveBvars[nVars + 1].size() - (int)liveBvars[v].size() - (int)liveBvars[v + 1].size();
@@ -1047,6 +1069,9 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
       return 0;
     }
   // restore previous tree
+  std::vector<int> vTmp(liveBvars[v].begin() + nOut, liveBvars[v].end());
+  liveBvars[v].clear();
+  liveBvars[v + 1].clear();
   // walk new upper level where swapped
   for ( int i = nSwapHead; i < liveBvars[nVars].size(); i++ )
     {
@@ -1062,32 +1087,38 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
 	DecEdgeNonConst( ElseOfBvar( a ) );
       }
     else
-      ShiftBvar( a, -1 );
+      {
+	ShiftBvar( a, -1 );
+	liveBvars[v].push_back( a );
+      }
   // walk new upper level where shifted
   for ( int i = 0; i < nSwapHead; i++ )
     {
       int a = liveBvars[nVars][i];
       ShiftBvar( a, 1 );
+      liveBvars[v + 1].push_back( a );
     }
-  // walk upper level from where out of nodes
-  for ( int i = nOut; i < liveBvars[v].size(); i++ )
+  // walk old upper level from where out of nodes
+  for ( int a : vTmp )
     {
-      int a = liveBvars[v][i];
       if ( Var( ThenOfBvar( a ) ) == v + 1 ||
 	   Var( ElseOfBvar( a ) ) == v + 1 )
 	{
+	  liveBvars[v].push_back( a );
 	  unsigned x1 = ThenOfBvar( a );
-	  unsigned x0 = ElseOfBvar( a );
 	  if ( !Edge( x1 ) && Var( x1 ) == v + 1 )
 	    {
 	      IncEdgeNonConst( Then( x1 ) );
 	      IncEdgeNonConst( Else( x1 ) );
+	      liveBvars[v + 1].push_back( Lit2Bvar( x1 ) );
 	    }
 	  IncEdgeNonConst( x1 );
+	  unsigned x0 = ElseOfBvar( a );
 	  if ( !Edge( x0 ) && Var( x0 ) == v + 1 )
 	    {
 	      IncEdgeNonConst( Then( x0 ) );
 	      IncEdgeNonConst( Else( x0 ) );
+	      liveBvars[v + 1].push_back( Lit2Bvar( x0 ) );
 	    }
 	  IncEdgeNonConst( x0 );
 	}
@@ -1096,44 +1127,30 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
   for ( int i = nSwapHead; i < liveBvars[nVars].size(); i++ )
     {
       int a = liveBvars[nVars][i];
-      assert( !SwapBvar( a, 1 ) );
+      SwapBvar( a, 1 );
+      liveBvars[v].push_back( a );
     }
-  if ( fOutOfNodes )
-    return -1;
-  return 1; // if ( fOutOfLimit );
+  return -1; // if ( fOutOfLimit );
 }
-inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, std::vector<unsigned> & vNodes, int nLimit )
+inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, int nLimit )
 {
-  int fRefresh = 0;
+  float ReoThold_ = ReoThold;
+  int nRefresh_ = nRefresh;
+  ReoThold = 0;
   for ( int i = 0; i < nSwap; i++ )
     {
       int dLimit = nLimit - nNodes;
+      InitRefresh();
       if ( fUp )
 	pos -= 1;
-      int r = Swap( pos, nNodes, dLimit );
-      if ( r == 1 )
+      if ( Swap( pos, nNodes, dLimit ) )
 	{
 	  if ( fUp )
 	    pos += 1;
+	  ReoThold = ReoThold_;
+	  nRefresh = nRefresh_;
 	  return;
 	}
-      if ( r == -1 )
-	{
-	  if ( fUp )
-	    pos += 1;
-	  if ( fGC && !fRefresh )
-	    {
-	      GarbageCollect( vNodes );
-	      fRefresh = 1;
-	    }
-	  else if ( fRealloc )
-	    Realloc();
-	  else
-	    throw "Node overflow";
-	  i--;
-	  continue;
-	}
-      fRefresh = 0;
       std::swap( new2old[pos], new2old[pos + 1] );
       if ( !fUp )
 	pos += 1;
@@ -1147,7 +1164,10 @@ inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int &
 	  std::cout << "pos = " << pos << " nNode = " << nNodes << std::endl;
           PrintOrdering( new2old );
 	}
+      CheckLiveBvar();
     }
+  ReoThold = ReoThold_;
+  nRefresh = nRefresh_;
 }
 
 /**Function*************************************************************
@@ -1161,7 +1181,7 @@ inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int &
    SeeAlso     []
 
 ***********************************************************************/
-void SimpleBdd::Reorder( std::vector<unsigned> & vNodes )
+void SimpleBdd::Reorder()
 {
   std::vector<int> descendingOrder;
   std::vector<int> new2old;
@@ -1173,7 +1193,7 @@ void SimpleBdd::Reorder( std::vector<unsigned> & vNodes )
       liveBvars[i].clear();
       liveBvars[i].reserve( nObjs / nVars );
     }
-  CountEdgeAndBvar( vNodes );
+  CountEdgeAndBvar( *pvNodes );
   for ( int i = 0; i < nVars; i++ )
     {
       new2old.push_back( i );
@@ -1211,11 +1231,11 @@ void SimpleBdd::Reorder( std::vector<unsigned> & vNodes )
 	  nSwap = pos;
 	}
       else nSwap = nVars - pos - 1;
-      Shift( pos, nNodes, nSwap, fUp, bestPos, nBestNodes, new2old, vNodes, nLimit );
+      Shift( pos, nNodes, nSwap, fUp, bestPos, nBestNodes, new2old, nLimit );
       fUp ^= 1;
       if ( fUp ) nSwap = pos;
       else nSwap = nVars - pos - 1;
-      Shift( pos, nNodes, nSwap, fUp, bestPos, nBestNodes, new2old, vNodes, nLimit );
+      Shift( pos, nNodes, nSwap, fUp, bestPos, nBestNodes, new2old, nLimit );
       if ( pos < bestPos )
 	{
 	  fUp = 0;
@@ -1226,17 +1246,54 @@ void SimpleBdd::Reorder( std::vector<unsigned> & vNodes )
 	  fUp = 1;
 	  nSwap = pos - bestPos;
 	}
-      Shift( pos, nNodes, nSwap, fUp, bestPos, nBestNodes, new2old, vNodes, nLimit );
+      Shift( pos, nNodes, nSwap, fUp, bestPos, nBestNodes, new2old, nLimit );
     }
   // finish
   std::vector<int> vTmp( vOrdering );
   vOrdering.clear();
   for ( int i : new2old )
     vOrdering.push_back( vTmp[i] );
-  UncountEdge( vNodes );
+  UncountEdge( *pvNodes ); // may slow it
+  /*
+  for ( int i = 0; i < nObjs; i++ )
+    {
+      if ( EdgeOfBvar( i ) )
+	std::cout << i << " " << EdgeOfBvar( i ) << std::endl;
+      assert ( !EdgeOfBvar(i) );
+    }
+  */
   CacheClear();
 }
 
+void SimpleBdd::CheckLiveBvar_rec( unsigned x )
+{
+  if ( LitIsConst( x ) )
+    return;
+  if ( Mark( x ) )
+    return;
+  if( std::find( liveBvars[Var( x )].begin(), liveBvars[Var(x)].end(), Lit2Bvar( x ) )  == liveBvars[Var(x)].end() )
+    {
+      std::cout << x << std::endl;
+      abort();
+    }
+  assert(Var( Then(x)) > Var(x));
+  assert(Var( Else(x) ) > Var(x));
+  SetMark( x, 1 );
+  CheckLiveBvar_rec( Else( x ) );
+  CheckLiveBvar_rec( Then( x ) );
+}
+inline void SimpleBdd::CheckLiveBvar()
+{
+  return;
+  for ( unsigned x : *pvNodes )
+    CheckLiveBvar_rec( x );
+  for ( int i = 0; i < nVars; i++ )
+    CheckLiveBvar_rec( LitIthVar( i ) );
+  for ( unsigned x : *pvNodes )
+    Unmark_rec( x );
+  for ( int i = 0; i < nVars; i++ )
+    Unmark_rec( LitIthVar( i ) );
+}
 
 }
 
