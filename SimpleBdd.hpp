@@ -11,60 +11,24 @@
 
 namespace SimpleBdd
 {
-class SimpleBdd
+class BddMan
 {
 /**Function*************************************************************
    
-   Synopsis    [Data structure]
+   Synopsis    [Data type]
 
-   Description []
+   Description [var = Variable, lit = Literal, bvar = BddVariable = Literal >> 1]
                
    SideEffects []
 
    SeeAlso     []
 
 ***********************************************************************/
-private:
-  int                nVars;         // the number of variables
-  int                nObjs;         // the number of nodes used
-  unsigned           nObjsAlloc;    // the number of nodes allocated
-  int *              pUnique;       // unique table for nodes
-  int *              pNexts;        // next pointer for nodes
-  unsigned *         pCache;        // array of triples <arg0, arg1, AND(arg0, arg1)>
-  unsigned *         pObjs;         // array of pairs cof0 for nodes
-  unsigned char *    pVars;         // array of variables for nodes
-  unsigned short *   pSVars;        // array of variables for nodes when more than 255 vars
-  unsigned char *    pMarks;        // array of marks for nodes
-  unsigned           nUniqueMask;   // selection mask for unique table
-  unsigned           nCacheMask;    // selection mask for computed table
-  unsigned           nMinRemoved;   // the minimum int of removed nodes
-  int                nVerbose;      // the level of verbosing information
-
-  int                nRefresh;      // the number of refresh tried
-  int                fGC;           // flag of garbage collection
-  int                fRealloc;      // flag of reallocation
-  int                nReo;          // threshold to run reordering
-  
-  std::vector<int>   vOrdering;     // variable ordering : new 2 old
-  float              ReoThold;      // threshold to terminate reordering. 0=off
-  unsigned *         pEdges;        // array of number of incoming edges for nodes
-  std::vector<std::vector<int> > liveBvars; // array of live Bvars for each layer
-  std::vector<unsigned> * pvNodes;  // vector of live nodes (only top of tree)
-
-public:
-  int get_nVars() { return nVars; }
-  int get_order( int v ) { return vOrdering[v]; }
-  int get_pvNodesExists() { return pvNodes != NULL; }
-  void Ref( unsigned x ) { if ( pvNodes ) pvNodes->push_back( x ); }
-  void Pop() { if ( pvNodes ) pvNodes->pop_back(); }
-  void Deref( unsigned x ) {
-    if ( pvNodes )
-      {
-	auto it = std::find( pvNodes->begin(), pvNodes->end(), x );
-	assert( it != pvNodes->end() );
-	pvNodes->erase( it );
-      }
-  }
+  typedef uint32_t lit;
+  typedef int bvar;
+  typedef uint8_t var;
+  typedef uint8_t mark;
+  typedef uint32_t edge;
   
 /**Function*************************************************************
    
@@ -77,29 +41,12 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  unsigned Hash( int Arg0, int Arg1, int Arg2 ) { return 12582917 * Arg0 + 4256249 * Arg1 + 741457 * Arg2; }
-
-/**Function*************************************************************
-   
-   Synopsis    [Definition of constant and invalid values]
-
-   Description [Var = Variable, Lit = Literal, Bvar = BddVariable = Lit >> 1]
-               
-   SideEffects []
-
-   SeeAlso     []
-
-***********************************************************************/
-  int      BvarConst()   { return 0;                   }
-  int      VarConst()    { return pVars? 0xff: 0xffff; }
-  int      BvarInvalid() { return 0x7fffffff;          }
-  unsigned EdgeInvalid() { return 0xffffffff;          }
-  int      MarkInvalid() { return 0xff;                }
-  int      VarRemoved()  { return pVars? 0xff: 0xffff; }
+  uint32_t Hash( uint32_t Arg0, uint32_t Arg1, uint32_t Arg2 ) { return 12582917 * Arg0 + 4256249 * Arg1 + 741457 * Arg2; }
+  //  uint64_t Hash( uint64_t Arg0, uint64_t Arg1, uint64_t Arg2 ) { return 67280421310721ull * Arg0 + 2147483647ull * Arg1 + 12582917 * Arg2; }
   
 /**Function*************************************************************
    
-   Synopsis    [Utilities for Bvar]
+   Synopsis    [Member variables]
 
    Description []
                
@@ -108,11 +55,77 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  unsigned BvarIthVar( int a )      { return a + 1;                        }
-  int      BvarIsEq( int a, int b ) { return a == b;                       }
-  int      BvarIsConst( int a )     { return BvarIsEq( a, BvarConst() );   }
-  int      BvarIsInvalid( int a )   { return BvarIsEq( a, BvarInvalid() ); }
+private:
+  var    nVars;         // the number of variables
+  bvar   nObjs;         // the number of nodes used
+  lit    nObjsAlloc;    // the number of nodes allocated
+  bvar * pUnique;       // unique table for nodes
+  bvar * pNexts;        // next pointer for nodes
+  lit *  pCache;        // array of triples <arg0, arg1, AND(arg0, arg1)>
+  lit *  pObjs;         // array of pairs cof0 for nodes
+  var *  pVars;         // array of variables for nodes
+  mark * pMarks;        // array of marks for nodes
+  lit    nUniqueMask;   // selection mask for unique table
+  lit    nCacheMask;    // selection mask for computed table
+  bvar   nMinRemoved;   // the minimum int of removed nodes
+  int    nVerbose;      // the level of verbosing information
 
+  int    nRefresh;      // the number of refresh tried
+  int    fGC;           // flag of garbage collection
+  int    fRealloc;      // flag of reallocation
+  int    nReo;          // threshold to run reordering
+  double MaxGrowth;     // threshold to terminate reordering. 0=off
+  edge * pEdges;        // array of number of incoming edges for nodes
+  
+  std::vector<var>                vOrdering; // variable ordering : new 2 old
+  std::vector<std::vector<bvar> > liveBvars; // array of live Bvars for each layer
+  std::vector<lit> *              pvNodes;   // vector of live nodes (only top of tree)
+  
+public:
+  var  get_nVars()         { return nVars;           }
+  var  get_order( var v )  { return vOrdering[v];    }
+  int  get_pvNodesExists() { return pvNodes != NULL; }
+
+/**Function*************************************************************
+   
+   Synopsis    [Reference]
+
+   Description []
+               
+   SideEffects []
+
+   SeeAlso     []
+
+***********************************************************************/
+  void Ref( lit x ) { if ( pvNodes ) pvNodes->push_back( x ); }
+  void Pop()        { if ( pvNodes ) pvNodes->pop_back();     }
+  void Deref( lit x ) {
+    if ( pvNodes )
+      {
+	auto it = std::find( pvNodes->begin(), pvNodes->end(), x );
+	assert( it != pvNodes->end() );
+	pvNodes->erase( it );
+      }
+  }
+
+/**Function*************************************************************
+   
+   Synopsis    [Definition of constant and invalid values]
+
+   Description []
+               
+   SideEffects []
+
+   SeeAlso     []
+
+***********************************************************************/
+  bvar BvarConst()   { return 0;                                }
+  var  VarConst()    { return std::numeric_limits<var>::max();  }
+  bvar BvarInvalid() { return std::numeric_limits<bvar>::max(); }
+  edge EdgeInvalid() { return std::numeric_limits<edge>::max(); }
+  mark MarkInvalid() { return std::numeric_limits<mark>::max(); }
+  var  VarRemoved()  { return std::numeric_limits<var>::max();  }
+  
 /**Function*************************************************************
    
    Synopsis    [Bvar to/from Lit]
@@ -124,60 +137,8 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  unsigned Bvar2Lit( int a, int c ) { return a + a + (int)( c > 0 ); }
-  int      Lit2Bvar( unsigned x )   { return x >> 1;                 }
-
-/**Function*************************************************************
-   
-   Synopsis    [Utilities for Lit]
-
-   Description []
-               
-   SideEffects []
-
-   SeeAlso     []
-
-***********************************************************************/
-  unsigned LitRegular( unsigned x )          { return x & ~01;                        }
-  unsigned LitNot( unsigned x )              { return x ^ 1;                          }
-  unsigned LitNotCond( unsigned x, int c )   { return x ^ (int)( c > 0 );             }
-  unsigned LitConst0()                       { return Bvar2Lit( BvarConst(), 0 );     }
-  unsigned LitConst1()                       { return LitNot( LitConst0() );          }
-  unsigned LitInvalid()                      { return Bvar2Lit( BvarInvalid(), 0 );   }
-  int      LitIsCompl( unsigned x )          { return x & 1;                          }
-  unsigned LitIthVar( int a )                { return Bvar2Lit( BvarIthVar( a ), 0 ); }
-  int      LitIsEq( unsigned x, unsigned y ) { return x == y;                         }
-  int      LitIsConst0( unsigned x )         { return LitIsEq( x, LitConst0() );      }
-  int      LitIsConst1( unsigned x )         { return LitIsEq( x, LitConst1() );      }
-  int      LitIsConst( unsigned x )          { return BvarIsConst( Lit2Bvar( x ) );   }
-  int      LitIsInvalid( unsigned x )        { return BvarIsInvalid( Lit2Bvar( x ) ); }
-  int      LitIsRemoved( unsigned x )        { return Var( x ) == VarRemoved();       }  
-/**Function*************************************************************
-   
-   Synopsis    [Utilities for Lit]
-
-   Description []
-               
-   SideEffects []
-
-   SeeAlso     []
-
-***********************************************************************/
-  int      Var( unsigned x )     { return pVars? pVars[Lit2Bvar( x )]: pSVars[Lit2Bvar( x )]; }
-  unsigned Then( unsigned x )    { return LitNotCond( pObjs[LitRegular( x )], LitIsCompl( x ) ); }
-  unsigned Else( unsigned x )    { return LitNotCond( pObjs[LitNot( LitRegular( x ) )], LitIsCompl( x ) ); }
-  int      Next( unsigned x )    { return pNexts[Lit2Bvar( x )]; }
-  int      Mark( unsigned x )    { return pMarks[Lit2Bvar( x )]; }
-  unsigned Edge( unsigned x )    { return pEdges[Lit2Bvar( x )]; }
-
-  void     SetMark( unsigned x, int m ) { pMarks[Lit2Bvar( x )] = m; }
-  void     IncMark( unsigned x ) { if ( ++pMarks[Lit2Bvar( x )] == MarkInvalid() ) throw "Mark overflow"; }
-  void     DecMark( unsigned x ) { assert( --pMarks[Lit2Bvar( x )] != MarkInvalid() ); }
-
-  void     IncEdge( unsigned x ) { if ( ++pEdges[Lit2Bvar( x )] == EdgeInvalid() ) throw "Edge overflow"; }
-  void     DecEdge( unsigned x ) { assert( --pEdges[Lit2Bvar( x )] != EdgeInvalid() ); }
-  void     IncEdgeNonConst( unsigned x ) { if ( !LitIsConst( x ) ) IncEdge( x ); }
-  void     DecEdgeNonConst( unsigned x ) { if ( !LitIsConst( x ) ) DecEdge( x ); }
+  lit  Bvar2Lit( bvar a, int c ) { return a + a + (int)( c > 0 ); }
+  bvar Lit2Bvar( lit x )         { return x >> 1;                 }
 
 /**Function*************************************************************
    
@@ -190,24 +151,84 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  int      VarOfBvar( int a )  { return pVars? pVars[a]: pSVars[a]; }
-  unsigned ThenOfBvar( int a ) { return pObjs[Bvar2Lit( a, 0 )];    }
-  unsigned ElseOfBvar( int a ) { return pObjs[Bvar2Lit( a, 1 )];    }
-  int      NextOfBvar( int a ) { return pNexts[a];                  }
-  int      MarkOfBvar( int a ) { return pMarks[a];                  }
-  unsigned EdgeOfBvar( int a ) { return pEdges[a];                  }
+  bvar BvarIthVar( var v )        { return v + 1;                        }
+  int  BvarIsEq( bvar a, bvar b ) { return a == b;                       }
+  int  BvarIsConst( bvar a )      { return BvarIsEq( a, BvarConst() );   }
+  int  BvarIsInvalid( bvar a )    { return BvarIsEq( a, BvarInvalid() ); }
 
-  void     SetVarOfBvar( int a, int v ) { if ( pVars ) pVars[a] = v; else pSVars[a] = v; }
-  void     SetThenOfBvar( int a, unsigned x1 ) { pObjs[Bvar2Lit( a, 0 )] = x1; }
-  void     SetElseOfBvar( int a, unsigned x0 ) { pObjs[Bvar2Lit( a, 1 )] = x0; }
-  void     SetNextOfBvar( int a, int b ) { pNexts[a] = b; }
-  void     SetMarkOfBvar( int a, int m ) { pMarks[a] = m; }
-  void     SetEdgeOfBvar( int a, int e ) { pEdges[a] = e; }
+  var  VarOfBvar( bvar a )        { return pVars[a];                     }
+  lit  ThenOfBvar( bvar a )       { return pObjs[Bvar2Lit( a, 0 )];      }
+  lit  ElseOfBvar( bvar a )       { return pObjs[Bvar2Lit( a, 1 )];      }
+  bvar NextOfBvar( bvar a )       { return pNexts[a];                    }
+  mark MarkOfBvar( bvar a )       { return pMarks[a];                    }
+  edge EdgeOfBvar( bvar a )       { return pEdges[a];                    }
 
-  int      BvarIsRemoved( int a ) { return VarOfBvar( a ) == VarRemoved(); }
-  void     SetBvarRemoved( int a ) { SetVarOfBvar( a, VarRemoved() ); }
-  int      BvarIsVar( int a ) { return a <= nVars && !BvarIsConst( a ); }
+  void SetVarOfBvar( bvar a, var v )   { pVars[a] = v;                 }
+  void SetThenOfBvar( bvar a, lit x1 ) { pObjs[Bvar2Lit( a, 0 )] = x1; }
+  void SetElseOfBvar( bvar a, lit x0 ) { pObjs[Bvar2Lit( a, 1 )] = x0; }
+  void SetNextOfBvar( bvar a, bvar b ) { pNexts[a] = b;                }
+  void SetMarkOfBvar( bvar a, mark m ) { pMarks[a] = m;                }
+  void SetEdgeOfBvar( bvar a, edge e ) { pEdges[a] = e;                }
 
+  int  BvarIsRemoved( bvar a )  { return VarOfBvar( a ) == VarRemoved();        }
+  void SetBvarRemoved( bvar a ) { SetVarOfBvar( a, VarRemoved() );              }
+  int  BvarIsVar( bvar a )      { return a <= (bvar)nVars && !BvarIsConst( a ); }
+  
+/**Function*************************************************************
+   
+   Synopsis    [Utilities for Lit]
+
+   Description []
+               
+   SideEffects []
+
+   SeeAlso     []
+
+***********************************************************************/
+  lit  LitRegular( lit x )        { return x & ~01;                        }
+  lit  LitNot( lit x )            { return x ^ 1;                          }
+  lit  LitNotCond( lit x, int c ) { return x ^ (int)( c > 0 );             }
+  lit  LitConst0()                { return Bvar2Lit( BvarConst(), 0 );     }
+  lit  LitConst1()                { return LitNot( LitConst0() );          }
+  lit  LitInvalid()               { return Bvar2Lit( BvarInvalid(), 0 );   }
+  lit  LitIthVar( var v )         { return Bvar2Lit( BvarIthVar( v ), 0 ); }
+  int  LitIsCompl( lit x )        { return x & 1;                          }
+  int  LitIsEq( lit x, lit y )    { return x == y;                         }
+  int  LitIsConst0( lit x )       { return LitIsEq( x, LitConst0() );      }
+  int  LitIsConst1( lit x )       { return LitIsEq( x, LitConst1() );      }
+  int  LitIsConst( lit x )        { return BvarIsConst( Lit2Bvar( x ) );   }
+  int  LitIsInvalid( lit x )      { return BvarIsInvalid( Lit2Bvar( x ) ); }
+  int  LitIsRemoved( lit x )      { return Var( x ) == VarRemoved();       }
+  
+  var  Var( lit x )  { return VarOfBvar( Lit2Bvar( x ) ); }
+  lit  Then( lit x ) { return LitNotCond( pObjs[LitRegular( x )], LitIsCompl( x ) ); }
+  lit  Else( lit x ) { return LitNotCond( pObjs[LitNot( LitRegular( x ) )], LitIsCompl( x ) ); }
+  bvar Next( lit x ) { return NextOfBvar( Lit2Bvar( x ) ); }
+  bvar Mark( lit x ) { return MarkOfBvar( Lit2Bvar( x ) ); }
+  edge Edge( lit x ) { return EdgeOfBvar( Lit2Bvar( x ) ); }
+
+  void SetMark( lit x, mark m ) { SetMarkOfBvar( Lit2Bvar( x ), m ); }
+  void IncMark( lit x ) { if ( ++pMarks[Lit2Bvar( x )] == MarkInvalid() ) throw "Mark overflow"; }
+  void DecMark( lit x ) { assert( --pMarks[Lit2Bvar( x )] != MarkInvalid() ); }
+
+  void IncEdge( lit x ) { if ( ++pEdges[Lit2Bvar( x )] == EdgeInvalid() ) throw "Edge overflow"; }
+  void DecEdge( lit x ) { assert( --pEdges[Lit2Bvar( x )] != EdgeInvalid() ); }
+  void IncEdgeNonConst( lit x ) { if ( !LitIsConst( x ) ) IncEdge( x ); }
+  void DecEdgeNonConst( lit x ) { if ( !LitIsConst( x ) ) DecEdge( x ); }
+
+/**Function*************************************************************
+   
+   Synopsis    [Node overflow]
+
+   Description []
+               
+   SideEffects []
+
+   SeeAlso     []
+
+***********************************************************************/
+  int  IsLimit() { return (lit)nObjs == nObjsAlloc || nObjs == BvarInvalid(); }
+  
 /**Function*************************************************************
    
    Synopsis    [Functions]
@@ -219,49 +240,51 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-private:
-  unsigned UniqueCreateInt( int v, unsigned x1, unsigned x0 );
-  unsigned CacheLookup( unsigned Arg1, unsigned Arg2 );
-  unsigned CacheInsert( unsigned Arg1, unsigned Arg2, unsigned Res );
-  void     CacheClear();
-  void     Rehash();
-  unsigned And_rec( unsigned x, unsigned y );
-  int      Count_rec( unsigned x );
-  void     Mark_rec( unsigned x );
-  void     Unmark_rec( unsigned x );
-  void     RemoveNodeByBvar( int a );
-  void     CountEdge_rec( unsigned x );
-  void     CountEdge( std::vector<unsigned> & vNodes );
-  void     UncountEdge_rec( unsigned x );
-  void     UncountEdge( std::vector<unsigned> & vNodes );
-  void     CountEdgeAndBvar_rec( unsigned x );
-  void     CountEdgeAndBvar( std::vector<unsigned> & vNodes );
-  void     ShiftBvar( int a, int d );
-  void     SwapBvar( int a, int fRestore );
-  int      Swap( int v, int & nNodes, int dLimit );
-  void     Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, int nLimit );
-  void     CheckLiveBvar_rec( unsigned x );
-  void     CheckLiveBvar();
+  BddMan( var nVars, lit nObjsAlloc_, std::vector<var> * pvOrdering, int nVerbose );
+  ~BddMan();
   
-public:
-  SimpleBdd( int nVars, unsigned nObjsAlloc_, std::vector<int> * pvOrdering, int nVerbose );
-  ~SimpleBdd();
-  int      IsLimit() { return (unsigned)nObjs == nObjsAlloc || nObjs == BvarInvalid(); }
-  void     InitRefresh() { nRefresh = 0; }
-  unsigned UniqueCreate( int v, unsigned x1, unsigned x0 );
-  void     Realloc();
-  unsigned And( unsigned x, unsigned y );
-  unsigned Or( unsigned x, unsigned y );
-  unsigned Xnor( unsigned x, unsigned y );
-  int      CountNodes( unsigned x );
-  int      CountNodesArrayShared( std::vector<unsigned> & vNodes );
-  int      CountNodesArrayIndependent( std::vector<unsigned> & vNodes );
-  void     GarbageCollect();
-  void     RefreshConfig( int fRealloc_, int fGC_, int nReoThold );
-  int      Refresh();
-  void     PrintOrdering( std::vector<int> & new2old );
-  void     ReorderConfig( int nReoThold );
-  void     Reorder();
+  lit  UniqueCreateInt( var v, lit x1, lit x0 );
+  lit  UniqueCreate( var v, lit x1, lit x0 );
+  
+  lit  CacheLookup( lit Arg1, lit Arg2 );
+  lit  CacheInsert( lit Arg1, lit Arg2, lit Res );
+  void CacheClear();
+  
+  lit  And_rec( lit x, lit y );
+  lit  And( lit x, lit y );
+  lit  Or( lit x, lit y );
+  lit  Xnor( lit x, lit y );
+  
+  void Rehash();
+  void Realloc();
+  
+  void RemoveNodeByBvar( bvar a );
+  void GarbageCollect();
+  
+  void ShiftBvar( bvar a, int d );
+  void SwapBvar( bvar a, int fRestore );
+  int  Swap( var v, bvar & nNodes, lit dLimit );
+  void Shift( var & pos, bvar & nNodes, var nSwap, int fUp, var & bestPos, bvar & nBestNodes, std::vector<var> & new2old, lit nLimit );
+  void Reorder();
+  
+  void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth );
+  int  Refresh();
+  
+  int  Count_rec( lit x );
+  void Mark_rec( lit x );
+  void Unmark_rec( lit x );
+  void CountEdge_rec( lit x );
+  void CountEdge( std::vector<lit> & vNodes );
+  void UncountEdge_rec( lit x );
+  void UncountEdge( std::vector<lit> & vNodes );
+  void CountEdgeAndBvar_rec( lit x );
+  void CountEdgeAndBvar( std::vector<lit> & vNodes );
+  //  void CheckLiveBvar_rec( unsigned x );
+  //  void CheckLiveBvar();
+  int  CountNodes( lit x );
+  int  CountNodesArrayShared( std::vector<lit> & vNodes );
+  int  CountNodesArrayIndependent( std::vector<lit> & vNodes );
+  void PrintOrdering( std::vector<var> & new2old );
 };
 
 /**Function*************************************************************
@@ -275,7 +298,7 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-inline unsigned SimpleBdd::UniqueCreateInt( int v, unsigned x1, unsigned x0 )
+inline unsigned BddMan::UniqueCreateInt( var v, unsigned x1, unsigned x0 )
 {
   int * q = pUnique + ( Hash( v, x1, x0 ) & nUniqueMask );
   for ( ; *q; q = pNexts + *q )
@@ -305,7 +328,7 @@ inline unsigned SimpleBdd::UniqueCreateInt( int v, unsigned x1, unsigned x0 )
   return Bvar2Lit( *q, 0 );
 }
   
-inline unsigned SimpleBdd::UniqueCreate( int v, unsigned x1, unsigned x0 )
+inline unsigned BddMan::UniqueCreate( var v, lit x1, lit x0 )
 {
   if ( LitIsEq( x1, x0 ) )
     return x0;
@@ -338,7 +361,7 @@ inline unsigned SimpleBdd::UniqueCreate( int v, unsigned x1, unsigned x0 )
    SeeAlso     []
 
 ***********************************************************************/
-SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, std::vector<int> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nVerbose(nVerbose)
+BddMan::BddMan( var nVars, lit nObjsAlloc_, std::vector<var> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nVerbose(nVerbose)
 {
   while ( nObjsAlloc < nVars + 1 )
     {
@@ -359,23 +382,12 @@ SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, std::vector<int> * pvOrde
   nRefresh    = 0;
   fRealloc    = 0;
   fGC         = 0;
-  ReoThold    = 0;
+  MaxGrowth    = 0;
   nReo        = 4000;
   pvNodes     = NULL;
   pEdges      = NULL;
-  if ( nVars < 0xff )
-    {
-      pVars   = (unsigned char *)calloc( nObjsAlloc, sizeof(unsigned char) );
-      pSVars  = NULL;
-    }
-  else
-    {
-      pSVars  = (unsigned short *)calloc( nObjsAlloc, sizeof(unsigned short) );
-      pVars   = NULL;
-    }
-  if ( nVars > VarConst() )
-    throw "Variable overflow";
-  if ( !pUnique || !pNexts || !pCache || !pObjs || !pMarks || (!pVars && !pSVars) )
+  pVars   = (unsigned char *)calloc( nObjsAlloc, sizeof(unsigned char) );
+  if ( !pUnique || !pNexts || !pCache || !pObjs || !pMarks || !pVars )
     throw "Allocation failed";
   SetVarOfBvar( BvarConst(), VarConst() );
   nObjs = 1;
@@ -398,7 +410,7 @@ SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, std::vector<int> * pvOrde
   }
 }
 
-SimpleBdd::~SimpleBdd()
+BddMan::~BddMan()
 {
   if ( nVerbose )
     std::cout << "Free : Var = " << nVars << " Obj = " << nObjs << " Alloc = " << nObjsAlloc - 1 << std::endl;
@@ -408,8 +420,6 @@ SimpleBdd::~SimpleBdd()
   free( pObjs );
   if ( pVars )
     free( pVars );
-  if ( pSVars )
-    free( pSVars );
   if ( pvNodes )
     delete pvNodes;
   if ( pEdges )
@@ -428,14 +438,14 @@ SimpleBdd::~SimpleBdd()
    SeeAlso     []
 
 ***********************************************************************/
-inline unsigned SimpleBdd::CacheLookup( unsigned Arg1, unsigned Arg2 )
+inline unsigned BddMan::CacheLookup( unsigned Arg1, unsigned Arg2 )
 {
   unsigned * p = pCache + 3 * (long long)( Hash( 0, Arg1, Arg2 ) & nCacheMask );
   if ( p[0] == Arg1 && p[1] == Arg2 )
     return p[2];
   return LitInvalid();
 }
-inline unsigned SimpleBdd::CacheInsert( unsigned Arg1, unsigned Arg2, unsigned Res )
+inline unsigned BddMan::CacheInsert( unsigned Arg1, unsigned Arg2, unsigned Res )
 {
   if ( LitIsInvalid( Res ) )
     return Res;
@@ -445,7 +455,7 @@ inline unsigned SimpleBdd::CacheInsert( unsigned Arg1, unsigned Arg2, unsigned R
   p[2] = Res;
   return Res;
 }
-inline void SimpleBdd::CacheClear() {
+inline void BddMan::CacheClear() {
   free( pCache );
   pCache = (unsigned *)calloc( 3 * (long long)( nCacheMask + 1 ), sizeof(unsigned) );
 }
@@ -461,7 +471,7 @@ inline void SimpleBdd::CacheClear() {
    SeeAlso     []
 
 ***********************************************************************/
-inline void SimpleBdd::Rehash()
+inline void BddMan::Rehash()
 {
   unsigned nUniqueMaskOld = nUniqueMask >> 1; // assuming it has been doubled
   for ( unsigned i = 0; i < nUniqueMaskOld + 1; i++ )
@@ -490,7 +500,7 @@ inline void SimpleBdd::Rehash()
 	}
     }
 }
-inline void SimpleBdd::Realloc()
+inline void BddMan::Realloc()
 {
   unsigned nObjsAllocOld = nObjsAlloc;
   unsigned nUniqueMaskOld = nUniqueMask;
@@ -506,20 +516,14 @@ inline void SimpleBdd::Realloc()
   pNexts      = (int *)realloc( pNexts, sizeof(int) * ( nUniqueMask + 1 ) );
   pObjs       = (unsigned *)realloc( pObjs, sizeof(unsigned) * 2 * (long long)nObjsAlloc );
   pMarks      = (unsigned char *)realloc( pMarks, sizeof(unsigned char) * nObjsAlloc );
-  if ( pVars )
-    pVars     = (unsigned char *)realloc( pVars, sizeof(unsigned char) * nObjsAlloc );
-  else
-    pSVars    = (unsigned short *)realloc( pSVars, sizeof(unsigned short) * nObjsAlloc );
-  if ( !pUnique || !pNexts || !pObjs || !pMarks || (!pVars && !pSVars) )
+  pVars     = (unsigned char *)realloc( pVars, sizeof(unsigned char) * nObjsAlloc );
+  if ( !pUnique || !pNexts || !pObjs || !pMarks || !pVars )
     throw "Reallocation failed";
   memset( pUnique + ( nUniqueMaskOld + 1 ), 0, sizeof(int) * ( nUniqueMaskOld + 1 ) );
   memset( pNexts + ( nUniqueMaskOld + 1 ), 0, sizeof(int) * ( nUniqueMaskOld + 1 ) );
   memset( pObjs + 2 * (long long)nObjsAllocOld, 0, sizeof(unsigned) * 2 * (long long)nObjsAllocOld );
   memset( pMarks + nObjsAllocOld, 0, sizeof(unsigned char) * nObjsAllocOld );
-  if ( pVars )
-    memset( pVars + nObjsAllocOld, 0, sizeof(unsigned char) * nObjsAllocOld );
-  else
-    memset( pSVars + nObjsAllocOld, 0, sizeof(unsigned short) * nObjsAllocOld );
+  memset( pVars + nObjsAllocOld, 0, sizeof(unsigned char) * nObjsAllocOld );
   CacheClear();
   Rehash();
   if ( pEdges )
@@ -542,7 +546,7 @@ inline void SimpleBdd::Realloc()
    SeeAlso     []
 
 ***********************************************************************/
-unsigned SimpleBdd::And_rec( unsigned x, unsigned y )
+unsigned BddMan::And_rec( unsigned x, unsigned y )
 {
   if ( LitIsConst0( x ) )
     return x;
@@ -599,19 +603,19 @@ unsigned SimpleBdd::And_rec( unsigned x, unsigned y )
     return z;
   return CacheInsert( x, y, z );
 }
-inline unsigned SimpleBdd::And( unsigned x, unsigned y )
+inline unsigned BddMan::And( unsigned x, unsigned y )
 {
-  InitRefresh();
+  nRefresh = 0;
   unsigned z = LitInvalid();
   while( LitIsInvalid( z ) )
     z = And_rec( x, y );
   return z;
 }
-inline unsigned SimpleBdd::Or( unsigned x, unsigned y )
+inline unsigned BddMan::Or( unsigned x, unsigned y )
 {
   return LitNot( And_rec( LitNot( x ), LitNot( y ) ) );
 }
-inline unsigned SimpleBdd::Xnor( unsigned x, unsigned y )
+inline unsigned BddMan::Xnor( unsigned x, unsigned y )
 {
   unsigned z1 = And( x, y );
   Ref( z1 );
@@ -634,14 +638,14 @@ inline unsigned SimpleBdd::Xnor( unsigned x, unsigned y )
    SeeAlso     []
 
 ***********************************************************************/
-int SimpleBdd::Count_rec( unsigned x )
+int BddMan::Count_rec( unsigned x )
 {
   if ( LitIsConst( x ) || Mark( x ) )
     return 0;
   SetMark( x, 1 );
   return 1 + Count_rec( Else( x ) ) + Count_rec( Then( x ) );
 }
-void SimpleBdd::Mark_rec( unsigned x )
+void BddMan::Mark_rec( unsigned x )
 {
   if ( LitIsConst( x ) || Mark( x ) )
     return;
@@ -649,7 +653,7 @@ void SimpleBdd::Mark_rec( unsigned x )
   Mark_rec( Else( x ) );
   Mark_rec( Then( x ) );
 }
-void SimpleBdd::Unmark_rec( unsigned x )
+void BddMan::Unmark_rec( unsigned x )
 {
   if ( LitIsConst( x ) || !Mark( x ) )
     return;
@@ -657,13 +661,13 @@ void SimpleBdd::Unmark_rec( unsigned x )
   Unmark_rec( Else( x ) );
   Unmark_rec( Then( x ) );
 }
-inline int SimpleBdd::CountNodes( unsigned x )
+inline int BddMan::CountNodes( unsigned x )
 {
   int count = Count_rec( x );
   Unmark_rec( x );
   return count;
 }
-inline int SimpleBdd::CountNodesArrayShared( std::vector<unsigned> & vNodes )
+inline int BddMan::CountNodesArrayShared( std::vector<unsigned> & vNodes )
 {
   unsigned x;
   int count = 0;
@@ -677,7 +681,7 @@ inline int SimpleBdd::CountNodesArrayShared( std::vector<unsigned> & vNodes )
     Unmark_rec( LitIthVar( i ) );
   return count + 4; // add 4 to make the number comparable to command "collapse -v"
 }
-inline int SimpleBdd::CountNodesArrayIndependent( std::vector<unsigned> & vNodes )
+inline int BddMan::CountNodesArrayIndependent( std::vector<unsigned> & vNodes )
 {
   int count = 0;
   for ( unsigned x : vNodes )
@@ -702,7 +706,7 @@ inline int SimpleBdd::CountNodesArrayIndependent( std::vector<unsigned> & vNodes
    SeeAlso     []
 
 ***********************************************************************/
-inline void SimpleBdd::RemoveNodeByBvar( int a )
+inline void BddMan::RemoveNodeByBvar( int a )
 {
   int * q = pUnique + ( Hash( VarOfBvar( a ), ThenOfBvar( a ), ElseOfBvar( a ) ) & nUniqueMask );
   for ( ; *q; q = pNexts + *q )
@@ -715,7 +719,7 @@ inline void SimpleBdd::RemoveNodeByBvar( int a )
   if ( nMinRemoved > a )
     nMinRemoved = a;
 }
-inline void SimpleBdd::GarbageCollect()
+inline void BddMan::GarbageCollect()
 {
   unsigned x;
   if ( nVerbose )
@@ -741,17 +745,28 @@ inline void SimpleBdd::GarbageCollect()
    SeeAlso     []
 
 ***********************************************************************/
-inline void SimpleBdd::RefreshConfig( int fRealloc_, int fGC_, int nReoThold )
+inline void BddMan::RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
 {
   fRealloc = fRealloc_;
   fGC = fGC_;
+  MaxGrowth = 0.01 * nMaxGrowth;
   if ( pvNodes )
     delete pvNodes;
-  if ( fGC || nReoThold )
-    pvNodes = new std::vector<unsigned>;
-  ReorderConfig( nReoThold );
+  if ( pEdges )
+    free( pEdges );
+  if ( liveBvars.size() )
+    liveBvars.clear();
+  if ( fGC || MaxGrowth )
+    pvNodes = new std::vector<lit>;
+  if ( MaxGrowth )
+    {
+      pEdges = (edge *)calloc( nObjsAlloc, sizeof(edge) );
+      if ( !pEdges )
+	throw "Allocation failed";
+      liveBvars.resize( nVars + 2 );
+    }
 }
-inline int SimpleBdd::Refresh()
+inline int BddMan::Refresh()
 {
   nRefresh += 1;
   if ( nVerbose )
@@ -761,7 +776,7 @@ inline int SimpleBdd::Refresh()
       GarbageCollect();
       return 0;
     }
-  if ( nRefresh <= 2 && ReoThold && nObjs > nReo )
+  if ( nRefresh <= 2 && MaxGrowth && nObjs > nReo )
     {
       Reorder();
       nReo = nReo + nReo;
@@ -786,7 +801,7 @@ inline int SimpleBdd::Refresh()
    SeeAlso     []
 
 ***********************************************************************/
-void SimpleBdd::CountEdge_rec( unsigned x )
+void BddMan::CountEdge_rec( unsigned x )
 {
   if ( LitIsConst( x ) )
     return;
@@ -797,7 +812,7 @@ void SimpleBdd::CountEdge_rec( unsigned x )
   CountEdge_rec( Else( x ) );
   CountEdge_rec( Then( x ) );
 }
-inline void SimpleBdd::CountEdge( std::vector<unsigned> & vNodes )
+inline void BddMan::CountEdge( std::vector<unsigned> & vNodes )
 {
   for ( unsigned x : vNodes )
     CountEdge_rec( x );
@@ -808,7 +823,7 @@ inline void SimpleBdd::CountEdge( std::vector<unsigned> & vNodes )
   for ( int i = 0; i < nVars; i++ )
     Unmark_rec( LitIthVar( i ) );
 }
-void SimpleBdd::UncountEdge_rec( unsigned x )
+void BddMan::UncountEdge_rec( unsigned x )
 {
   if ( LitIsConst( x ) )
     return;
@@ -819,7 +834,7 @@ void SimpleBdd::UncountEdge_rec( unsigned x )
   UncountEdge_rec( Else( x ) );
   UncountEdge_rec( Then( x ) );
 }
-inline void SimpleBdd::UncountEdge( std::vector<unsigned> & vNodes )
+inline void BddMan::UncountEdge( std::vector<unsigned> & vNodes )
 {
   for ( unsigned x : vNodes )
     UncountEdge_rec( x );
@@ -831,7 +846,7 @@ inline void SimpleBdd::UncountEdge( std::vector<unsigned> & vNodes )
     Unmark_rec( LitIthVar( i ) );
 }
 
-void SimpleBdd::CountEdgeAndBvar_rec( unsigned x )
+void BddMan::CountEdgeAndBvar_rec( unsigned x )
 {
   if ( LitIsConst( x ) )
     return;
@@ -843,7 +858,7 @@ void SimpleBdd::CountEdgeAndBvar_rec( unsigned x )
   CountEdgeAndBvar_rec( Else( x ) );
   CountEdgeAndBvar_rec( Then( x ) );
 }
-inline void SimpleBdd::CountEdgeAndBvar( std::vector<unsigned> & vNodes )
+inline void BddMan::CountEdgeAndBvar( std::vector<unsigned> & vNodes )
 {
   for ( unsigned x : vNodes )
     CountEdgeAndBvar_rec( x );
@@ -866,39 +881,12 @@ inline void SimpleBdd::CountEdgeAndBvar( std::vector<unsigned> & vNodes )
    SeeAlso     []
 
 ***********************************************************************/
-inline void SimpleBdd::PrintOrdering( std::vector<int> & new2old )
+inline void BddMan::PrintOrdering( std::vector<var> & new2old )
 {
   std::cout << "Ordering :" << std::endl;
   for ( int i : new2old )
     std::cout << vOrdering[i] << ",";
   std::cout << std::endl << "----------" << std::endl;
-}
-
-/**Function*************************************************************
-   
-   Synopsis    [Reorder config]
-
-   Description []
-               
-   SideEffects []
-
-   SeeAlso     []
-
-***********************************************************************/
-void SimpleBdd::ReorderConfig( int nReoThold )
-{
-  ReoThold = 0.01 * nReoThold;
-  if ( pEdges )
-    free( pEdges );
-  if ( liveBvars.size() )
-    liveBvars.clear();
-  if ( ReoThold )
-    {
-      pEdges = (unsigned *)calloc( nObjsAlloc, sizeof(unsigned) );
-      if ( !pEdges )
-	throw "Allocation failed";
-      liveBvars.resize( nVars + 2 );
-    }
 }
 
 /**Function*************************************************************
@@ -912,7 +900,7 @@ void SimpleBdd::ReorderConfig( int nReoThold )
    SeeAlso     []
 
 ***********************************************************************/
-inline void SimpleBdd::ShiftBvar( int a, int d )
+inline void BddMan::ShiftBvar( int a, int d )
 {
   int v = VarOfBvar( a );
   unsigned x1 = ThenOfBvar( a );
@@ -936,7 +924,7 @@ inline void SimpleBdd::ShiftBvar( int a, int d )
   *next = *q;
   *q = a;
 }
-inline void SimpleBdd::SwapBvar( int a, int fRestore )
+inline void BddMan::SwapBvar( int a, int fRestore )
 {
   int v = VarOfBvar( a );
   unsigned x1 = ThenOfBvar( a );
@@ -1018,7 +1006,7 @@ inline void SimpleBdd::SwapBvar( int a, int fRestore )
    SeeAlso     []
 
 ***********************************************************************/
-inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
+inline int BddMan::Swap( var v, bvar & nNodes, lit dLimit )
 {
   liveBvars[nVars].clear();
   liveBvars[nVars + 1].clear();
@@ -1058,11 +1046,11 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
 	{
 	  SwapBvar( a, 0 );
 	  liveBvars[nVars].push_back( a );
-	  if ( (int)liveBvars[nVars].size()
-	       + (int)liveBvars[nVars + 1].size()
-	       - (int)liveBvars[v].size()
-	       - (int)liveBvars[v + 1].size()
-	       > dLimit )
+	  if ( liveBvars[nVars].size()
+	       + liveBvars[nVars + 1].size()
+	       > liveBvars[v].size()
+	       + liveBvars[v + 1].size()
+	       + dLimit )
 	    {
 	      nOut = i + 1;
 	      fOutOfLimit = 1;
@@ -1142,22 +1130,22 @@ inline int SimpleBdd::Swap( int v, int & nNodes, int dLimit )
     }
   return -1; // if ( fOutOfLimit );
 }
-inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int & bestPos, int & nBestNodes, std::vector<int> & new2old, int nLimit )
+inline void BddMan::Shift( var & pos, bvar & nNodes, var nSwap, int fUp, var & bestPos, bvar & nBestNodes, std::vector<var> & new2old, lit nLimit )
 {
-  float ReoThold_ = ReoThold;
+  float MaxGrowth_ = MaxGrowth;
   int nRefresh_ = nRefresh;
-  ReoThold = 0;
+  MaxGrowth = 0;
   for ( int i = 0; i < nSwap; i++ )
     {
-      int dLimit = nLimit - nNodes;
-      InitRefresh();
+      lit dLimit = nLimit - nNodes;
+      nRefresh = 0;
       if ( fUp )
 	pos -= 1;
       if ( Swap( pos, nNodes, dLimit ) )
 	{
 	  if ( fUp )
 	    pos += 1;
-	  ReoThold = ReoThold_;
+	  MaxGrowth = MaxGrowth_;
 	  nRefresh = nRefresh_;
 	  return;
 	}
@@ -1174,9 +1162,9 @@ inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int &
 	  std::cout << "pos = " << pos << " nNode = " << nNodes << std::endl;
           PrintOrdering( new2old );
 	}
-      CheckLiveBvar();
+      //      CheckLiveBvar();
     }
-  ReoThold = ReoThold_;
+  MaxGrowth = MaxGrowth_;
   nRefresh = nRefresh_;
 }
 
@@ -1191,10 +1179,10 @@ inline void SimpleBdd::Shift( int & pos, int & nNodes, int nSwap, int fUp, int &
    SeeAlso     []
 
 ***********************************************************************/
-void SimpleBdd::Reorder()
+void BddMan::Reorder()
 {
-  std::vector<int> descendingOrder;
-  std::vector<int> new2old;
+  std::vector<var> descendingOrder;
+  std::vector<var> new2old;
   if ( nVerbose )
     std::cout << "\tReordering" << std::endl;
   // initialize
@@ -1213,7 +1201,7 @@ void SimpleBdd::Reorder()
     {
       return liveBvars[i].size() > liveBvars[j].size();
     });
-  int nNodes = 0;
+  bvar nNodes = 0;
   for ( int i = 0; i < nVars; i++ )
     nNodes += liveBvars[i].size();
   if ( nVerbose  >= 2 )
@@ -1227,12 +1215,12 @@ void SimpleBdd::Reorder()
   // shift
   for ( int i = 0; i < nVars; i++ )
     {
-      int pos = std::distance( new2old.begin(), std::find( new2old.begin(), new2old.end(), descendingOrder[i] ) );
+      var pos = std::distance( new2old.begin(), std::find( new2old.begin(), new2old.end(), descendingOrder[i] ) );
       int fUp = 0;
-      int nSwap;
-      int nLimit = nNodes * ReoThold + nNodes;
-      int bestPos = pos;
-      int nBestNodes = nNodes;
+      var nSwap;
+      lit nLimit = nNodes * MaxGrowth + nNodes;
+      var bestPos = pos;
+      bvar nBestNodes = nNodes;
       if ( nVerbose >= 2 )
 	std::cout << "\tBegin shift " << vOrdering[descendingOrder[i]] << " (" << i + 1 << "/" << nVars << std::endl;
       if( pos < nVars >> 1 )
@@ -1259,7 +1247,7 @@ void SimpleBdd::Reorder()
       Shift( pos, nNodes, nSwap, fUp, bestPos, nBestNodes, new2old, nLimit );
     }
   // finish
-  std::vector<int> vTmp( vOrdering );
+  std::vector<var> vTmp( vOrdering );
   vOrdering.clear();
   for ( int i : new2old )
     vOrdering.push_back( vTmp[i] );
@@ -1275,7 +1263,7 @@ void SimpleBdd::Reorder()
   CacheClear();
 }
 
-void SimpleBdd::CheckLiveBvar_rec( unsigned x )
+/*void BddMan::CheckLiveBvar_rec( unsigned x )
 {
   if ( LitIsConst( x ) )
     return;
@@ -1292,7 +1280,7 @@ void SimpleBdd::CheckLiveBvar_rec( unsigned x )
   CheckLiveBvar_rec( Else( x ) );
   CheckLiveBvar_rec( Then( x ) );
 }
-inline void SimpleBdd::CheckLiveBvar()
+inline void BddMan::CheckLiveBvar()
 {
   return;
   for ( unsigned x : *pvNodes )
@@ -1304,7 +1292,7 @@ inline void SimpleBdd::CheckLiveBvar()
   for ( int i = 0; i < nVars; i++ )
     Unmark_rec( LitIthVar( i ) );
 }
-
+*/
 }
 
 #endif

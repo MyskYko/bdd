@@ -4,7 +4,7 @@
 #include <lorina/lorina.hpp>
 #include <cudd.h>
 
-std::vector<unsigned> BuildBdd( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man )
+std::vector<unsigned> BuildBdd( mockturtle::aig_network & aig, SimpleBdd::BddMan & man )
 {
   int * pFanouts = NULL;
   if ( man.get_pvNodesExists() )
@@ -165,7 +165,7 @@ void GiaTest( Gia_Man_t * pGia, int nVerbose, int nMem, char * pFileName, int fS
 }
 */
 
-auto Bdd2Aig_rec( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, unsigned x, std::map<int, mockturtle::aig_network::signal> & m )
+auto Bdd2Aig_rec( mockturtle::aig_network & aig, SimpleBdd::BddMan & man, unsigned x, std::map<int, mockturtle::aig_network::signal> & m )
 {
   if ( man.LitIsConst0( x ) )
     return aig.get_constant( 0 );
@@ -194,7 +194,7 @@ auto Bdd2Aig_rec( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, uns
   return f;
 }
 
-void Bdd2Aig( mockturtle::aig_network & aig, SimpleBdd::SimpleBdd & man, std::vector<unsigned> & vNodes )
+void Bdd2Aig( mockturtle::aig_network & aig, SimpleBdd::BddMan & man, std::vector<unsigned> & vNodes )
 {
   for ( int i = 0; i < man.get_nVars(); i++ )
     aig.create_pi();
@@ -219,7 +219,7 @@ int main()
   */
   
   try {
-    SimpleBdd::SimpleBdd man(aig.num_pis(), 1, NULL, 1);
+    SimpleBdd::BddMan man(aig.num_pis(), 1, NULL, 1);
     man.RefreshConfig( 1, 1, 10 );
     std::vector<unsigned> vNodes = BuildBdd( aig_topo, man );
     std::cout << "Shared BDD nodes = " << man.CountNodesArrayShared( vNodes ) << std::endl;

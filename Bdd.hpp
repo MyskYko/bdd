@@ -10,9 +10,9 @@ namespace Bdd {
   };
 
   class SimpleBddMan : public BddMan {
-    SimpleBdd::SimpleBdd * a;
+    SimpleBdd::BddMan * a;
     SimpleBddMan() {
-      a = new SimpleBdd::SimpleBdd(10, 1, NULL, 1);
+      a = new SimpleBdd::BddMan(10, 1, NULL, 1);
     };
     uint64_t And( uint64_t x, uint64_t y ) override {
       return 0;
