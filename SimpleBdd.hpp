@@ -37,7 +37,7 @@ private:
   unsigned char *    pMarks;        // array of marks for nodes
   unsigned           nUniqueMask;   // selection mask for unique table
   unsigned           nCacheMask;    // selection mask for computed table
-  int                nMinRemoved;   // the minimum int of removed nodes
+  unsigned           nMinRemoved;   // the minimum int of removed nodes
   int                nVerbose;      // the level of verbosing information
 
   int                nRefresh;      // the number of refresh tried
@@ -244,7 +244,7 @@ private:
   void     CheckLiveBvar();
   
 public:
-  SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vector<int> * pvOrdering, int nVerbose );
+  SimpleBdd( int nVars, unsigned nObjsAlloc_, std::vector<int> * pvOrdering, int nVerbose );
   ~SimpleBdd();
   int      IsLimit() { return (unsigned)nObjs == nObjsAlloc || nObjs == BvarInvalid(); }
   void     InitRefresh() { nRefresh = 0; }
@@ -287,7 +287,7 @@ inline unsigned SimpleBdd::UniqueCreateInt( int v, unsigned x1, unsigned x0 )
   int head = *q;
   if ( IsLimit() )
     {
-      for ( ; nMinRemoved < nObjs; nMinRemoved++ )
+      for ( ; nMinRemoved < (unsigned)nObjs; nMinRemoved++ )
 	if ( BvarIsRemoved( nMinRemoved ) )
 	  break;
       if ( nMinRemoved == nObjs )
@@ -319,7 +319,7 @@ inline unsigned SimpleBdd::UniqueCreate( int v, unsigned x1, unsigned x0 )
       if ( LitIsInvalid( x ) )
 	{
 	  if ( Refresh() )
-	    throw "Node overflow";
+	    return x;
 	}
       else
 	break;
@@ -338,11 +338,11 @@ inline unsigned SimpleBdd::UniqueCreate( int v, unsigned x1, unsigned x0 )
    SeeAlso     []
 
 ***********************************************************************/
-SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vector<int> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nVerbose(nVerbose)
+SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, std::vector<int> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nVerbose(nVerbose)
 {
   while ( nObjsAlloc < nVars + 1 )
     {
-      if ( !fDynAlloc || !nObjsAlloc || nObjsAlloc > 1 << 31 )
+      if ( !nObjsAlloc || nObjsAlloc > 1 << 31 )
 	throw "Node overflow just for Variables\n";
       nObjsAlloc = nObjsAlloc + nObjsAlloc;
     }
@@ -350,7 +350,7 @@ SimpleBdd::SimpleBdd( int nVars, unsigned nObjsAlloc_, int fDynAlloc, std::vecto
     std::cout << "Allocate " << nObjsAlloc << " nodes" << std::endl;
   nUniqueMask = ( 1 << (int)log2( nObjsAlloc ) ) - 1;
   nCacheMask  = ( 1 << (int)log2( nObjsAlloc ) ) - 1;
-  nMinRemoved = nObjsAlloc - 1;
+  nMinRemoved = nObjsAlloc;
   pUnique     = (int *)calloc( nUniqueMask + 1, sizeof(int) );
   pNexts      = (int *)calloc( nUniqueMask + 1, sizeof(int) );
   pCache      = (unsigned *)calloc( 3 * (long long)( nCacheMask + 1 ), sizeof(unsigned) );
@@ -582,25 +582,29 @@ unsigned SimpleBdd::And_rec( unsigned x, unsigned y )
       y1 = Then( y );
     }
   unsigned z1 = And_rec( x1, y1 );
+  if ( LitIsInvalid( z1 ) )
+    return z1;
   Ref( z1 );
   unsigned z0 = And_rec( x0, y0 );
+  if( LitIsInvalid( z0 ) )
+    {
+      Pop();
+      return z0;
+    }
   Ref( z0 );
   z = UniqueCreate( std::min( Var( x ), Var( y ) ), z1, z0 );
   Pop();
   Pop();
+  if ( LitIsInvalid( z ) )
+    return z;
   return CacheInsert( x, y, z );
 }
 inline unsigned SimpleBdd::And( unsigned x, unsigned y )
 {
   InitRefresh();
-  unsigned z = And_rec( x, y );
-  if ( ReoThold && nObjs > nReo )
-    {
-      Ref( z );
-      Reorder();
-      nReo = nReo + nReo;
-      Pop();
-    }
+  unsigned z = LitInvalid();
+  while( LitIsInvalid( z ) )
+    z = And_rec( x, y );
   return z;
 }
 inline unsigned SimpleBdd::Or( unsigned x, unsigned y )
@@ -757,12 +761,18 @@ inline int SimpleBdd::Refresh()
       GarbageCollect();
       return 0;
     }
+  if ( nRefresh <= 2 && ReoThold && nObjs > nReo )
+    {
+      Reorder();
+      nReo = nReo + nReo;
+      return -1;
+    }
   if ( fRealloc && nObjsAlloc < 1 << 31 )
     {
       Realloc();
       return 0;
     }
-  return -1;
+  throw "Node overflow";
 }
 
 /**Function*************************************************************

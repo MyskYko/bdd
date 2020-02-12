@@ -1,4 +1,5 @@
 #include "SimpleBdd.hpp"
+#include "Bdd.hpp"
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 #include <cudd.h>
@@ -218,7 +219,7 @@ int main()
   */
   
   try {
-    SimpleBdd::SimpleBdd man(aig.num_pis(), 1, 1, NULL, 1);
+    SimpleBdd::SimpleBdd man(aig.num_pis(), 1, NULL, 1);
     man.RefreshConfig( 1, 1, 10 );
     std::vector<unsigned> vNodes = BuildBdd( aig_topo, man );
     std::cout << "Shared BDD nodes = " << man.CountNodesArrayShared( vNodes ) << std::endl;
