@@ -11,6 +11,7 @@
 
 namespace SimpleBdd
 {
+template <typename var = uint8_t, typename lit = uint32_t, typename bvar = int32_t, typename mark = uint8_t, typename edge = uint32_t>
 class BddMan
 {
 /**Function*************************************************************
@@ -24,12 +25,12 @@ class BddMan
    SeeAlso     []
 
 ***********************************************************************/
+/*  typedef uint8_t var;
   typedef uint32_t lit;
   typedef int bvar; // signed lit
-  typedef uint8_t var;
   typedef uint8_t mark;
   typedef uint32_t edge;
-  
+*/
 /**Function*************************************************************
    
    Synopsis    [Hash]
@@ -41,8 +42,8 @@ class BddMan
    SeeAlso     []
 
 ***********************************************************************/
-  uint32_t Hash( uint32_t Arg0, uint32_t Arg1, uint32_t Arg2 ) { return 12582917 * Arg0 + 4256249 * Arg1 + 741457 * Arg2; }
-  //  uint64_t Hash( uint64_t Arg0, uint64_t Arg1, uint64_t Arg2 ) { return 67280421310721ull * Arg0 + 2147483647ull * Arg1 + 12582917 * Arg2; }
+  lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 12582917 * Arg0 + 4256249 * Arg1 + 741457 * Arg2; }
+  //  lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 67280421310721ull * Arg0 + 2147483647ull * Arg1 + 12582917 * Arg2; }
   
 /**Function*************************************************************
    
