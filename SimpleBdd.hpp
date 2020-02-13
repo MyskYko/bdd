@@ -271,7 +271,7 @@ public:
 ***********************************************************************/
   uint64_t Count_rec( lit x )
   {
-    if ( LitIsConst( x ) || Mark( x ) )
+    if ( /*LitIsConst( x ) ||*/ Mark( x ) )
       return 0;
     SetMark( x, 1 );
     return 1 + Count_rec( Else( x ) ) + Count_rec( Then( x ) );
@@ -280,6 +280,7 @@ public:
   {
     uint64_t count = Count_rec( x );
     Unmark_rec( x );
+    SetMark( 0, 0 );
     return count;
   }
   uint64_t CountNodesArrayShared( std::vector<lit> & vNodes )
@@ -288,24 +289,25 @@ public:
     uint64_t count = 0;
     for ( lit x : vNodes )
       count += Count_rec( x );
-    for ( var v = 0; v < nVars; v++ )
-      count += Count_rec( LitIthVar( v ) );
+    //for ( var v = 0; v < nVars; v++ )
+    //      count += Count_rec( LitIthVar( v ) );
     for ( lit x : vNodes )  
       Unmark_rec( x );
-    for ( var v = 0; v < nVars; v++ )
-      Unmark_rec( LitIthVar( v ) );
-    return count + 4; // add 4 to make the number comparable to CUDD
+    //    for ( var v = 0; v < nVars; v++ )
+    //      Unmark_rec( LitIthVar( v ) );
+    SetMark( 0, 0 );
+    return count; // +4
   }
   uint64_t CountNodesArrayIndependent( std::vector<lit> & vNodes )
   {
     uint64_t count = 0;
     for ( lit x : vNodes )
       {
-	// exclude variables to make the number comparable to command "print_stats" after "collapse"
 	if ( LitIsConst( x ) || LitIsVar( x ) )
 	  continue; 
 	count += Count_rec( x );
 	Unmark_rec( x );
+	SetMark( 0, 0 );
     }
   return count;
 }

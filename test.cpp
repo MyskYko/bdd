@@ -1,8 +1,6 @@
-#include "SimpleBdd.hpp"
 #include "Bdd.hpp"
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
-#include <cudd.h>
 
 std::vector<uint64_t> BuildBdd( mockturtle::aig_network & aig, Bdd::BddMan & man )
 {
@@ -67,7 +65,7 @@ auto Bdd2Aig_rec( mockturtle::aig_network & aig, Bdd::BddMan & man, uint64_t x, 
   uint64_t x0 = man.Else( x );
   auto f1 = Bdd2Aig_rec( aig, man, x1, m );
   auto f0 = Bdd2Aig_rec( aig, man, x0, m );
-  auto c = aig.make_signal( aig.pi_at( man.GetOldVar( v ) ) );
+  auto c = aig.make_signal( aig.pi_at( v ) );
   auto f = aig.create_ite( c, f1, f0 );
   if ( man.IsCompl( x ) )
     {
@@ -102,11 +100,23 @@ int main()
     man.PrintStats( vNodes );
     mockturtle::aig_network aig2;
     Bdd2Aig( aig2, man, vNodes );
-    mockturtle::write_bench( aig2, "file2.bench" );
+    mockturtle::write_bench( aig2, "file_simple.bench" );
   }
   catch ( char const * error ) {
     std::cout << error << std::endl;
   }
-  
+
+  try {
+    Bdd::CuddMan man( aig.num_pis() );
+    std::vector<uint64_t> vNodes = BuildBdd( aig_topo, man );
+    man.PrintStats( vNodes );
+    mockturtle::aig_network aig2;
+    Bdd2Aig( aig2, man, vNodes );
+    mockturtle::write_bench( aig2, "file_cudd.bench" );
+  }
+  catch ( char const * error ) {
+    std::cout << error << std::endl;
+  }
+
   return 0;
 }
