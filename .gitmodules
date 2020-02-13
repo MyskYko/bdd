@@ -1,0 +1,9 @@
+[submodule "cudd"]
+	path = cudd
+	url = https://github.com/ivmai/cudd.git
+[submodule "mockturtle"]
+	path = mockturtle
+	url = https://github.com/lsils/mockturtle.git
+[submodule "buddy"]
+	path = buddy
+	url = https://github.com/jgcoded/BuDDy.git
