@@ -38,13 +38,17 @@ std::vector<uint64_t> BuildBdd( mockturtle::aig_network & aig, Bdd::BddMan & man
 	    man.Deref( m[index] );
 	});
     });
-  free( pFanouts );
   std::vector<uint64_t> vNodes;
   aig.foreach_po( [&]( auto po )
     {
-      vNodes.push_back( man.NotCond( m[aig.node_to_index( aig.get_node( po ) )], aig.is_complemented( po ) ) );
+      auto index = aig.node_to_index( aig.get_node( po ) );
+      vNodes.push_back( man.NotCond( m[index], aig.is_complemented( po ) ) );
       man.Ref( vNodes.back() );
+      pFanouts[index] -= 1;
+      if ( pFanouts[index] == 0 )
+	man.Deref( m[index] );
     });
+  free( pFanouts );
   return vNodes;
 }
 
