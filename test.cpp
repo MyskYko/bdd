@@ -43,6 +43,7 @@ std::vector<uint64_t> BuildBdd( mockturtle::aig_network & aig, Bdd::BddMan & man
   aig.foreach_po( [&]( auto po )
     {
       vNodes.push_back( man.NotCond( m[aig.node_to_index( aig.get_node( po ) )], aig.is_complemented( po ) ) );
+      man.Ref( vNodes.back() );
     });
   return vNodes;
 }
@@ -113,6 +114,18 @@ int main()
     mockturtle::aig_network aig2;
     Bdd2Aig( aig2, man, vNodes );
     mockturtle::write_bench( aig2, "file_cudd.bench" );
+  }
+  catch ( char const * error ) {
+    std::cout << error << std::endl;
+  }
+
+  try {
+    Bdd::BuddyMan man( aig.num_pis() );
+    std::vector<uint64_t> vNodes = BuildBdd( aig_topo, man );
+    man.PrintStats( vNodes );
+    mockturtle::aig_network aig2;
+    Bdd2Aig( aig2, man, vNodes );
+    mockturtle::write_bench( aig2, "file_buddy.bench" );
   }
   catch ( char const * error ) {
     std::cout << error << std::endl;
