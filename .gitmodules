@@ -1,9 +1,9 @@
-[submodule "cudd"]
-	path = cudd
+[submodule "lib/cudd"]
+	path = lib/cudd
 	url = https://github.com/ivmai/cudd.git
-[submodule "mockturtle"]
-	path = mockturtle
+[submodule "lib/mockturtle"]
+	path = lib/mockturtle
 	url = https://github.com/lsils/mockturtle.git
-[submodule "buddy_c"]
-	path = buddy_c
+[submodule "lib/buddy"]
+	path = lib/buddy
 	url = https://github.com/MyskYko/BuDDy.git
