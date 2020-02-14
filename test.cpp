@@ -1,4 +1,4 @@
-#include "Bdd.hpp"
+#include <Bdd.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 

@@ -20,3 +20,5 @@ add_subdirectory(lib)
 
 add_executable(a.out test.cpp)
 target_link_libraries(a.out mockturtle simplebdd cudd buddy)
+target_include_directories(a.out PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+

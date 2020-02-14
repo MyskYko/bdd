@@ -68,7 +68,7 @@ private:
   mark * pMarks;        // array of marks for nodes
   lit    nUniqueMask;   // selection mask for unique table
   lit    nCacheMask;    // selection mask for computed table
-  bvar   nMinRemoved;   // the minimum int of removed nodes
+  lit    nMinRemoved;   // the minimum int of removed nodes
   int    nVerbose;      // the level of verbosing information
 
   int    nRefresh;      // the number of refresh tried
@@ -285,7 +285,6 @@ public:
   }
   uint64_t CountNodesArrayShared( std::vector<lit> & vNodes )
   {
-    lit x;
     uint64_t count = 0;
     for ( lit x : vNodes )
       count += Count_rec( x );
