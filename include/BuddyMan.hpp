@@ -3,16 +3,24 @@
 
 #include <iostream>
 #include "BddMan.hpp"
-extern "C" {
-#include <bdd.h>
+namespace Buddy
+{
+  extern "C"
+  {
+    #include <bdd.h>
+    // Notice : BDD, bdd, BDD_(somehting), bdd_(something) are defined in buddy
+  }
 }
-// Notice : BDD, bdd, BDD_(somehting), bdd_(something) are defined in buddy
 
-namespace Bdd {
+using namespace Buddy;
 
-  class BuddyMan : public BddMan {
+namespace Bdd
+{
+  class BuddyMan : public BddMan
+  {
   public:
-    BuddyMan( int nVars ) {
+    BuddyMan( int nVars )
+    {
       bdd_init( 100000, 10000 );
       bdd_setvarnum( nVars );
     };
@@ -43,7 +51,6 @@ namespace Bdd {
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
   };
-
 }
 
 #endif

@@ -4,15 +4,17 @@
 #include "BddMan.hpp"
 #include <SimpleBdd.hpp>
 
-namespace Bdd {
-  
+namespace Bdd
+{
   template<typename var = uint8_t>
-  class SimpleBddMan : public BddMan {
+  class SimpleBddMan : public BddMan
+  {
   private:
     SimpleBdd::BddMan<var> * man;
     
   public:
-    SimpleBddMan( int nVars ) {
+    SimpleBddMan( int nVars )
+    {
       assert( nVars < (int)std::numeric_limits<var>::max() );
       man = new SimpleBdd::BddMan<var>( nVars, 1, NULL, 0 );
       man->RefreshConfig( 1, 1, 0 );
@@ -40,7 +42,6 @@ namespace Bdd {
       std::cout << "Sum of BDD nodes = " << man->CountNodesArrayIndependent( vNodes ) << std::endl;
     }
   };
-  
 }
 
 #endif

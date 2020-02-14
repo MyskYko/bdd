@@ -3,16 +3,23 @@
 
 #include <iostream>
 #include "BddMan.hpp"
-#include <cudd.h>
+namespace Cudd
+{
+  #include <cudd.h>
+}
 
-namespace Bdd {
+using namespace Cudd;
 
-  class CuddMan : public BddMan {
+namespace Bdd
+{
+  class CuddMan : public BddMan
+  {
   private:
     DdManager * man;
     
   public:
-    CuddMan( int nVars ) {
+    CuddMan( int nVars )
+    {
       man = Cudd_Init( nVars, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0 );
     }
     ~CuddMan() { Cudd_Quit( man ); }
@@ -43,7 +50,6 @@ namespace Bdd {
       free( vNodes );
     }
   };
-
 }
 
 #endif

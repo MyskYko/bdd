@@ -4,9 +4,10 @@
 #include <cstdint>
 #include <vector>
 
-namespace Bdd {
-
-  class BddMan {
+namespace Bdd
+{
+  class BddMan
+  {
   public:
     virtual uint64_t Const0() = 0;
     virtual uint64_t Const1() = 0;
@@ -23,7 +24,6 @@ namespace Bdd {
     virtual int      GetNumVar() = 0;
     virtual void     PrintStats( std::vector<uint64_t> & vNodes_ ) = 0;
   };
-  
 }
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef SIMPLE_BDD
-#define SIMPLE_BDD
+#ifndef SIMPLE_BDD_HPP_
+#define SIMPLE_BDD_HPP
 
 #include <vector>
 #include <cassert>
@@ -11,6 +11,7 @@
 
 namespace SimpleBdd
 {
+  
 template <typename var = uint8_t, typename lit = uint32_t, typename bvar = int32_t, typename mark = uint8_t, typename edge = uint32_t>
 class BddMan
 {
@@ -1213,7 +1214,6 @@ void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
     UncountEdge( *pvNodes ); // may slow it
     CacheClear();
   }
-  
 };
 
 }
