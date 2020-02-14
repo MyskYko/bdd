@@ -1,7 +1,7 @@
 #ifndef BDD_HPP
 #define BDD_HPP
 
-#include "SimpleBdd.hpp"
+#include <SimpleBdd.hpp>
 #include <cudd.h>
 extern "C" {
 #include <bdd.h>

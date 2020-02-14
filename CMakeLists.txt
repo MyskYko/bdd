@@ -19,11 +19,4 @@ endif()
 add_subdirectory(lib)
 
 add_executable(a.out test.cpp)
-target_link_libraries(a.out mockturtle cudd buddy)
-
-message(STATUS "*** dump start cmake variables ***")
-get_cmake_property(_variableNames VARIABLES)
-foreach(_variableName ${_variableNames})
-        message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
-message(STATUS "*** dump end ***")
+target_link_libraries(a.out mockturtle simplebdd cudd buddy)
