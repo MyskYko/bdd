@@ -6,6 +6,7 @@
 extern "C" {
 #include <bdd.h>
 }
+// Notice : BDD, bdd, BDD_(somehting), bdd_(something) are defined in buddy
 
 namespace Bdd {
 
