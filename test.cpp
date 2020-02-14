@@ -1,4 +1,4 @@
-#include <Bdd.hpp>
+#include <SimpleBddMan.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 
@@ -17,7 +17,7 @@ std::vector<uint64_t> BuildBdd( mockturtle::aig_network & aig, Bdd::BddMan & man
     {
       m[aig.node_to_index( pi )] =  man.IthVar( i );
     });
-  aig.foreach_gate( [&]( auto gate, int i )
+  aig.foreach_gate( [&]( auto gate )
     {
       uint64_t x;
       x = man.Const1();
@@ -110,7 +110,7 @@ int main()
   catch ( char const * error ) {
     std::cout << error << std::endl;
   }
-
+  /*
   try {
     Bdd::CuddMan man( aig.num_pis() );
     std::vector<uint64_t> vNodes = BuildBdd( aig_topo, man );
@@ -134,6 +134,6 @@ int main()
   catch ( char const * error ) {
     std::cout << error << std::endl;
   }
-
+  */
   return 0;
 }

@@ -498,7 +498,7 @@ public:
 	for ( ; nMinRemoved < (lit)nObjs; nMinRemoved++ )
 	  if ( BvarIsRemoved( nMinRemoved ) )
 	    break;
-	if ( nMinRemoved == nObjs )
+	if ( nMinRemoved == (lit)nObjs )
 	  return LitInvalid();
 	*q = nMinRemoved++;
       }
@@ -811,7 +811,7 @@ void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
     *q = *next;
     *next = 0;
     SetVarOfBvarRemoved( a );
-    if ( nMinRemoved > a )
+    if ( nMinRemoved > (lit)a )
       nMinRemoved = a;
   }
   void GarbageCollect()
@@ -996,7 +996,7 @@ void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
     bvar nSwapHead = liveBvars[nVars].size();
     bvar nOut = 0;
     // walk upper level again
-    for ( bvar i = 0; i < liveBvars[v].size(); i++ )
+    for ( bvar i = 0; i < (bvar)liveBvars[v].size(); i++ )
       {
 	bvar a = liveBvars[v][i];
 	if ( VarOfBvar( a ) == v )
@@ -1028,7 +1028,7 @@ void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
     liveBvars[v].clear();
     liveBvars[v + 1].clear();
     // walk new upper level where swapped
-    for ( bvar i = nSwapHead; i < liveBvars[nVars].size(); i++ )
+    for ( bvar i = nSwapHead; i < (bvar)liveBvars[nVars].size(); i++ )
       {
 	bvar a = liveBvars[nVars][i];
 	DecEdgeNonConst( ThenOfBvar( a ) );
@@ -1079,7 +1079,7 @@ void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
 	  }
       }
     // walk new upper level where swapped
-    for ( bvar i = nSwapHead; i < liveBvars[nVars].size(); i++ )
+    for ( bvar i = nSwapHead; i < (bvar)liveBvars[nVars].size(); i++ )
       {
 	bvar a = liveBvars[nVars][i];
 	SwapBvar( a, 1 );
