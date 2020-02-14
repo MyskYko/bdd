@@ -13,11 +13,11 @@ int main()
 
   try
     {
-      Bdd::SimpleBddMan<> man( aig.num_pis() );
-      std::vector<uint64_t> vNodes = Bdd::Aig2Bdd( aig_topo, man );
-      man.PrintStats( vNodes );
+      Bdd::SimpleBddMan<> bdd( aig.num_pis() );
+      Bdd::Aig2Bdd( aig_topo, bdd );
+      bdd.PrintStats();
       mockturtle::aig_network aig2;
-      Bdd::Bdd2Aig( aig2, man, vNodes );
+      Bdd::Bdd2Aig( aig2, bdd );
       mockturtle::write_bench( aig2, "file_simple.bench" );
     }
   catch ( char const * error )
@@ -27,11 +27,11 @@ int main()
   
   try
     {
-      Bdd::CuddMan man( aig.num_pis() );
-      std::vector<uint64_t> vNodes = Bdd::Aig2Bdd( aig_topo, man );
-      man.PrintStats( vNodes );
+      Bdd::CuddMan bdd( aig.num_pis() );
+      Bdd::Aig2Bdd( aig_topo, bdd );
+      bdd.PrintStats();
       mockturtle::aig_network aig2;
-      Bdd::Bdd2Aig( aig2, man, vNodes );
+      Bdd::Bdd2Aig( aig2, bdd );
       mockturtle::write_bench( aig2, "file_cudd.bench" );
     }
   catch ( char const * error )
@@ -41,11 +41,11 @@ int main()
   
   try
     {
-      Bdd::BuddyMan man( aig.num_pis() );
-      std::vector<uint64_t> vNodes = Bdd::Aig2Bdd( aig_topo, man );
-      man.PrintStats( vNodes );
+      Bdd::BuddyMan bdd( aig.num_pis() );
+      Bdd::Aig2Bdd( aig_topo, bdd );
+      bdd.PrintStats();
       mockturtle::aig_network aig2;
-      Bdd::Bdd2Aig( aig2, man, vNodes );
+      Bdd::Bdd2Aig( aig2, bdd );
       mockturtle::write_bench( aig2, "file_buddy.bench" );
     }
   catch ( char const * error )

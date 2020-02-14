@@ -3,7 +3,7 @@
 
 namespace Bdd
 {
-  std::vector<uint64_t> Aig2Bdd( mockturtle::aig_network & aig, BddMan & bdd )
+  void Aig2Bdd( mockturtle::aig_network & aig, BddMan & bdd )
   {
     int * pFanouts = (int *)calloc( aig.size(), sizeof(int) );
     if ( !pFanouts )
@@ -39,18 +39,16 @@ namespace Bdd
 	      bdd.Deref( m[index] );
 	  });
       });
-    std::vector<uint64_t> vNodes;
     aig.foreach_po( [&]( auto po )
       {
 	auto index = aig.node_to_index( aig.get_node( po ) );
-	vNodes.push_back( bdd.NotCond( m[index], aig.is_complemented( po ) ) );
-	bdd.Ref( vNodes.back() );
+	bdd.vNodes.push_back( bdd.NotCond( m[index], aig.is_complemented( po ) ) );
+	bdd.Ref( bdd.vNodes.back() );
 	pFanouts[index] -= 1;
 	if ( pFanouts[index] == 0 )
 	  bdd.Deref( m[index] );
       });
     free( pFanouts );
-    return vNodes;
   }
   
   auto Bdd2Aig_rec( mockturtle::aig_network & aig, BddMan & bdd, uint64_t x, std::map<uint64_t, mockturtle::aig_network::signal> & m )
@@ -82,12 +80,12 @@ namespace Bdd
     return f;
   }
   
-  void Bdd2Aig( mockturtle::aig_network & aig, BddMan & bdd, std::vector<uint64_t> & vNodes )
+  void Bdd2Aig( mockturtle::aig_network & aig, BddMan & bdd )
   {
     for ( int i = 0; i < bdd.GetNumVar(); i++ )
       aig.create_pi();
     std::map<uint64_t, mockturtle::aig_network::signal> m;
-    for ( uint64_t x : vNodes )
+    for ( uint64_t x : bdd.vNodes )
       {
 	auto f = Bdd2Aig_rec( aig, bdd, x, m );
 	aig.create_po( f );

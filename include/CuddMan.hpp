@@ -36,18 +36,18 @@ namespace Bdd
     uint64_t NotCond( uint64_t x, int c ) override { return (uint64_t)Cudd_NotCond( (DdNode *)x, c ); }
     uint64_t And( uint64_t x, uint64_t y ) override { return (uint64_t)Cudd_bddAnd( man, (DdNode *)x, (DdNode *)y ); }
     int GetNumVar() override { return Cudd_ReadSize( man ); }
-    void PrintStats( std::vector<uint64_t> & vNodes_ ) override
+    void PrintStats() override
     {
-      DdNode ** vNodes = (DdNode **)malloc( sizeof(DdNode*) * vNodes_.size() );
+      DdNode ** vNodes_ = (DdNode **)malloc( sizeof(DdNode*) * vNodes.size() );
       uint64_t count = 0;
-      for ( uint32_t i = 0; i < vNodes_.size(); i++ )
+      for ( uint32_t i = 0; i < vNodes.size(); i++ )
 	{
-	  vNodes[i] = (DdNode *)vNodes_[i];
-	  count += Cudd_DagSize( vNodes[i] );
+	  vNodes_[i] = (DdNode *)vNodes[i];
+	  count += Cudd_DagSize( vNodes_[i] );
 	}
-      std::cout << "Shared BDD nodes = " << Cudd_SharingSize( vNodes, vNodes_.size() ) << std::endl;
+      std::cout << "Shared BDD nodes = " << Cudd_SharingSize( vNodes_, vNodes.size() ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
-      free( vNodes );
+      free( vNodes_ );
     }
   };
 }

@@ -33,13 +33,13 @@ namespace Bdd
     uint64_t NotCond( uint64_t x, int c ) override { return man->LitNotCond( x, c ); }
     uint64_t And( uint64_t x, uint64_t y ) override { return man->And( x, y ); }
     int GetNumVar() override { return man->get_nVars(); }
-    void PrintStats( std::vector<uint64_t> & vNodes_ ) override
+    void PrintStats() override
     {
-      std::vector<uint32_t> vNodes( vNodes_.size() );
-      for ( uint32_t i = 0; i < vNodes_.size(); i++ )
-	vNodes.push_back( vNodes_[i] );
-      std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes ) << std::endl;
-      std::cout << "Sum of BDD nodes = " << man->CountNodesArrayIndependent( vNodes ) << std::endl;
+      std::vector<uint32_t> vNodes_( vNodes_.size() );
+      for ( uint32_t i = 0; i < vNodes.size(); i++ )
+	vNodes_.push_back( vNodes[i] );
+      std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes_ ) << std::endl;
+      std::cout << "Sum of BDD nodes = " << man->CountNodesArrayIndependent( vNodes_ ) << std::endl;
     }
   };
 }
