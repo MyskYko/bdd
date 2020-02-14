@@ -3,8 +3,9 @@
 
 namespace Bdd
 {
-  void Aig2Bdd( mockturtle::aig_network & aig, BddMan & bdd )
+  void Aig2Bdd( mockturtle::aig_network & aig_, BddMan & bdd )
   {
+    mockturtle::topo_view aig{aig_};
     int * pFanouts = (int *)calloc( aig.size(), sizeof(int) );
     if ( !pFanouts )
       throw "Allocation failed";

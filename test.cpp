@@ -9,12 +9,11 @@ int main()
 {
   mockturtle::aig_network aig;
   lorina::read_aiger( "file.aig", mockturtle::aiger_reader( aig ) );
-  mockturtle::topo_view aig_topo{aig};
 
   try
     {
       Bdd::SimpleBddMan<> bdd( aig.num_pis() );
-      Bdd::Aig2Bdd( aig_topo, bdd );
+      Bdd::Aig2Bdd( aig, bdd );
       bdd.PrintStats();
       mockturtle::aig_network aig2;
       Bdd::Bdd2Aig( aig2, bdd );
@@ -28,7 +27,7 @@ int main()
   try
     {
       Bdd::CuddMan bdd( aig.num_pis() );
-      Bdd::Aig2Bdd( aig_topo, bdd );
+      Bdd::Aig2Bdd( aig, bdd );
       bdd.PrintStats();
       mockturtle::aig_network aig2;
       Bdd::Bdd2Aig( aig2, bdd );
@@ -42,7 +41,7 @@ int main()
   try
     {
       Bdd::BuddyMan bdd( aig.num_pis() );
-      Bdd::Aig2Bdd( aig_topo, bdd );
+      Bdd::Aig2Bdd( aig, bdd );
       bdd.PrintStats();
       mockturtle::aig_network aig2;
       Bdd::Bdd2Aig( aig2, bdd );
