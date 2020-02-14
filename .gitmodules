@@ -4,3 +4,6 @@
 [submodule "mockturtle"]
 	path = mockturtle
 	url = https://github.com/lsils/mockturtle.git
+[submodule "buddy_c"]
+	path = buddy_c
+	url = https://github.com/MyskYko/BuDDy.git
