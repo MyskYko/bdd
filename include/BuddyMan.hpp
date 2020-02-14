@@ -16,13 +16,20 @@ using namespace Buddy;
 
 namespace Bdd
 {
+  struct BuddyParam
+  {
+    int nVars = 0;
+    int nNodes = 100000;
+    int nCache = 10000;
+  };
+    
   class BuddyMan : public BddMan
   {
   public:
-    BuddyMan( int nVars )
+    BuddyMan( BuddyParam p )
     {
-      bdd_init( 100000, 10000 );
-      bdd_setvarnum( nVars );
+      bdd_init( p.nNodes, p.nCache );
+      bdd_setvarnum( p.nVars );
     };
     ~BuddyMan() { bdd_done(); }
     uint64_t Const0() override { return bdd_false(); }

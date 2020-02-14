@@ -4,15 +4,21 @@
 #include <AigBdd.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
+#include <string>
 
-int main()
+int main( int argc, char ** argv )
 {
+  if ( argc == 1 )
+    return 1;
+  std::string filename = argv[1];
   mockturtle::aig_network aig;
-  lorina::read_aiger( "file.aig", mockturtle::aiger_reader( aig ) );
+  lorina::read_aiger( filename, mockturtle::aiger_reader( aig ) );
 
   try
     {
-      Bdd::SimpleBddMan<> bdd( aig.num_pis() );
+      Bdd::SimpleBddParam p;
+      p.nVars = aig.num_pis();
+      Bdd::SimpleBddMan<> bdd( p );
       Bdd::Aig2Bdd( aig, bdd );
       bdd.PrintStats();
       mockturtle::aig_network aig2;
@@ -26,7 +32,9 @@ int main()
   
   try
     {
-      Bdd::CuddMan bdd( aig.num_pis() );
+      Bdd::CuddParam p;
+      p.nVars = aig.num_pis();
+      Bdd::CuddMan bdd( p );
       Bdd::Aig2Bdd( aig, bdd );
       bdd.PrintStats();
       mockturtle::aig_network aig2;
@@ -40,7 +48,9 @@ int main()
   
   try
     {
-      Bdd::BuddyMan bdd( aig.num_pis() );
+      Bdd::BuddyParam p;
+      p.nVars = aig.num_pis();
+      Bdd::BuddyMan bdd( p );
       Bdd::Aig2Bdd( aig, bdd );
       bdd.PrintStats();
       mockturtle::aig_network aig2;

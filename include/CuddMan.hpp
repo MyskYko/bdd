@@ -12,15 +12,23 @@ using namespace Cudd;
 
 namespace Bdd
 {
+  struct CuddParam
+  {
+    int nVars = 0;
+    int nNodes = CUDD_UNIQUE_SLOTS;
+    int nCache = CUDD_CACHE_SLOTS;
+    int nMaxMem = 0;
+  };
+    
   class CuddMan : public BddMan
   {
   private:
     DdManager * man;
     
   public:
-    CuddMan( int nVars )
+    CuddMan( CuddParam p )
     {
-      man = Cudd_Init( nVars, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0 );
+      man = Cudd_Init( p.nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
     }
     ~CuddMan() { Cudd_Quit( man ); }
     uint64_t Const0() override { return (uint64_t)Cudd_Not( Cudd_ReadOne( man ) ); }

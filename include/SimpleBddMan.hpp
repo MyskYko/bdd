@@ -6,6 +6,16 @@
 
 namespace Bdd
 {
+  struct SimpleBddParam
+  {
+    int  nVars = 254;
+    int  nNodes = 1;
+    int  nVerbose = 0;
+    bool fGC = 1;
+    bool fRealloc = 1;
+    int  nMaxGrowth = 0;
+  };
+  
   template<typename var = uint8_t>
   class SimpleBddMan : public BddMan
   {
@@ -13,11 +23,11 @@ namespace Bdd
     SimpleBdd::BddMan<var> * man;
     
   public:
-    SimpleBddMan( int nVars )
+    SimpleBddMan( SimpleBddParam p )
     {
-      assert( nVars < (int)std::numeric_limits<var>::max() );
-      man = new SimpleBdd::BddMan<var>( nVars, 1, NULL, 0 );
-      man->RefreshConfig( 1, 1, 0 );
+      assert( p.nVars < (int)std::numeric_limits<var>::max() );
+      man = new SimpleBdd::BddMan<var>( p.nVars, p.nNodes, NULL, p.nVerbose );
+      man->RefreshConfig( p.fGC, p.fRealloc, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }
     uint64_t Const0() override { return man->LitConst0(); }
