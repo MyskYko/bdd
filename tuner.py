@@ -40,38 +40,36 @@ class Tuner(MeasurementInterface):
     return performance
     """
     cfg = desired_result.configuration.data
-    print(cfg)
 
-    f = open(self.filename, mode="w")
-    for i, param in enumerate(self.params):
-      if param[0] == "None":
-        f.write(param[1] + "\n")
-        continue
-      if param[0] == "Int":
-        f.write(str(cfg[i]) + "\n")
-        continue
-      if param[0] == "Pow":
-        print(cfg[i])
-        print(math.log(cfg[i], 2))
-        print(math.log(cfg[i], 2)%1 == 0)
-        f.write(str(cfg[i]) + "\n")
-        if cfg[i] == 6:
-          return Result(time=100)          
-        continue
-    f.close()
-    
-    run_result = self.call_program(self.run_cmd)
-    assert run_result['returncode'] == 0
-    return Result(time=run_result['time'])
-
-  def save_final_config(self, configuration):
-    cfg = configuration.data
     f = open(self.filename, mode="w")
     for i, param in enumerate(self.params):
       if param[0] == "None":
         f.write(param[1] + "\n")
         continue
       f.write(str(cfg[i]) + "\n")
+    f.close()
+    
+    run_result = self.call_program(self.run_cmd)
+    print(run_result)
+    if run_result['returncode'] != 0:
+      return Result(time=100)
+    return Result(time=run_result['time'])
+
+  def save_final_config(self, configuration):
+    cfg = configuration.data
+    f = open(self.filename, mode="w")
+    print("### Results ###")
+    for i, param in enumerate(self.params):
+      if param[0] == "None":
+        f.write(param[1] + "\n")
+        continue
+      f.write(str(cfg[i]) + "\n")
+      if param[0] == "Int":
+        print(str(param[1]) + " < " + str(cfg[i]) + " < " + str(param[2]))
+        continue
+      if param[0] == "Pow":
+        print(str(2 ** int(param[1])) + " < " + str(cfg[i]) + " < " + str(2 ** int(param[2])))
+        continue
     f.close()
 
 if __name__ == '__main__':

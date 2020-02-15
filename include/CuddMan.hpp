@@ -2,6 +2,8 @@
 #define CUDD_MAN_HPP_
 
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "BddMan.hpp"
 namespace Cudd
 {
@@ -14,10 +16,28 @@ namespace Bdd
 {
   struct CuddParam
   {
-    int nVars = 0;
-    int nNodes = CUDD_UNIQUE_SLOTS;
-    int nCache = CUDD_CACHE_SLOTS;
-    int nMaxMem = 0;
+    // Param
+    int nVars = 0; // None 0
+    int nNodes = CUDD_UNIQUE_SLOTS; // Int 100 10000
+    int nCache = CUDD_CACHE_SLOTS; // Int 10000 1000000
+    int nMaxMem = 0; // Int 10000000 1000000000
+    // end
+    
+    CuddParam( std::string fname = "_CuddMan.hpp_setting.txt" )
+    {
+      std::ifstream f( fname );
+      if ( !f )
+	return;
+      std::string str;
+      if ( std::getline( f, str ) )
+	nVars = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nNodes = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nCache = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nMaxMem = std::stoi( str );
+    }
   };
     
   class CuddMan : public BddMan

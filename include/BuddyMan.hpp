@@ -18,9 +18,25 @@ namespace Bdd
 {
   struct BuddyParam
   {
-    int nVars = 0;
-    int nNodes = 100000;
-    int nCache = 10000;
+    // Param
+    int nVars = 0; // None 0
+    int nNodes = 100000; // Int 10000 1000000
+    int nCache = 10000; // Int 10000 100000
+    // end
+
+    BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )
+    {
+      std::ifstream f( fname );
+      if ( !f )
+	return;
+      std::string str;
+      if ( std::getline( f, str ) )
+	nVars = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nNodes = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nCache = std::stoi( str );
+    }
   };
     
   class BuddyMan : public BddMan
