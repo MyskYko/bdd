@@ -1,6 +1,7 @@
 #ifndef SIMPLE_BDD_MAN_HPP_
 #define SIMPLE_BDD_MAN_HPP_
 
+#include <fstream>
 #include "BddMan.hpp"
 #include <SimpleBdd.hpp>
 
@@ -8,12 +9,34 @@ namespace Bdd
 {
   struct SimpleBddParam
   {
-    int  nVars = 254;
-    int  nNodes = 1;
-    int  nVerbose = 0;
-    bool fGC = 1;
-    bool fRealloc = 1;
-    int  nMaxGrowth = 0;
+    // Param
+    int  nVars = 0; // None 1
+    int  nNodes = 1; // Pow 0 30
+    int  nVerbose = 0; // None 0
+    bool fGC = 1; // None 1
+    bool fRealloc = 1; // None 1
+    int  nMaxGrowth = 0; // None 0
+    // end
+    
+    SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
+    {
+      std::ifstream f( fname );
+      if ( !f )
+	return;
+      std::string str;
+      if ( std::getline( f, str ) )
+	nVars = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nNodes = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nVerbose = std::stoi( str );
+      if ( std::getline( f, str ) )
+	fGC = std::stoi( str );
+      if ( std::getline( f, str ) )
+	fRealloc = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nMaxGrowth = std::stoi( str );
+    }
   };
   
   template<typename var = uint8_t>

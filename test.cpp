@@ -20,16 +20,19 @@ int main( int argc, char ** argv )
       p.nVars = aig.num_pis();
       Bdd::SimpleBddMan<> bdd( p );
       Bdd::Aig2Bdd( aig, bdd );
+      /*
       bdd.PrintStats();
       mockturtle::aig_network aig2;
       Bdd::Bdd2Aig( aig2, bdd );
       mockturtle::write_bench( aig2, "file_simple.bench" );
+      */
     }
   catch ( char const * error )
     {
       std::cout << error << std::endl;
+      return 1;
     }
-  
+  /*
   try
     {
       Bdd::CuddParam p;
@@ -61,6 +64,6 @@ int main( int argc, char ** argv )
     {
       std::cout << error << std::endl;
     }
-  
+  */
   return 0;
 }
