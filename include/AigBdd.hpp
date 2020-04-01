@@ -3,7 +3,8 @@
 
 namespace Bdd
 {
-  void Aig2Bdd( mockturtle::aig_network & aig_, BddMan & bdd )
+  template <typename node>
+  void Aig2Bdd( mockturtle::aig_network & aig_, BddMan<node> & bdd )
   {
     mockturtle::topo_view aig{aig_};
     int * pFanouts = (int *)calloc( aig.size(), sizeof(int) );
@@ -13,7 +14,7 @@ namespace Bdd
       {
 	pFanouts[aig.node_to_index( gate )] = aig.fanout_size( gate );
       });
-    std::map<uint32_t, uint64_t> m;
+    std::map<uint32_t, node> m;
     m[aig.node_to_index( aig.get_node( aig.get_constant( 0 ) ) )] = bdd.Const0();
     aig.foreach_pi( [&]( auto pi, int i )
       {
@@ -21,12 +22,11 @@ namespace Bdd
       });
     aig.foreach_gate( [&]( auto gate )
       {
-	uint64_t x;
-	x = bdd.Const1();
+	node x = bdd.Const1();
 	aig.foreach_fanin( gate, [&]( auto fanin )
 	  {
 	    bdd.Ref( x );
-	    uint64_t y = bdd.And( x, bdd.NotCond( m[aig.node_to_index( aig.get_node( fanin ) )], aig.is_complemented( fanin ) ) );
+	    node y = bdd.And( x, bdd.NotCond( m[aig.node_to_index( aig.get_node( fanin ) )], aig.is_complemented( fanin ) ) );
 	    bdd.Deref( x );
 	    x = y;
 	  });
@@ -52,7 +52,8 @@ namespace Bdd
     free( pFanouts );
   }
   
-  auto Bdd2Aig_rec( mockturtle::aig_network & aig, BddMan & bdd, uint64_t x, std::map<uint64_t, mockturtle::aig_network::signal> & m )
+  template <typename node>
+  auto Bdd2Aig_rec( mockturtle::aig_network & aig, BddMan<node> & bdd, node x, std::map<node, mockturtle::aig_network::signal> & m )
   {
     if ( x == bdd.Const0() )
       return aig.get_constant( 0 );
@@ -66,8 +67,8 @@ namespace Bdd
 	return f;
       }
     int v = bdd.Var( x );
-    uint64_t x1 = bdd.Then( x );
-    uint64_t x0 = bdd.Else( x );
+    node x1 = bdd.Then( x );
+    node x0 = bdd.Else( x );
     auto c = aig.make_signal( aig.pi_at( v ) );
     auto f1 = Bdd2Aig_rec( aig, bdd, x1, m );
     auto f0 = Bdd2Aig_rec( aig, bdd, x0, m );
@@ -80,13 +81,14 @@ namespace Bdd
     m[bdd.Regular( x )] = f;
     return f;
   }
-  
-  void Bdd2Aig( mockturtle::aig_network & aig, BddMan & bdd )
+
+  template <typename node>
+  void Bdd2Aig( mockturtle::aig_network & aig, BddMan<node> & bdd )
   {
     for ( int i = 0; i < bdd.GetNumVar(); i++ )
       aig.create_pi();
-    std::map<uint64_t, mockturtle::aig_network::signal> m;
-    for ( uint64_t x : bdd.vNodes )
+    std::map<node, mockturtle::aig_network::signal> m;
+    for ( node x : bdd.vNodes )
       {
 	auto f = Bdd2Aig_rec( aig, bdd, x, m );
 	aig.create_po( f );
