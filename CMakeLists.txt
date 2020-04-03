@@ -18,7 +18,11 @@ endif()
 
 add_subdirectory(lib)
 
-add_executable(test test.cpp)
-target_link_libraries(test mockturtle simplebdd cudd buddy_cpp cacbdd)
-target_include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_executable(test_simplebdd ${CMAKE_CURRENT_SOURCE_DIR}/test_simplebdd.cpp)
+target_link_libraries(test_simplebdd mockturtle simplebdd)
+target_include_directories(test_simplebdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(test_cudd ${CMAKE_CURRENT_SOURCE_DIR}/test_cudd.cpp)
+target_link_libraries(test_cudd mockturtle cudd)
+target_include_directories(test_cudd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

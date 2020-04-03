@@ -10,7 +10,6 @@ namespace Bdd
   struct SimpleBddParam
   {
     // Param
-    int  nVars = 0; // None 1
     int  nNodes = 1; // Pow 0 30
     int  nVerbose = 0; // None 0
     bool fGC = 1; // None 1
@@ -24,8 +23,6 @@ namespace Bdd
       if ( !f )
 	return;
       std::string str;
-      if ( std::getline( f, str ) )
-	nVars = std::stoi( str );
       if ( std::getline( f, str ) )
 	nNodes = std::stoi( str );
       if ( std::getline( f, str ) )
@@ -46,10 +43,18 @@ namespace Bdd
     SimpleBdd::BddMan<var> * man;
     
   public:
-    SimpleBddMan( SimpleBddParam p )
+    SimpleBddMan( int nVars )
     {
-      assert( p.nVars < (int)std::numeric_limits<var>::max() );
-      man = new SimpleBdd::BddMan<var>( p.nVars, p.nNodes, NULL, p.nVerbose );
+      assert( nVars < (int)std::numeric_limits<var>::max() );
+      SimpleBddParam p;
+      man = new SimpleBdd::BddMan<var>( nVars, p.nNodes, NULL, p.nVerbose );
+      man->RefreshConfig( p.fGC, p.fRealloc, p.nMaxGrowth );
+    };
+
+    SimpleBddMan( int nVars, SimpleBddParam p )
+    {
+      assert( nVars < (int)std::numeric_limits<var>::max() );
+      man = new SimpleBdd::BddMan<var>( nVars, p.nNodes, NULL, p.nVerbose );
       man->RefreshConfig( p.fGC, p.fRealloc, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }

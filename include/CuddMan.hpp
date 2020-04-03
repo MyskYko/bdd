@@ -17,7 +17,6 @@ namespace Bdd
   struct CuddParam
   {
     // Param
-    int nVars = 0; // None 0
     int nNodes = CUDD_UNIQUE_SLOTS; // Int 100 10000
     int nCache = CUDD_CACHE_SLOTS; // Int 10000 1000000
     int nMaxMem = 0; // Int 10000000 1000000000
@@ -29,8 +28,6 @@ namespace Bdd
       if ( !f )
 	return;
       std::string str;
-      if ( std::getline( f, str ) )
-	nVars = std::stoi( str );
       if ( std::getline( f, str ) )
 	nNodes = std::stoi( str );
       if ( std::getline( f, str ) )
@@ -46,9 +43,14 @@ namespace Bdd
     DdManager * man;
     
   public:
-    CuddMan( CuddParam p )
+    CuddMan( int nVars )
     {
-      man = Cudd_Init( p.nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
+      CuddParam p;
+      man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
+    }
+    CuddMan( int nVars, CuddParam p )
+    {
+      man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
     }
     ~CuddMan() { Cudd_Quit( man ); }
     DdNode * Const0() override { return Cudd_Not( Cudd_ReadOne( man ) ); }
