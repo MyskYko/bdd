@@ -4,7 +4,7 @@ target_include_directories(mockturtle INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/mock
 target_link_libraries(mockturtle INTERFACE ez kitty lorina sparsepp percy)
 
 add_library(simplebdd INTERFACE)
-target_include_directories(simplebdd INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+set_target_properties(simplebdd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/simplebdd)
 
 add_library(cudd STATIC IMPORTED GLOBAL)
 set_target_properties(cudd PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/cudd/cudd/.libs/libcudd.a)
@@ -12,12 +12,12 @@ set_target_properties(cudd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURR
 
 add_library(buddy STATIC IMPORTED GLOBAL)
 set_target_properties(buddy PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/buddy/src/.libs/libbdd.a)
-target_include_directories(buddy INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/buddy/src)
+set_target_properties(buddy PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/buddy/src)
 
 add_library(buddy_cpp STATIC IMPORTED GLOBAL)
 set_target_properties(buddy_cpp PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/buddy_cpp/src/.libs/libbdd.a)
-target_include_directories(buddy_cpp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/buddy_cpp/src)
+set_target_properties(buddy_cpp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/buddy_cpp/src)
 
 add_library(cacbdd STATIC IMPORTED GLOBAL)
-set_target_properties(cacbdd PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/cacBDD/libcacBDD.a)
-target_include_directories(cacbdd INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cacBDD/includes)
+set_target_properties(cacbdd PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/cacbdd/libcacBDD.a)
+set_target_properties(cacbdd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/cacbdd/includes)
