@@ -13,7 +13,6 @@ namespace Bdd
   struct CacBddParam
   {
     // Param
-    int nVars = 0; // None 0
     // end
 
     CacBddParam( std::string fname = "_CacBddMan.hpp_setting.txt" )
@@ -21,9 +20,6 @@ namespace Bdd
       std::ifstream f( fname );
       if ( !f )
 	return;
-      std::string str;
-      if ( std::getline( f, str ) )
-	nVars = std::stoi( str );
     }
   };
     
@@ -33,7 +29,16 @@ namespace Bdd
     XBDDManager * man;
     
   public:
-    CacBddMan( CacBddParam p ) { man = new XBDDManager( p.nVars ); };
+    CacBddMan( int nVars ) {
+      CacBddParam p;
+      (void)p;
+      man = new XBDDManager( nVars );
+    };
+    CacBddMan( int nVars, CacBddParam p )
+    {
+      (void)p;
+      man = new XBDDManager( nVars );
+    };
     ~CacBddMan()
     {
       vNodes.clear();
@@ -44,7 +49,7 @@ namespace Bdd
     BDD  IthVar( int i ) override { return man->BddVar( i+1 ); }
     BDD  Regular( BDD const & x ) override { BDD y = x; return y.IsComp()? !x: x; }
     bool IsCompl( BDD const & x ) override { BDD y = x; return y.IsComp(); }
-    int  Var( BDD const & x ) override { BDD y = x; return y.Variable(); }
+    int  Var( BDD const & x ) override { BDD y = x; return y.Variable()-1; }
     BDD  Then( BDD const & x ) override { return x.Then(); }
     BDD  Else( BDD const & x ) override { return x.Else(); }
     void Ref( BDD const & x ) override { (void)x; }
@@ -58,6 +63,8 @@ namespace Bdd
       std::cout << "Sum of BDD nodes = #####" << std::endl;
       man->ShowInfo();
     }
+
+    uint64_t Id( BDD const & x ) { return (uint64_t)x.Node(); }
   };
 }
 

@@ -2,13 +2,13 @@
 #define BUDDY_MAN_HPP_
 
 #include <iostream>
+#include <fstream>
 #include "BddMan.hpp"
 namespace Buddy
 {
   extern "C"
   {
     #include <bdd.h>
-    // Notice : BDD, bdd, BDD_(somehting), bdd_(something) are defined in buddy
   }
 }
 
@@ -19,7 +19,6 @@ namespace Bdd
   struct BuddyParam
   {
     // Param
-    int nVars = 0; // None 0
     int nNodes = 100000; // Int 10000 1000000
     int nCache = 10000; // Int 10000 100000
     // end
@@ -31,8 +30,6 @@ namespace Bdd
 	return;
       std::string str;
       if ( std::getline( f, str ) )
-	nVars = std::stoi( str );
-      if ( std::getline( f, str ) )
 	nNodes = std::stoi( str );
       if ( std::getline( f, str ) )
 	nCache = std::stoi( str );
@@ -42,24 +39,30 @@ namespace Bdd
   class BuddyMan : public BddMan<BDD>
   {
   public:
-    BuddyMan( BuddyParam p )
+    BuddyMan( int nVars )
+    {
+      BuddyParam p;
+      bdd_init( p.nNodes, p.nCache );
+      bdd_setvarnum( nVars );
+    };
+    BuddyMan( int nVars, BuddyParam p )
     {
       bdd_init( p.nNodes, p.nCache );
-      bdd_setvarnum( p.nVars );
+      bdd_setvarnum( nVars );
     };
     ~BuddyMan() { bdd_done(); }
     BDD  Const0() override { return bdd_false(); }
     BDD  Const1() override { return bdd_true(); }
     BDD  IthVar( int i ) override { return bdd_ithvar( i ); }
-    BDD  Regular( BDD x ) override { return x; }
-    bool IsCompl( BDD x ) override { (void)x; return 0; }
-    int  Var( BDD x ) override { return bdd_var( x ); }
-    BDD  Then( BDD x ) override { return bdd_high( x ); }
-    BDD  Else( BDD x ) override { return bdd_low( x ); }
-    void Ref( BDD x ) override { bdd_addref( x ); }
-    void Deref( BDD x ) override { bdd_delref( x ); }
-    BDD  NotCond( BDD x, bool c ) override { return c? bdd_not( x ): x; }
-    BDD  And( BDD x, BDD y ) override { return bdd_and( x, y ); }
+    BDD  Regular( BDD const & x ) override { return x; }
+    bool IsCompl( BDD const & x ) override { (void)x; return 0; }
+    int  Var( BDD const & x ) override { return bdd_var( x ); }
+    BDD  Then( BDD const & x ) override { return bdd_high( x ); }
+    BDD  Else( BDD const & x ) override { return bdd_low( x ); }
+    void Ref( BDD const & x ) override { bdd_addref( x ); }
+    void Deref( BDD const & x ) override { bdd_delref( x ); }
+    BDD  NotCond( BDD const & x, bool c ) override { return c? bdd_not( x ): x; }
+    BDD  And( BDD const & x, BDD const & y ) override { return bdd_and( x, y ); }
     int  GetNumVar() override { return bdd_varnum(); }
     void PrintStats() override
     {
@@ -71,6 +74,8 @@ namespace Bdd
       std::cout << "Shared BDD nodes = " << bdd_anodecount( vNodes.data(), vNodes.size() ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
+
+    uint64_t Id( BDD const & x ) { return (uint64_t)x; }
   };
 }
 

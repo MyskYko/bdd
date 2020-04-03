@@ -30,3 +30,10 @@ add_executable(test_buddy_cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_buddy_cpp.cpp)
 target_link_libraries(test_buddy_cpp mockturtle buddy_cpp)
 target_include_directories(test_buddy_cpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+add_executable(test_buddy ${CMAKE_CURRENT_SOURCE_DIR}/test_buddy.cpp)
+target_link_libraries(test_buddy mockturtle buddy)
+target_include_directories(test_buddy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(test_cacbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_cacbdd.cpp)
+target_link_libraries(test_cacbdd mockturtle cacbdd)
+target_include_directories(test_cacbdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
