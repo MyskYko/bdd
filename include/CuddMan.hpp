@@ -54,15 +54,15 @@ namespace Bdd
     DdNode * Const0() override { return Cudd_Not( Cudd_ReadOne( man ) ); }
     DdNode * Const1() override { return Cudd_ReadOne( man ); }
     DdNode * IthVar( int i ) override { return Cudd_ReadVars( man, i ); }
-    DdNode * Regular( DdNode * x ) override { return Cudd_Regular( x ); }
-    bool     IsCompl( DdNode * x ) override { return Cudd_IsComplement( x ); }
-    int      Var( DdNode * x ) override { return Cudd_NodeReadIndex( x ); }
-    DdNode * Then( DdNode * x ) override { return Cudd_NotCond( Cudd_T( x ), IsCompl( x ) ); }
-    DdNode * Else( DdNode * x ) override { return Cudd_NotCond( Cudd_E( x ), IsCompl( x ) ); }
-    void     Ref( DdNode * x ) override { Cudd_Ref( x ); }
-    void     Deref( DdNode * x ) override { Cudd_RecursiveDeref( man, x ); }
-    DdNode * NotCond( DdNode * x, bool c ) override { return Cudd_NotCond( x, c ); }
-    DdNode * And( DdNode * x, DdNode * y ) override { return Cudd_bddAnd( man, x, y ); }
+    DdNode * Regular( DdNode * const & x ) override { return Cudd_Regular( x ); }
+    bool     IsCompl( DdNode * const & x ) override { return Cudd_IsComplement( x ); }
+    int      Var( DdNode * const & x ) override { return Cudd_NodeReadIndex( x ); }
+    DdNode * Then( DdNode * const & x ) override { return Cudd_NotCond( Cudd_T( x ), IsCompl( x ) ); }
+    DdNode * Else( DdNode * const & x ) override { return Cudd_NotCond( Cudd_E( x ), IsCompl( x ) ); }
+    void     Ref( DdNode * const & x ) override { Cudd_Ref( x ); }
+    void     Deref( DdNode * const & x ) override { Cudd_RecursiveDeref( man, x ); }
+    DdNode * NotCond( DdNode * const & x, bool c ) override { return Cudd_NotCond( x, c ); }
+    DdNode * And( DdNode * const & x, DdNode * const & y ) override { return Cudd_bddAnd( man, x, y ); }
     int      GetNumVar() override { return Cudd_ReadSize( man ); }
     void     PrintStats() override
     {

@@ -3,10 +3,7 @@
 
 #include <iostream>
 #include "BddMan.hpp"
-//namespace Buddy
-//{
 #include <bdd.h>
-//}
 
 using namespace Buddy;
 
@@ -47,15 +44,15 @@ namespace Bdd
     bdd  Const0() override { return bdd_false(); }
     bdd  Const1() override { return bdd_true(); }
     bdd  IthVar( int i ) override { return bdd_ithvar( i ); }
-    bdd  Regular( bdd x ) override { return x; }
-    bool IsCompl( bdd x ) override { (void)x; return 0; }
-    int  Var( bdd x ) override { return bdd_var( x ); }
-    bdd  Then( bdd x ) override { return bdd_high( x ); }
-    bdd  Else( bdd x ) override { return bdd_low( x ); }
-    void Ref( bdd x ) override { (void)x; }
-    void Deref( bdd x ) override { (void)x; }
-    bdd  NotCond( bdd x, bool c ) override { return c? bdd_not( x ): x; }
-    bdd  And( bdd x, bdd y ) override { return bdd_and( x, y ); }
+    bdd  Regular( bdd const & x ) override { return x; }
+    bool IsCompl( bdd const & x ) override { (void)x; return 0; }
+    int  Var( bdd const & x ) override { return bdd_var( x ); }
+    bdd  Then( bdd const & x ) override { return bdd_high( x ); }
+    bdd  Else( bdd const & x ) override { return bdd_low( x ); }
+    void Ref( bdd const & x ) override { (void)x; }
+    void Deref( bdd const & x ) override { (void)x; }
+    bdd  NotCond( bdd const & x, bool c ) override { return c? bdd_not( x ): x; }
+    bdd  And( bdd const & x, bdd const & y ) override { return bdd_and( x, y ); }
     int  GetNumVar() override { return bdd_varnum(); }
     void PrintStats() override
     {

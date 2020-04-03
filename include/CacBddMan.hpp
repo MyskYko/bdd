@@ -2,9 +2,9 @@
 #define CACBDD_MAN_HPP_
 
 #include <iostream>
+#include <fstream>
 #include "BddMan.hpp"
 #include <BDDNode.h>
-
 
 using namespace cacBDD;
 
@@ -42,15 +42,15 @@ namespace Bdd
     BDD  Const0() override { return man->BddZero(); }
     BDD  Const1() override { return man->BddOne(); }
     BDD  IthVar( int i ) override { return man->BddVar( i+1 ); }
-    BDD  Regular( BDD x ) override { return x.IsComp()? !x: x; }
-    bool IsCompl( BDD x ) override { return x.IsComp(); }
-    int  Var( BDD x ) override { return x.Variable(); }
-    BDD  Then( BDD x ) override { return x.Then(); }
-    BDD  Else( BDD x ) override { return x.Else(); }
-    void Ref( BDD x ) override { (void)x; }
-    void Deref( BDD x ) override { (void)x; }
-    BDD  NotCond( BDD x, bool c ) override { return c? !x: x; }
-    BDD  And( BDD x, BDD y ) override { return x * y; }
+    BDD  Regular( BDD const & x ) override { BDD y = x; return y.IsComp()? !x: x; }
+    bool IsCompl( BDD const & x ) override { BDD y = x; return y.IsComp(); }
+    int  Var( BDD const & x ) override { BDD y = x; return y.Variable(); }
+    BDD  Then( BDD const & x ) override { return x.Then(); }
+    BDD  Else( BDD const & x ) override { return x.Else(); }
+    void Ref( BDD const & x ) override { (void)x; }
+    void Deref( BDD const & x ) override { (void)x; }
+    BDD  NotCond( BDD const & x, bool c ) override { return c? !x: x; }
+    BDD  And( BDD const & x, BDD const & y ) override { return x * y; }
     int  GetNumVar() override { return man->manager()->GetVariableCount(); }
     void PrintStats() override
     {
