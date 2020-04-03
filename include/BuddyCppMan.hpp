@@ -1,7 +1,8 @@
-#ifndef BUDDY_MAN_HPP_
-#define BUDDY_MAN_HPP_
+#ifndef BUDDY_CPP_MAN_HPP_
+#define BUDDY_CPP_MAN_HPP_
 
 #include <iostream>
+#include <fstream>
 #include "BddMan.hpp"
 #include <bdd.h>
 
@@ -9,22 +10,19 @@ using namespace Buddy;
 
 namespace Bdd
 {
-  struct BuddyParam
+  struct BuddyCppParam
   {
     // Param
-    int nVars = 0; // None 0
     int nNodes = 100000; // Int 10000 1000000
     int nCache = 10000; // Int 10000 100000
     // end
 
-    BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )
+    BuddyCppParam( std::string fname = "_BuddyCppMan.hpp_setting.txt" )
     {
       std::ifstream f( fname );
       if ( !f )
 	return;
       std::string str;
-      if ( std::getline( f, str ) )
-	nVars = std::stoi( str );
       if ( std::getline( f, str ) )
 	nNodes = std::stoi( str );
       if ( std::getline( f, str ) )
@@ -32,15 +30,21 @@ namespace Bdd
     }
   };
     
-  class BuddyMan : public BddMan<bdd>
+  class BuddyCppMan : public BddMan<bdd>
   {
   public:
-    BuddyMan( BuddyParam p )
+    BuddyCppMan( int nVars )
+    {
+      BuddyCppParam p;
+      bdd_init( p.nNodes, p.nCache );
+      bdd_setvarnum( nVars );
+    };
+    BuddyCppMan( int nVars, BuddyCppParam p )
     {
       bdd_init( p.nNodes, p.nCache );
-      bdd_setvarnum( p.nVars );
+      bdd_setvarnum( nVars );
     };
-    ~BuddyMan() { bdd_done(); }
+    ~BuddyCppMan() { bdd_done(); }
     bdd  Const0() override { return bdd_false(); }
     bdd  Const1() override { return bdd_true(); }
     bdd  IthVar( int i ) override { return bdd_ithvar( i ); }
@@ -64,6 +68,8 @@ namespace Bdd
       std::cout << "Shared BDD nodes = " << bdd_anodecount( vNodes.data(), vNodes.size() ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
+
+    uint64_t Id( bdd const & x ) { return (uint64_t)x.id(); }
   };
 }
 

@@ -26,3 +26,7 @@ add_executable(test_cudd ${CMAKE_CURRENT_SOURCE_DIR}/test_cudd.cpp)
 target_link_libraries(test_cudd mockturtle cudd)
 target_include_directories(test_cudd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+add_executable(test_buddy_cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_buddy_cpp.cpp)
+target_link_libraries(test_buddy_cpp mockturtle buddy_cpp)
+target_include_directories(test_buddy_cpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+

@@ -76,6 +76,8 @@ namespace Bdd
       std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes ) << std::endl;
       std::cout << "Sum of BDD nodes = " << man->CountNodesArrayIndependent( vNodes ) << std::endl;
     }
+
+    uint64_t Id( uint32_t const & x ) { return (uint64_t)x; }
   };
 }
 

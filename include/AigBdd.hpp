@@ -53,15 +53,15 @@ namespace Bdd
   }
   
   template <typename node>
-  auto Bdd2Aig_rec( mockturtle::aig_network & aig, BddMan<node> & bdd, node x, std::map<node, mockturtle::aig_network::signal> & m )
+  auto Bdd2Aig_rec( mockturtle::aig_network & aig, BddMan<node> & bdd, node x, std::map<uint64_t, mockturtle::aig_network::signal> & m )
   {
     if ( x == bdd.Const0() )
       return aig.get_constant( 0 );
     if ( x == bdd.Const1() )
       return aig.get_constant( 1 );
-    if ( m.count( bdd.Regular( x ) ) )
+    if ( m.count( bdd.Id( bdd.Regular( x ) ) ) )
       {
-	auto f = m[bdd.Regular( x )];
+	auto f = m[bdd.Id( bdd.Regular( x ) )];
 	if ( bdd.IsCompl( x ) )
 	  f = aig.create_not( f );
 	return f;
@@ -75,10 +75,10 @@ namespace Bdd
     auto f = aig.create_ite( c, f1, f0 );
     if ( bdd.IsCompl( x ) )
       {
-	m[bdd.Regular( x )] = aig.create_not( f );
+	m[bdd.Id( bdd.Regular( x ) )] = aig.create_not( f );
 	return f;
       }
-    m[bdd.Regular( x )] = f;
+    m[bdd.Id( bdd.Regular( x ) )] = f;
     return f;
   }
 
@@ -87,7 +87,7 @@ namespace Bdd
   {
     for ( int i = 0; i < bdd.GetNumVar(); i++ )
       aig.create_pi();
-    std::map<node, mockturtle::aig_network::signal> m;
+    std::map<uint64_t, mockturtle::aig_network::signal> m;
     for ( node x : bdd.vNodes )
       {
 	auto f = Bdd2Aig_rec( aig, bdd, x, m );
