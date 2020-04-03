@@ -13,3 +13,7 @@ set_target_properties(cudd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURR
 add_library(buddy STATIC IMPORTED GLOBAL)
 set_target_properties(buddy PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/buddy/src/.libs/libbdd.a)
 target_include_directories(buddy INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/buddy/src)
+
+add_library(buddy_cpp STATIC IMPORTED GLOBAL)
+set_target_properties(buddy_cpp PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/buddy_cpp/src/.libs/libbdd.a)
+target_include_directories(buddy_cpp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/buddy_cpp/src)

@@ -3,10 +3,14 @@
 
 #include <iostream>
 #include "BddMan.hpp"
-//namespace Buddy
-//{
-#include <bdd.h>
-//}
+namespace Buddy
+{
+  extern "C"
+  {
+    #include <bdd.h>
+    // Notice : BDD, bdd, BDD_(somehting), bdd_(something) are defined in buddy
+  }
+}
 
 using namespace Buddy;
 
@@ -35,7 +39,7 @@ namespace Bdd
     }
   };
     
-  class BuddyMan : public BddMan<bdd>
+  class BuddyMan : public BddMan<BDD>
   {
   public:
     BuddyMan( BuddyParam p )
@@ -44,18 +48,18 @@ namespace Bdd
       bdd_setvarnum( p.nVars );
     };
     ~BuddyMan() { bdd_done(); }
-    bdd  Const0() override { return bdd_false(); }
-    bdd  Const1() override { return bdd_true(); }
-    bdd  IthVar( int i ) override { return bdd_ithvar( i ); }
-    bdd  Regular( bdd x ) override { return x; }
-    bool IsCompl( bdd x ) override { (void)x; return 0; }
-    int  Var( bdd x ) override { return bdd_var( x ); }
-    bdd  Then( bdd x ) override { return bdd_high( x ); }
-    bdd  Else( bdd x ) override { return bdd_low( x ); }
-    void Ref( bdd x ) override { (void)x; }
-    void Deref( bdd x ) override { (void)x; }
-    bdd  NotCond( bdd x, bool c ) override { return c? bdd_not( x ): x; }
-    bdd  And( bdd x, bdd y ) override { return bdd_and( x, y ); }
+    BDD  Const0() override { return bdd_false(); }
+    BDD  Const1() override { return bdd_true(); }
+    BDD  IthVar( int i ) override { return bdd_ithvar( i ); }
+    BDD  Regular( BDD x ) override { return x; }
+    bool IsCompl( BDD x ) override { (void)x; return 0; }
+    int  Var( BDD x ) override { return bdd_var( x ); }
+    BDD  Then( BDD x ) override { return bdd_high( x ); }
+    BDD  Else( BDD x ) override { return bdd_low( x ); }
+    void Ref( BDD x ) override { bdd_addref( x ); }
+    void Deref( BDD x ) override { bdd_delref( x ); }
+    BDD  NotCond( BDD x, bool c ) override { return c? bdd_not( x ): x; }
+    BDD  And( BDD x, BDD y ) override { return bdd_and( x, y ); }
     int  GetNumVar() override { return bdd_varnum(); }
     void PrintStats() override
     {

@@ -16,20 +16,26 @@ int main( int argc, char ** argv )
 
   try
     {
-      Bdd::SimpleBddParam p;
-      //Bdd::CuddParam p;
-      //Bdd::BuddyParam p;
-      p.nVars = aig.num_pis();
-      Bdd::SimpleBddMan<> bdd( p );
-      //Bdd::CuddMan bdd( p );
-      //Bdd::BuddyMan bdd( p );
-      Bdd::Aig2Bdd( aig, bdd );
-      /*
-      bdd.PrintStats();
-      mockturtle::aig_network aig2;
-      Bdd::Bdd2Aig( aig2, bdd );
-      mockturtle::write_bench( aig2, "file_simple.bench" );
-      */
+      Bdd::SimpleBddParam sp;
+      Bdd::CuddParam cp;
+      Bdd::BuddyParam bp;
+      sp.nVars = aig.num_pis();
+      cp.nVars = aig.num_pis();
+      bp.nVars = aig.num_pis();
+      Bdd::SimpleBddMan<> sbdd( sp );
+      Bdd::CuddMan cbdd( cp );
+      Bdd::BuddyMan bbdd( bp );
+      Bdd::Aig2Bdd( aig, sbdd );
+      Bdd::Aig2Bdd( aig, cbdd );
+      Bdd::Aig2Bdd( aig, bbdd );
+      
+      sbdd.PrintStats();
+      cbdd.PrintStats();
+      bbdd.PrintStats();
+      //      mockturtle::aig_network aig2;
+      //      Bdd::Bdd2Aig( aig2, bdd );
+      //      mockturtle::write_bench( aig2, "file_simple.bench" );
+
     }
   catch ( char const * error )
     {
