@@ -14,7 +14,7 @@
 	path = lib/buddy_cpp
 	url = https://github.com/MyskYko/BuDDy.git
 	ignore = dirty
-[submodule "cacbdd"]
-	path = cacbdd
+[submodule "lib/cacbdd"]
+	path = lib/cacbdd
 	url = https://github.com/soga-denken/cacBDD.git
 	ignore = dirty
