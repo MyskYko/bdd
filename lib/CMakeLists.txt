@@ -17,3 +17,7 @@ target_include_directories(buddy INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/buddy/src
 add_library(buddy_cpp STATIC IMPORTED GLOBAL)
 set_target_properties(buddy_cpp PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/buddy_cpp/src/.libs/libbdd.a)
 target_include_directories(buddy_cpp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/buddy_cpp/src)
+
+add_library(cacbdd STATIC IMPORTED GLOBAL)
+set_target_properties(cacbdd PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/cacBDD/libcacBDD.a)
+target_include_directories(cacbdd INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cacBDD/includes)

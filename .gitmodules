@@ -13,3 +13,6 @@
 [submodule "lib/buddy_cpp"]
 	path = lib/buddy_cpp
 	url = https://github.com/MyskYko/BuDDy.git
+[submodule "lib/cacBDD"]
+	path = lib/cacBDD
+	url = https://github.com/soga-denken/cacBDD.git
