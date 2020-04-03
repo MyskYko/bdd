@@ -1,5 +1,5 @@
 #ifndef SIMPLE_BDD_HPP_
-#define SIMPLE_BDD_HPP
+#define SIMPLE_BDD_HPP_
 
 #include <vector>
 #include <cassert>
