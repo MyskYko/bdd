@@ -1,7 +1,15 @@
+#if defined(SIMPLEBDD)
 #include <SimpleBddMan.hpp>
+#elif defined(CUDD)
 #include <CuddMan.hpp>
+#elif defined(BUDDY)
 #include <BuddyMan.hpp>
+#elif defined(CACBDD)
 #include <CacBddMan.hpp>
+#else
+#error unspecified package
+#endif
+
 #include <AigBdd.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
@@ -12,31 +20,34 @@ int main( int argc, char ** argv )
   if ( argc == 1 )
     return 1;
   std::string filename = argv[1];
+  std::string filename2;
+  if ( argc >= 2 )
+    filename2 = argv[2];
+  
   mockturtle::aig_network aig;
   lorina::read_aiger( filename, mockturtle::aiger_reader( aig ) );
 
   try
     {
-      Bdd::SimpleBddMan<> sbdd( aig.num_pis() );
-      Bdd::Aig2Bdd( aig, sbdd );
-      sbdd.PrintStats();
+#if defined(SIMPLEBDD)
+      Bdd::SimpleBddMan<> bdd( aig.num_pis() );
+#elif defined(CUDD)
+      Bdd::CuddMan bdd( aig.num_pis() );
+#elif defined(BUDDY)
+      Bdd::BuddyMan bdd( aig.num_pis() );
+#elif defined(CACBDD)
+      Bdd::CacBddMan bdd( aig.num_pis() );
+#else
+#error
+#endif
       
-      Bdd::CuddMan cbdd( aig.num_pis() );
-      Bdd::Aig2Bdd( aig, cbdd );
-      cbdd.PrintStats();
-      
-      Bdd::BuddyMan bbdd( aig.num_pis() );
-      Bdd::Aig2Bdd( aig, bbdd );
-      bbdd.PrintStats();
-
-      Bdd::CacBddMan cacbdd( aig.num_pis() );
-      Bdd::Aig2Bdd( aig, cacbdd );
-      cacbdd.PrintStats();
-      
-      //      mockturtle::aig_network aig2;
-      //      Bdd::Bdd2Aig( aig2, bdd );
-      //      mockturtle::write_bench( aig2, "file_simple.bench" );
-
+      Bdd::Aig2Bdd( aig, bdd );
+      bdd.PrintStats();
+      if ( !filename2.empty() ) {
+	mockturtle::aig_network aig2;
+	Bdd::Bdd2Aig( aig2, bdd );
+	mockturtle::write_bench( aig2, filename2 );
+      }
     }
   catch ( char const * error )
     {
