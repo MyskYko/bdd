@@ -10,10 +10,6 @@
 	path = lib/buddy
 	url = https://github.com/MyskYko/BuDDy.git
 	ignore = dirty
-[submodule "lib/buddy_cpp"]
-	path = lib/buddy_cpp
-	url = https://github.com/MyskYko/BuDDy.git
-	ignore = dirty
 [submodule "lib/cacbdd"]
 	path = lib/cacbdd
 	url = https://github.com/soga-denken/cacBDD.git
