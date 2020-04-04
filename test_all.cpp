@@ -1,6 +1,7 @@
 #include <SimpleBddMan.hpp>
 #include <CuddMan.hpp>
 #include <BuddyMan.hpp>
+#include <CacBddMan.hpp>
 #include <AigBdd.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
@@ -16,22 +17,22 @@ int main( int argc, char ** argv )
 
   try
     {
-      Bdd::SimpleBddParam sp;
-      Bdd::CuddParam cp;
-      Bdd::BuddyParam bp;
-      sp.nVars = aig.num_pis();
-      cp.nVars = aig.num_pis();
-      bp.nVars = aig.num_pis();
-      Bdd::SimpleBddMan<> sbdd( sp );
-      Bdd::CuddMan cbdd( cp );
-      Bdd::BuddyMan bbdd( bp );
+      Bdd::SimpleBddMan<> sbdd( aig.num_pis() );
       Bdd::Aig2Bdd( aig, sbdd );
-      Bdd::Aig2Bdd( aig, cbdd );
-      Bdd::Aig2Bdd( aig, bbdd );
-      
       sbdd.PrintStats();
+      
+      Bdd::CuddMan cbdd( aig.num_pis() );
+      Bdd::Aig2Bdd( aig, cbdd );
       cbdd.PrintStats();
+      
+      Bdd::BuddyMan bbdd( aig.num_pis() );
+      Bdd::Aig2Bdd( aig, bbdd );
       bbdd.PrintStats();
+
+      Bdd::CacBddMan cacbdd( aig.num_pis() );
+      Bdd::Aig2Bdd( aig, cacbdd );
+      cacbdd.PrintStats();
+      
       //      mockturtle::aig_network aig2;
       //      Bdd::Bdd2Aig( aig2, bdd );
       //      mockturtle::write_bench( aig2, "file_simple.bench" );

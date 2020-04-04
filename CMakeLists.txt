@@ -33,3 +33,7 @@ target_include_directories(test_buddy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/includ
 add_executable(test_cacbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_cacbdd.cpp)
 target_link_libraries(test_cacbdd mockturtle cacbdd)
 target_include_directories(test_cacbdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(test_all ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
+target_link_libraries(test_all mockturtle simplebdd cudd buddy cacbdd)
+target_include_directories(test_all PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

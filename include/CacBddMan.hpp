@@ -6,8 +6,6 @@
 #include "BddMan.hpp"
 #include <BDDNode.h>
 
-using namespace cacBDD;
-
 namespace Bdd
 {
   struct CacBddParam
@@ -23,39 +21,39 @@ namespace Bdd
     }
   };
     
-  class CacBddMan : public BddMan<BDD>
+  class CacBddMan : public BddMan<cacBDD::BDD>
   {
   private:
-    XBDDManager * man;
+    cacBDD::XBDDManager * man;
     
   public:
     CacBddMan( int nVars ) {
       CacBddParam p;
       (void)p;
-      man = new XBDDManager( nVars );
+      man = new cacBDD::XBDDManager( nVars );
     };
     CacBddMan( int nVars, CacBddParam p )
     {
       (void)p;
-      man = new XBDDManager( nVars );
+      man = new cacBDD::XBDDManager( nVars );
     };
     ~CacBddMan()
     {
       vNodes.clear();
       delete man;
     }
-    BDD  Const0() override { return man->BddZero(); }
-    BDD  Const1() override { return man->BddOne(); }
-    BDD  IthVar( int i ) override { return man->BddVar( i+1 ); }
-    BDD  Regular( BDD const & x ) override { BDD y = x; return y.IsComp()? !x: x; }
-    bool IsCompl( BDD const & x ) override { BDD y = x; return y.IsComp(); }
-    int  Var( BDD const & x ) override { BDD y = x; return y.Variable()-1; }
-    BDD  Then( BDD const & x ) override { return x.Then(); }
-    BDD  Else( BDD const & x ) override { return x.Else(); }
-    void Ref( BDD const & x ) override { (void)x; }
-    void Deref( BDD const & x ) override { (void)x; }
-    BDD  NotCond( BDD const & x, bool c ) override { return c? !x: x; }
-    BDD  And( BDD const & x, BDD const & y ) override { return x * y; }
+    cacBDD::BDD  Const0() override { return man->BddZero(); }
+    cacBDD::BDD  Const1() override { return man->BddOne(); }
+    cacBDD::BDD  IthVar( int i ) override { return man->BddVar( i+1 ); }
+    cacBDD::BDD  Regular( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp()? !x: x; }
+    bool IsCompl( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp(); }
+    int  Var( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.Variable()-1; }
+    cacBDD::BDD  Then( cacBDD::BDD const & x ) override { return x.Then(); }
+    cacBDD::BDD  Else( cacBDD::BDD const & x ) override { return x.Else(); }
+    void Ref( cacBDD::BDD const & x ) override { (void)x; }
+    void Deref( cacBDD::BDD const & x ) override { (void)x; }
+    cacBDD::BDD  NotCond( cacBDD::BDD const & x, bool c ) override { return c? !x: x; }
+    cacBDD::BDD  And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
     int  GetNumVar() override { return man->manager()->GetVariableCount(); }
     void PrintStats() override
     {
@@ -64,7 +62,7 @@ namespace Bdd
       man->ShowInfo();
     }
 
-    uint64_t Id( BDD const & x ) { return (uint64_t)x.Node(); }
+    uint64_t Id( cacBDD::BDD const & x ) { return (uint64_t)x.Node(); }
   };
 }
 
