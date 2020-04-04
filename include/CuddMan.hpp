@@ -32,40 +32,37 @@ namespace Bdd
     }
   };
     
-  class CuddMan : public BddMan<Cudd::DdNode *>
+  class CuddMan : public BddMan<DdNode *>
   {
   private:
-    Cudd::DdManager * man;
+    DdManager * man;
     
   public:
     CuddMan( int nVars )
     {
-      using namespace Cudd;
       CuddParam p;
       man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
     }
     CuddMan( int nVars, CuddParam p )
     {
-      using namespace Cudd;
       man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
     }
-    ~CuddMan() { using namespace Cudd; Cudd_Quit( man ); }
-    Cudd::DdNode * Const0() override { using namespace Cudd; return Cudd_Not( Cudd_ReadOne( man ) ); }
-    Cudd::DdNode * Const1() override { using namespace Cudd; return Cudd_ReadOne( man ); }
-    Cudd::DdNode * IthVar( int i ) override { using namespace Cudd; return Cudd_ReadVars( man, i ); }
-    Cudd::DdNode * Regular( Cudd::DdNode * const & x ) override { using namespace Cudd; return Cudd_Regular( x ); }
-    bool     IsCompl( Cudd::DdNode * const & x ) override { using namespace Cudd; return Cudd_IsComplement( x ); }
-    int      Var( Cudd::DdNode * const & x ) override { using namespace Cudd; return Cudd_NodeReadIndex( x ); }
-    Cudd::DdNode * Then( Cudd::DdNode * const & x ) override { using namespace Cudd; return Cudd_NotCond( Cudd_T( x ), IsCompl( x ) ); }
-    Cudd::DdNode * Else( Cudd::DdNode * const & x ) override { using namespace Cudd; return Cudd_NotCond( Cudd_E( x ), IsCompl( x ) ); }
-    void     Ref( Cudd::DdNode * const & x ) override { using namespace Cudd; Cudd_Ref( x ); }
-    void     Deref( Cudd::DdNode * const & x ) override { using namespace Cudd; Cudd_RecursiveDeref( man, x ); }
-    Cudd::DdNode * NotCond( Cudd::DdNode * const & x, bool c ) override { using namespace Cudd; return Cudd_NotCond( x, c ); }
-    Cudd::DdNode * And( Cudd::DdNode * const & x, Cudd::DdNode * const & y ) override { using namespace Cudd; return Cudd_bddAnd( man, x, y ); }
-    int      GetNumVar() override { using namespace Cudd; return Cudd_ReadSize( man ); }
+    ~CuddMan() { Cudd_Quit( man ); }
+    DdNode * Const0() override { return Cudd_Not( Cudd_ReadOne( man ) ); }
+    DdNode * Const1() override { return Cudd_ReadOne( man ); }
+    DdNode * IthVar( int i ) override { return Cudd_ReadVars( man, i ); }
+    DdNode * Regular( DdNode * const & x ) override { return Cudd_Regular( x ); }
+    bool     IsCompl( DdNode * const & x ) override { return Cudd_IsComplement( x ); }
+    int      Var( DdNode * const & x ) override { return Cudd_NodeReadIndex( x ); }
+    DdNode * Then( DdNode * const & x ) override { return Cudd_NotCond( Cudd_T( x ), IsCompl( x ) ); }
+    DdNode * Else( DdNode * const & x ) override { return Cudd_NotCond( Cudd_E( x ), IsCompl( x ) ); }
+    void     Ref( DdNode * const & x ) override { Cudd_Ref( x ); }
+    void     Deref( DdNode * const & x ) override { Cudd_RecursiveDeref( man, x ); }
+    DdNode * NotCond( DdNode * const & x, bool c ) override { return Cudd_NotCond( x, c ); }
+    DdNode * And( DdNode * const & x, DdNode * const & y ) override { return Cudd_bddAnd( man, x, y ); }
+    int      GetNumVar() override { return Cudd_ReadSize( man ); }
     void     PrintStats() override
     {
-      using namespace Cudd; 
       uint64_t count = 0;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
 	count += Cudd_DagSize( vNodes[i] );
@@ -73,7 +70,7 @@ namespace Bdd
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
 
-    uint64_t Id( Cudd::DdNode * const & x ) { return (uint64_t)x; }
+    uint64_t Id( DdNode * const & x ) { return (uint64_t)x; }
   };
 }
 
