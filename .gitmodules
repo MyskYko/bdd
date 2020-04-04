@@ -1,6 +1,6 @@
 [submodule "lib/cudd"]
 	path = lib/cudd
-	url = https://github.com/ivmai/cudd.git
+	url = https://github.com/MyskYko/cudd.git
 	ignore = dirty
 [submodule "lib/mockturtle"]
 	path = lib/mockturtle

@@ -1,7 +1,6 @@
 #ifndef BDD_MAN_HPP_
 #define BDD_MAN_HPP_
 
-#include <cstdint>
 #include <vector>
 
 namespace Bdd
