@@ -36,40 +36,59 @@ namespace Bdd
     }
   };
   
-  template<typename var = uint8_t>
-  class SimpleBddMan : public BddMan<uint32_t>
+  class SimpleBddMan : public BddMan<SimpleBdd::lit>
   {
   private:
-    SimpleBdd::BddMan<var> * man;
+    SimpleBdd::BddManWrap * man;
     
   public:
     SimpleBddMan( int nVars )
     {
-      assert( nVars < (int)std::numeric_limits<var>::max() );
       SimpleBddParam p;
-      man = new SimpleBdd::BddMan<var>( nVars, p.nNodes, NULL, p.nVerbose );
+      if( nVars < (int)std::numeric_limits<uint8_t>::max() )
+	{
+	  man = new SimpleBdd::BddMan<uint8_t>( nVars, p.nNodes, NULL, p.nVerbose );
+	}
+      else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
+	{
+	  man = new SimpleBdd::BddMan<uint16_t>( nVars, p.nNodes, NULL, p.nVerbose );
+	}
+      else
+	{
+	  assert(0);
+	}
       man->RefreshConfig( p.fGC, p.fRealloc, p.nMaxGrowth );
     };
 
     SimpleBddMan( int nVars, SimpleBddParam p )
     {
-      assert( nVars < (int)std::numeric_limits<var>::max() );
-      man = new SimpleBdd::BddMan<var>( nVars, p.nNodes, NULL, p.nVerbose );
+      if( nVars < (int)std::numeric_limits<uint8_t>::max() )
+	{
+	  man = new SimpleBdd::BddMan<uint8_t>( nVars, p.nNodes, NULL, p.nVerbose );
+	}
+      else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
+	{
+	  man = new SimpleBdd::BddMan<uint16_t>( nVars, p.nNodes, NULL, p.nVerbose );
+	}
+      else
+	{
+	  assert(0);
+	}
       man->RefreshConfig( p.fGC, p.fRealloc, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }
-    uint32_t Const0() override { return man->LitConst0(); }
-    uint32_t Const1() override { return man->LitConst1(); }
-    uint32_t IthVar( int i ) override { return man->LitIthVar( i ); }
-    uint32_t Regular( uint32_t const & x ) override { return man->LitRegular( x ); }
-    bool IsCompl( uint32_t const & x ) override { return man->LitIsCompl( x ); }
-    int Var( uint32_t const & x ) override { return man->get_order( man->Var( x ) ); }
-    uint32_t Then( uint32_t const & x ) override { return man->Then( x ); }
-    uint32_t Else( uint32_t const & x ) override { return man->Else( x ); }
-    void Ref( uint32_t const & x ) override { man->Ref( x ); }
-    void Deref( uint32_t const & x ) override { man->Deref( x ); }
-    uint32_t NotCond( uint32_t const & x, bool c ) override { return man->LitNotCond( x, c ); }
-    uint32_t And( uint32_t const & x, uint32_t const & y ) override { return man->And( x, y ); }
+    SimpleBdd::lit Const0() override { return man->LitConst0(); }
+    SimpleBdd::lit Const1() override { return man->LitConst1(); }
+    SimpleBdd::lit IthVar( int i ) override { return man->LitIthVar_( i ); }
+    SimpleBdd::lit Regular( SimpleBdd::lit const & x ) override { return man->LitRegular( x ); }
+    bool IsCompl( SimpleBdd::lit const & x ) override { return man->LitIsCompl( x ); }
+    int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var_( x ) ); }
+    SimpleBdd::lit Then( SimpleBdd::lit const & x ) override { return man->Then( x ); }
+    SimpleBdd::lit Else( SimpleBdd::lit const & x ) override { return man->Else( x ); }
+    void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }
+    void Deref( SimpleBdd::lit const & x ) override { man->Deref( x ); }
+    SimpleBdd::lit NotCond( SimpleBdd::lit const & x, bool c ) override { return man->LitNotCond( x, c ); }
+    SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override
     {
@@ -77,7 +96,7 @@ namespace Bdd
       std::cout << "Sum of BDD nodes = " << man->CountNodesArrayIndependent( vNodes ) << std::endl;
     }
 
-    uint64_t Id( uint32_t const & x ) { return (uint64_t)x; }
+    uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }
   };
 }
 

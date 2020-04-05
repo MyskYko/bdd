@@ -11,27 +11,22 @@
 
 namespace SimpleBdd
 {
-  
-template <typename var = uint8_t, typename lit = uint32_t, typename bvar = int32_t, typename mark = uint8_t, typename edge = uint32_t>
-class BddMan
-{
 /**Function*************************************************************
-   
+
    Synopsis    [Data type]
 
    Description [var = Variable, lit = Literal, bvar = BddVariable = Literal >> 1]
-               
+
    SideEffects []
 
    SeeAlso     []
 
 ***********************************************************************/
-/*  typedef uint8_t var;
   typedef uint32_t lit;
   typedef int bvar; // signed lit
   typedef uint8_t mark;
   typedef uint32_t edge;
-*/
+  
 /**Function*************************************************************
    
    Synopsis    [Hash]
@@ -45,10 +40,10 @@ class BddMan
 ***********************************************************************/
   lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 12582917 * Arg0 + 4256249 * Arg1 + 741457 * Arg2; }
   //  lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 67280421310721ull * Arg0 + 2147483647ull * Arg1 + 12582917 * Arg2; }
-  
+
 /**Function*************************************************************
    
-   Synopsis    [Member variables]
+   Synopsis    [Wrapper class]
 
    Description []
                
@@ -57,6 +52,121 @@ class BddMan
    SeeAlso     []
 
 ***********************************************************************/
+
+class BddManWrap
+{
+public:
+  virtual ~BddManWrap() {};
+  virtual int  get_nVars() = 0;
+  virtual int  get_order( int v ) = 0;
+  virtual int  get_pvNodesExists() = 0;
+  virtual void Ref( lit x ) = 0;
+  //  virtual void Pop() = 0;
+  virtual void Deref( lit x ) = 0;
+  //  virtual bvar BvarConst() = 0;
+  //  virtual int  VarInvalid_() = 0;
+  //  virtual bvar BvarInvalid() = 0;
+  //  virtual edge EdgeInvalid() = 0;
+  //  virtual mark MarkInvalid() = 0;
+  //  virtual lit  Bvar2Lit( bvar a, int c ) = 0;
+  //  virtual bvar Lit2Bvar( lit x ) = 0;
+  //  virtual bvar BvarIthVar_( int v ) = 0;
+  //  virtual int  BvarIsEq( bvar a, bvar b ) = 0;
+  //  virtual int  BvarIsConst( bvar a ) = 0;
+  //  virtual int  BvarIsInvalid( bvar a ) = 0;
+  //  virtual int  VarOfBvar_( bvar a ) = 0;
+  //  virtual lit  ThenOfBvar( bvar a ) = 0;
+  //  virtual lit  ElseOfBvar( bvar a ) = 0;
+  //  virtual bvar NextOfBvar( bvar a ) = 0;
+  //  virtual mark MarkOfBvar( bvar a ) = 0;
+  //  virtual edge EdgeOfBvar( bvar a ) = 0;
+  //  virtual void SetVarOfBvar_( bvar a, int v ) = 0;
+  //  virtual void SetThenOfBvar( bvar a, lit x1 ) = 0;
+  //  virtual void SetElseOfBvar( bvar a, lit x0 ) = 0;
+  //  virtual void SetNextOfBvar( bvar a, bvar b ) = 0;
+  //  virtual void SetMarkOfBvar( bvar a, mark m ) = 0;
+  //  virtual void SetEdgeOfBvar( bvar a, edge e ) = 0;
+  //  virtual int  BvarIsRemoved( bvar a ) = 0;
+  //  virtual void SetVarOfBvarRemoved( bvar a ) = 0;
+  //  virtual int  BvarIsVar( bvar a ) = 0;
+  virtual lit  LitRegular( lit x ) = 0;
+  virtual lit  LitNot( lit x ) = 0;
+  virtual lit  LitNotCond( lit x, int c ) = 0;
+  virtual lit  LitConst0() = 0;
+  virtual lit  LitConst1() = 0;
+  //  virtual lit  LitInvalid() = 0;
+  virtual lit  LitIthVar_( int v ) = 0;
+  virtual int  LitIsCompl( lit x ) = 0;
+  //  virtual int  LitIsEq( lit x, lit y ) = 0;
+  //  virtual int  LitIsConst0( lit x ) = 0;
+  //  virtual int  LitIsConst1( lit x ) = 0;
+  //  virtual int  LitIsConst( lit x ) = 0;
+  //  virtual int  LitIsInvalid( lit x ) = 0;
+  //  virtual int  LitIsRemoved( lit x ) = 0;
+  //  virtual int  LitIsVar( lit x )     = 0;
+  virtual int  Var_( lit x ) = 0;
+  virtual lit  Then( lit x ) = 0;
+  virtual lit  Else( lit x ) = 0;
+  //  virtual bvar Next( lit x ) = 0;
+  //  virtual bvar Mark( lit x ) = 0;
+  //  virtual edge Edge( lit x ) = 0;
+  //  virtual void SetMark( lit x, mark m ) = 0;
+  //  virtual void IncMark( lit x ) = 0;
+  //  virtual void DecMark( lit x ) = 0;
+  //  virtual void IncEdge( lit x ) = 0;
+  //  virtual void DecEdge( lit x ) = 0;
+  //  virtual void IncEdgeNonConst( lit x ) = 0;
+  //  virtual void DecEdgeNonConst( lit x ) = 0;
+  //  virtual int  IsLimit() = 0;
+  //  virtual void Mark_rec( lit x ) = 0;
+  //  virtual void Unmark_rec( lit x ) = 0;
+  //  virtual uint64_t Count_rec( lit x ) = 0;
+  //  virtual uint64_t CountNodes( lit x ) = 0;
+  virtual uint64_t CountNodesArrayShared( std::vector<lit> & vNodes ) = 0;
+  virtual uint64_t CountNodesArrayIndependent( std::vector<lit> & vNodes ) = 0;
+  //  virtual void CountEdge_rec( lit x ) = 0;
+  //  virtual void CountEdge( std::vector<lit> & vNodes ) = 0;
+  //  virtual void UncountEdge_rec( lit x ) = 0;
+  //  virtual void UncountEdge( std::vector<lit> & vNodes ) = 0;
+  //  virtual void CountEdgeAndBvar_rec( lit x ) = 0;
+  //  virtual void CountEdgeAndBvar( std::vector<lit> & vNodes ) = 0;
+  //  virtual lit UniqueCreateInt_( int v, lit x1, lit x0 ) = 0;
+  //  virtual lit UniqueCreate_( int v, lit x1, lit x0 ) = 0;
+  //  virtual lit CacheLookup( lit Arg1, lit Arg2 ) = 0;
+  //  virtual lit CacheInsert( lit Arg1, lit Arg2, lit Res ) = 0;
+  //  virtual void CacheClear() = 0;
+  //  virtual lit And_rec( lit x, lit y ) = 0;
+  virtual lit And( lit x, lit y ) = 0;
+  //  virtual lit Or( lit x, lit y ) = 0;
+  //  virtual lit Xnor( lit x, lit y ) = 0;
+  virtual void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth ) = 0;
+  //  virtual int Refresh() = 0;
+  //  virtual void Rehash() = 0;
+  //  virtual void Realloc() = 0;
+  //  virtual void RemoveBvar( bvar a ) = 0;
+  //  virtual void GarbageCollect() = 0;
+  //  virtual void PrintOrdering( std::vector<var> & new2old ) = 0;
+  //  virtual void ShiftBvar( bvar a, int d ) = 0;
+  //  virtual void SwapBvar( bvar a, int fRestore ) = 0;
+  //  virtual int Swap_( int v, bvar & nNodes, int64_t dLimit ) = 0;
+  //  virtual void Shift_( int & pos, bvar & nNodes, int nSwap, int fUp, int & bestPos, bvar & nBestNodes, std::vector<var> & new2old, uint64_t nLimit ) = 0;
+  //  virtual void Reorder() = 0;
+};
+/**Function*************************************************************
+   
+   Synopsis    [Class]
+
+   Description []
+               
+   SideEffects []
+
+   SeeAlso     []
+
+***********************************************************************/
+  
+template <typename var = uint8_t>
+class BddMan : public BddManWrap
+{
 private:
   var    nVars;         // the number of variables
   bvar   nObjs;         // the number of nodes used
@@ -84,10 +194,12 @@ private:
   std::vector<lit> *              pvNodes;   // vector of live nodes (only top of tree)
   
 public:
-  var  get_nVars()         { return nVars;           }
-  var  get_order( var v )  { return vOrdering[v];    }
+  int  get_nVars() { return nVars; }
+  int  get_order( int v ) { return vOrdering[v]; }
   int  get_pvNodesExists() { return pvNodes != NULL; }
-
+  lit  LitIthVar_( int v ) { return LitIthVar( (var)v ); }
+  int  Var_( lit x ) { return Var( x ); }
+  
 /**Function*************************************************************
    
    Synopsis    [Reference]
@@ -310,7 +422,7 @@ public:
 	SetMark( 0, 0 );
     }
   return count;
-}
+  }
 
 /**Function*************************************************************
    
@@ -564,7 +676,8 @@ public:
     p[2] = Res;
     return Res;
   }
-  void CacheClear() {
+  void CacheClear()
+  {
     free( pCache );
     pCache = (lit *)calloc( 3 * (uint64_t)( nCacheMask + 1 ), sizeof(lit) );
   }
@@ -672,7 +785,7 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
+  void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
   {
     fRealloc = fRealloc_;
     fGC = fGC_;

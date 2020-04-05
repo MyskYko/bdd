@@ -7,7 +7,7 @@
 #elif defined(CACBDD)
 #include <CacBddMan.hpp>
 #else
-#error unspecified package
+#error
 #endif
 
 #include <AigBdd.hpp>
@@ -21,7 +21,7 @@ int main( int argc, char ** argv )
     return 1;
   std::string filename = argv[1];
   std::string filename2;
-  if ( argc >= 2 )
+  if ( argc > 2 )
     filename2 = argv[2];
   
   mockturtle::aig_network aig;
@@ -30,24 +30,23 @@ int main( int argc, char ** argv )
   try
     {
 #if defined(SIMPLEBDD)
-      Bdd::SimpleBddMan<> bdd( aig.num_pis() );
+      Bdd::SimpleBddMan bdd( aig.num_pis() );
 #elif defined(CUDD)
       Bdd::CuddMan bdd( aig.num_pis() );
 #elif defined(BUDDY)
       Bdd::BuddyMan bdd( aig.num_pis() );
 #elif defined(CACBDD)
       Bdd::CacBddMan bdd( aig.num_pis() );
-#else
-#error
 #endif
       
       Bdd::Aig2Bdd( aig, bdd );
       bdd.PrintStats();
-      if ( !filename2.empty() ) {
-	mockturtle::aig_network aig2;
-	Bdd::Bdd2Aig( aig2, bdd );
-	mockturtle::write_bench( aig2, filename2 );
-      }
+      if ( !filename2.empty() )
+	{
+	  mockturtle::aig_network aig2;
+	  Bdd::Bdd2Aig( aig2, bdd );
+	  mockturtle::write_bench( aig2, filename2 );
+	}
     }
   catch ( char const * error )
     {
