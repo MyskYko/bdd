@@ -26,9 +26,17 @@ namespace Bdd
 	aig.foreach_fanin( gate, [&]( auto fanin )
 	  {
 	    bdd.Ref( x );
-	    node y = bdd.And( x, bdd.NotCond( m[aig.node_to_index( aig.get_node( fanin ) )], aig.is_complemented( fanin ) ) );
+	    node y = m[aig.node_to_index( aig.get_node( fanin ) )];
+	    if ( aig.is_complemented( fanin ) )
+	      {
+		y = bdd.Not( y );
+		bdd.RefNot( y );
+	      }
+	    node z = bdd.And( x, y );
 	    bdd.Deref( x );
-	    x = y;
+	    if ( aig.is_complemented( fanin ) )
+	      bdd.DerefNot( y );
+	    x = z;
 	  });
 	m[aig.node_to_index( gate )] = x;
 	bdd.Ref( x );
@@ -43,8 +51,11 @@ namespace Bdd
     aig.foreach_po( [&]( auto po )
       {
 	auto index = aig.node_to_index( aig.get_node( po ) );
-	bdd.vNodes.push_back( bdd.NotCond( m[index], aig.is_complemented( po ) ) );
-	bdd.Ref( bdd.vNodes.back() );
+	node x = m[index];
+	if ( aig.is_complemented( po ) )
+	  x = bdd.Not( x );
+	bdd.vNodes.push_back( x );
+	bdd.Ref( x );
 	pFanouts[index] -= 1;
 	if ( pFanouts[index] == 0 )
 	  bdd.Deref( m[index] );

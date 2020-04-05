@@ -53,12 +53,12 @@ namespace Bdd
     DdNode * IthVar( int i ) override { return Cudd_ReadVars( man, i ); }
     DdNode * Regular( DdNode * const & x ) override { return Cudd_Regular( x ); }
     bool     IsCompl( DdNode * const & x ) override { return Cudd_IsComplement( x ); }
+    DdNode * Not( DdNode * const & x ) override { return Cudd_Not( x ); }
     int      Var( DdNode * const & x ) override { return Cudd_NodeReadIndex( x ); }
     DdNode * Then( DdNode * const & x ) override { return Cudd_NotCond( Cudd_T( x ), IsCompl( x ) ); }
     DdNode * Else( DdNode * const & x ) override { return Cudd_NotCond( Cudd_E( x ), IsCompl( x ) ); }
     void     Ref( DdNode * const & x ) override { Cudd_Ref( x ); }
     void     Deref( DdNode * const & x ) override { Cudd_RecursiveDeref( man, x ); }
-    DdNode * NotCond( DdNode * const & x, bool c ) override { return Cudd_NotCond( x, c ); }
     DdNode * And( DdNode * const & x, DdNode * const & y ) override { return Cudd_bddAnd( man, x, y ); }
     int      GetNumVar() override { return Cudd_ReadSize( man ); }
     void     PrintStats() override

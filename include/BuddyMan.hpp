@@ -54,12 +54,12 @@ namespace Bdd
     Buddy::BDD  IthVar( int i ) override { return Buddy::bdd_ithvar( i ); }
     Buddy::BDD  Regular( Buddy::BDD const & x ) override { return x; }
     bool IsCompl( Buddy::BDD const & x ) override { (void)x; return 0; }
+    Buddy::BDD  Not( Buddy::BDD const & x ) override { return Buddy::bdd_not( x ); }
     int  Var( Buddy::BDD const & x ) override { return Buddy::bdd_var( x ); }
     Buddy::BDD  Then( Buddy::BDD const & x ) override { return Buddy::bdd_high( x ); }
     Buddy::BDD  Else( Buddy::BDD const & x ) override { return Buddy::bdd_low( x ); }
     void Ref( Buddy::BDD const & x ) override { Buddy::bdd_addref( x ); }
     void Deref( Buddy::BDD const & x ) override { Buddy::bdd_delref( x ); }
-    Buddy::BDD  NotCond( Buddy::BDD const & x, bool c ) override { return c? Buddy::bdd_not( x ): x; }
     Buddy::BDD  And( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_and( x, y ); }
     int  GetNumVar() override { return Buddy::bdd_varnum(); }
     void PrintStats() override
@@ -74,6 +74,9 @@ namespace Bdd
     }
 
     uint64_t Id( Buddy::BDD const & x ) { return (uint64_t)x; }
+    
+    void RefNot( Buddy::BDD const & x ) override { Buddy::bdd_addref( x ); }
+    void DerefNot( Buddy::BDD const & x ) override { Buddy::bdd_delref( x ); }
   };
 }
 

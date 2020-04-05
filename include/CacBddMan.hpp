@@ -47,12 +47,12 @@ namespace Bdd
     cacBDD::BDD  IthVar( int i ) override { return man->BddVar( i+1 ); }
     cacBDD::BDD  Regular( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp()? !x: x; }
     bool IsCompl( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp(); }
+    cacBDD::BDD  Not( cacBDD::BDD const & x ) override { return !x; }
     int  Var( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.Variable()-1; }
     cacBDD::BDD  Then( cacBDD::BDD const & x ) override { return x.Then(); }
     cacBDD::BDD  Else( cacBDD::BDD const & x ) override { return x.Else(); }
     void Ref( cacBDD::BDD const & x ) override { (void)x; }
     void Deref( cacBDD::BDD const & x ) override { (void)x; }
-    cacBDD::BDD  NotCond( cacBDD::BDD const & x, bool c ) override { return c? !x: x; }
     cacBDD::BDD  And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
     int  GetNumVar() override { return man->manager()->GetVariableCount(); }
     void PrintStats() override

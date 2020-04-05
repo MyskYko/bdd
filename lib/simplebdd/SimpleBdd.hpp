@@ -91,7 +91,7 @@ public:
   //  virtual int  BvarIsVar( bvar a ) = 0;
   virtual lit  LitRegular( lit x ) = 0;
   virtual lit  LitNot( lit x ) = 0;
-  virtual lit  LitNotCond( lit x, int c ) = 0;
+  //  virtual lit  LitNotCond( lit x, int c ) = 0;
   virtual lit  LitConst0() = 0;
   virtual lit  LitConst1() = 0;
   //  virtual lit  LitInvalid() = 0;

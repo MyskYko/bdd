@@ -82,12 +82,12 @@ namespace Bdd
     SimpleBdd::lit IthVar( int i ) override { return man->LitIthVar_( i ); }
     SimpleBdd::lit Regular( SimpleBdd::lit const & x ) override { return man->LitRegular( x ); }
     bool IsCompl( SimpleBdd::lit const & x ) override { return man->LitIsCompl( x ); }
+    SimpleBdd::lit Not( SimpleBdd::lit const & x ) override { return man->LitNot( x ); }
     int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var_( x ) ); }
     SimpleBdd::lit Then( SimpleBdd::lit const & x ) override { return man->Then( x ); }
     SimpleBdd::lit Else( SimpleBdd::lit const & x ) override { return man->Else( x ); }
     void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( SimpleBdd::lit const & x ) override { man->Deref( x ); }
-    SimpleBdd::lit NotCond( SimpleBdd::lit const & x, bool c ) override { return man->LitNotCond( x, c ); }
     SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override
