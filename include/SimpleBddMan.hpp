@@ -92,8 +92,13 @@ namespace Bdd
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override
     {
+      uint64_t count = 0;
+      for ( uint32_t i = 0; i < vNodes.size(); i++ )
+	{
+	  count += man->CountNodes( vNodes[i] );
+	}
       std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes ) << std::endl;
-      std::cout << "Sum of BDD nodes = " << man->CountNodesArrayIndependent( vNodes ) << std::endl;
+      std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
 
     uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }

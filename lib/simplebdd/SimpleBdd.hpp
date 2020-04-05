@@ -121,9 +121,9 @@ public:
   //  virtual void Mark_rec( lit x ) = 0;
   //  virtual void Unmark_rec( lit x ) = 0;
   //  virtual uint64_t Count_rec( lit x ) = 0;
-  //  virtual uint64_t CountNodes( lit x ) = 0;
+  virtual uint64_t CountNodes( lit x ) = 0;
   virtual uint64_t CountNodesArrayShared( std::vector<lit> & vNodes ) = 0;
-  virtual uint64_t CountNodesArrayIndependent( std::vector<lit> & vNodes ) = 0;
+  //  virtual uint64_t CountNodesArrayIndependent( std::vector<lit> & vNodes ) = 0;
   //  virtual void CountEdge_rec( lit x ) = 0;
   //  virtual void CountEdge( std::vector<lit> & vNodes ) = 0;
   //  virtual void UncountEdge_rec( lit x ) = 0;

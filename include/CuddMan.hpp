@@ -65,7 +65,9 @@ namespace Bdd
     {
       uint64_t count = 0;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
-	count += Cudd_DagSize( vNodes[i] );
+	{
+	  count += Cudd_DagSize( vNodes[i] );
+	}
       std::cout << "Shared BDD nodes = " << Cudd_SharingSize( vNodes.data(), vNodes.size() ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
