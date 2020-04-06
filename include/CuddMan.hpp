@@ -12,9 +12,11 @@ namespace Bdd
   struct CuddParam
   {
     // Param
-    int nNodes = CUDD_UNIQUE_SLOTS; // Int 100 10000
-    int nCache = CUDD_CACHE_SLOTS; // Int 10000 1000000
-    int nMaxMem = 0; // Int 10000000 1000000000
+    int nNodes = CUDD_UNIQUE_SLOTS; // Log 1000 100000000
+    int nCache = CUDD_CACHE_SLOTS; // Log 1000 100000000
+    int nMaxMem = 0; // Log 1000 100000000
+    int nReoScheme = 1; // Switch 0 12
+    int nMaxGrowth = 20; // Int 1 200
     // end
     
     CuddParam( std::string fname = "_CuddMan.hpp_setting.txt" )
@@ -29,6 +31,10 @@ namespace Bdd
 	nCache = std::stoi( str );
       if ( std::getline( f, str ) )
 	nMaxMem = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nReoScheme = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nMaxGrowth = std::stoi( str );
     }
   };
     
@@ -42,10 +48,20 @@ namespace Bdd
     {
       CuddParam p;
       man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
+      if( p.nReoScheme )
+	{
+	  Cudd_AutodynEnable( man, (Cudd_ReorderingType)(CUDD_REORDER_SIFT + p.nReoScheme - 1) );
+	  Cudd_SetMaxGrowth( man, 1.0 + p.nMaxGrowth * 0.01 );
+	}
     }
     CuddMan( int nVars, CuddParam p )
     {
       man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
+      if( p.nReoScheme )
+	{
+	  Cudd_AutodynEnable( man, (Cudd_ReorderingType)(CUDD_REORDER_SIFT + p.nReoScheme - 1) );
+	  Cudd_SetMaxGrowth( man, 1.0 + p.nMaxGrowth * 0.01 );
+	}
     }
     ~CuddMan() { Cudd_Quit( man ); }
     DdNode * Const0() override { return Cudd_Not( Cudd_ReadOne( man ) ); }

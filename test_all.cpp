@@ -40,9 +40,9 @@ int main( int argc, char ** argv )
 #endif
       
       Bdd::Aig2Bdd( aig, bdd );
-      bdd.PrintStats();
       if ( !filename2.empty() )
 	{
+	  bdd.PrintStats();
 	  mockturtle::aig_network aig2;
 	  Bdd::Bdd2Aig( aig2, bdd );
 	  mockturtle::write_bench( aig2, filename2 );

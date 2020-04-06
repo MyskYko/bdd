@@ -10,11 +10,11 @@ namespace Bdd
   struct SimpleBddParam
   {
     // Param
-    int  nNodes = 1; // Pow 0 30
+    uint32_t  nNodes = 1; // Pow 0 31
     int  nVerbose = 0; // None 0
     bool fGC = 1; // None 1
     bool fRealloc = 1; // None 1
-    int  nMaxGrowth = 0; // None 0
+    int  nMaxGrowth = 10; // Int 1 200
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
@@ -24,7 +24,7 @@ namespace Bdd
 	return;
       std::string str;
       if ( std::getline( f, str ) )
-	nNodes = std::stoi( str );
+	nNodes = std::stoul( str );
       if ( std::getline( f, str ) )
 	nVerbose = std::stoi( str );
       if ( std::getline( f, str ) )

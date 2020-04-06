@@ -8,7 +8,9 @@ import math
 import opentuner
 from opentuner import ConfigurationManipulator
 from opentuner import IntegerParameter
+from opentuner.search.manipulator import LogIntegerParameter
 from opentuner.search.manipulator import PowerOfTwoParameter
+from opentuner.search.manipulator import SwitchParameter
 from opentuner import MeasurementInterface
 from opentuner import Result
 
@@ -29,8 +31,14 @@ class Tuner(MeasurementInterface):
       if param[0] == "Int":
         manipulator.add_parameter(IntegerParameter(i, int(param[1]), int(param[2])))
         continue
+      if param[0] == "Log":
+        manipulator.add_parameter(LogIntegerParameter(i, int(param[1]), int(param[2])))
+        continue
       if param[0] == "Pow":
         manipulator.add_parameter(PowerOfTwoParameter(i, 2 ** int(param[1]), 2 ** int(param[2])))
+        continue
+      if param[0] == "Switch":
+        manipulator.add_parameter(SwitchParameter(i, int(param[1]), int(param[2])))
         continue
     return manipulator
 
@@ -48,7 +56,7 @@ class Tuner(MeasurementInterface):
         continue
       f.write(str(cfg[i]) + "\n")
     f.close()
-    
+    print(cfg)
     run_result = self.call_program(self.run_cmd)
     print(run_result)
     if run_result['returncode'] != 0:
@@ -64,7 +72,7 @@ class Tuner(MeasurementInterface):
         f.write(param[1] + "\n")
         continue
       f.write(str(cfg[i]) + "\n")
-      if param[0] == "Int":
+      if param[0] == "Int" or param[0] == "Log" or param[0] == "Switch":
         print(str(param[1]) + " < " + str(cfg[i]) + " < " + str(param[2]))
         continue
       if param[0] == "Pow":

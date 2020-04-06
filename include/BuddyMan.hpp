@@ -17,8 +17,9 @@ namespace Bdd
   struct BuddyParam
   {
     // Param
-    int nNodes = 100000; // Int 10000 1000000
-    int nCache = 10000; // Int 10000 100000
+    int nNodes = 1250000; // Log 1000 100000000
+    int nCache = 2612440; // Log 1000 100000000
+    int nReoScheme = 1; // Switch 1 6
     // end
 
     BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )
@@ -31,6 +32,8 @@ namespace Bdd
 	nNodes = std::stoi( str );
       if ( std::getline( f, str ) )
 	nCache = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nReoScheme = std::stoi( str );
     }
   };
     
@@ -42,11 +45,15 @@ namespace Bdd
       BuddyParam p;
       Buddy::bdd_init( p.nNodes, p.nCache );
       Buddy::bdd_setvarnum( nVars );
+      Buddy::bdd_varblockall();
+      Buddy::bdd_autoreorder( p.nReoScheme );
     };
     BuddyMan( int nVars, BuddyParam p )
     {
       Buddy::bdd_init( p.nNodes, p.nCache );
       Buddy::bdd_setvarnum( nVars );
+      Buddy::bdd_varblockall();
+      Buddy::bdd_autoreorder( p.nReoScheme );
     };
     ~BuddyMan() { Buddy::bdd_done(); }
     Buddy::BDD  Const0() override { return Buddy::bdd_false(); }
