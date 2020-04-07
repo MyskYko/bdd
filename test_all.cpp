@@ -6,6 +6,8 @@
 #include <BuddyMan.hpp>
 #elif defined(CACBDD)
 #include <CacBddMan.hpp>
+#elif defined(ATBDD)
+#include <AtBddMan.hpp>
 #else
 #error
 #endif
@@ -37,6 +39,8 @@ int main( int argc, char ** argv )
       Bdd::BuddyMan bdd( aig.num_pis() );
 #elif defined(CACBDD)
       Bdd::CacBddMan bdd( aig.num_pis() );
+#elif defined(ATBDD)
+      Bdd::AtBddMan bdd( aig.num_pis() );
 #endif
       
       Bdd::Aig2Bdd( aig, bdd );

@@ -38,3 +38,7 @@ target_link_libraries(test_cacbdd mockturtle cacbdd)
 target_include_directories(test_cacbdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(test_cacbdd PUBLIC CACBDD)
 
+add_executable(test_atbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
+target_link_libraries(test_atbdd mockturtle atbdd)
+target_include_directories(test_atbdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(test_atbdd PUBLIC ATBDD)

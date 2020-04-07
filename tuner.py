@@ -57,7 +57,7 @@ class Tuner(MeasurementInterface):
       f.write(str(cfg[i]) + "\n")
     f.close()
     print(cfg)
-    run_result = self.call_program(self.run_cmd)
+    run_result = self.call_program(self.run_cmd, limit=60)
     print(run_result)
     if run_result['returncode'] != 0:
       return Result(time=100)

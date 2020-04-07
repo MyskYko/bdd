@@ -17,3 +17,6 @@ set_target_properties(buddy PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CUR
 add_library(cacbdd STATIC IMPORTED GLOBAL)
 set_target_properties(cacbdd PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/cacbdd/libcacBDD.a)
 set_target_properties(cacbdd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/cacbdd/includes)
+
+add_library(atbdd INTERFACE)
+set_target_properties(atbdd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/atbdd)
