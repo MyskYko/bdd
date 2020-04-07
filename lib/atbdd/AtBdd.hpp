@@ -26,6 +26,8 @@ namespace AtBdd
   typedef int bvar; // signed lit
   typedef uint8_t mark;
   typedef uint32_t edge;
+  typedef uint64_t size;
+  typedef int64_t ssize;
   
 /**Function*************************************************************
    
@@ -68,12 +70,12 @@ public:
   //  virtual bvar BvarInvalid() = 0;
   //  virtual edge EdgeInvalid() = 0;
   //  virtual mark MarkInvalid() = 0;
-  //  virtual lit  Bvar2Lit( bvar a, int c ) = 0;
+  //  virtual lit  Bvar2Lit( bvar a, bool c ) = 0;
   //  virtual bvar Lit2Bvar( lit x ) = 0;
   //  virtual bvar BvarIthVar_( int v ) = 0;
-  //  virtual int  BvarIsEq( bvar a, bvar b ) = 0;
-  //  virtual int  BvarIsConst( bvar a ) = 0;
-  //  virtual int  BvarIsInvalid( bvar a ) = 0;
+  //  virtual bool BvarIsEq( bvar a, bvar b ) = 0;
+  //  virtual bool BvarIsConst( bvar a ) = 0;
+  //  virtual bool BvarIsInvalid( bvar a ) = 0;
   //  virtual int  VarOfBvar_( bvar a ) = 0;
   //  virtual lit  ThenOfBvar( bvar a ) = 0;
   //  virtual lit  ElseOfBvar( bvar a ) = 0;
@@ -86,24 +88,24 @@ public:
   //  virtual void SetNextOfBvar( bvar a, bvar b ) = 0;
   //  virtual void SetMarkOfBvar( bvar a, mark m ) = 0;
   //  virtual void SetEdgeOfBvar( bvar a, edge e ) = 0;
-  //  virtual int  BvarIsRemoved( bvar a ) = 0;
+  //  virtual bool BvarIsRemoved( bvar a ) = 0;
   //  virtual void SetVarOfBvarRemoved( bvar a ) = 0;
-  //  virtual int  BvarIsVar( bvar a ) = 0;
+  //  virtual bool BvarIsVar( bvar a ) = 0;
   virtual lit  LitRegular( lit x ) = 0;
   virtual lit  LitNot( lit x ) = 0;
-  //  virtual lit  LitNotCond( lit x, int c ) = 0;
+  //  virtual lit  LitNotCond( lit x, bool c ) = 0;
   virtual lit  LitConst0() = 0;
   virtual lit  LitConst1() = 0;
   //  virtual lit  LitInvalid() = 0;
   virtual lit  LitIthVar_( int v ) = 0;
-  virtual int  LitIsCompl( lit x ) = 0;
-  //  virtual int  LitIsEq( lit x, lit y ) = 0;
-  //  virtual int  LitIsConst0( lit x ) = 0;
-  //  virtual int  LitIsConst1( lit x ) = 0;
-  //  virtual int  LitIsConst( lit x ) = 0;
-  //  virtual int  LitIsInvalid( lit x ) = 0;
-  //  virtual int  LitIsRemoved( lit x ) = 0;
-  //  virtual int  LitIsVar( lit x )     = 0;
+  virtual bool LitIsCompl( lit x ) = 0;
+  //  virtual bool LitIsEq( lit x, lit y ) = 0;
+  //  virtual bool LitIsConst0( lit x ) = 0;
+  //  virtual bool LitIsConst1( lit x ) = 0;
+  //  virtual bool LitIsConst( lit x ) = 0;
+  //  virtual bool LitIsInvalid( lit x ) = 0;
+  //  virtual bool LitIsRemoved( lit x ) = 0;
+  //  virtual bool LitIsVar( lit x )     = 0;
   virtual int  Var_( lit x ) = 0;
   virtual lit  Then( lit x ) = 0;
   virtual lit  Else( lit x ) = 0;
@@ -117,7 +119,7 @@ public:
   //  virtual void DecEdge( lit x ) = 0;
   //  virtual void IncEdgeNonConst( lit x ) = 0;
   //  virtual void DecEdgeNonConst( lit x ) = 0;
-  //  virtual int  IsLimit() = 0;
+  //  virtual bool IsLimit() = 0;
   //  virtual void Mark_rec( lit x ) = 0;
   //  virtual void Unmark_rec( lit x ) = 0;
   //  virtual uint64_t Count_rec( lit x ) = 0;
@@ -139,17 +141,17 @@ public:
   virtual lit And( lit x, lit y ) = 0;
   //  virtual lit Or( lit x, lit y ) = 0;
   //  virtual lit Xnor( lit x, lit y ) = 0;
-  virtual void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth ) = 0;
-  //  virtual int Refresh() = 0;
+  virtual void RefreshConfig( bool fRealloc_, bool fGC_, int nMaxGrowth ) = 0;
+  //  virtual bool Refresh() = 0;
   //  virtual void Rehash() = 0;
   //  virtual void Realloc() = 0;
   //  virtual void RemoveBvar( bvar a ) = 0;
   //  virtual void GarbageCollect() = 0;
   //  virtual void PrintOrdering( std::vector<var> & new2old ) = 0;
   //  virtual void ShiftBvar( bvar a, int d ) = 0;
-  //  virtual void SwapBvar( bvar a, int fRestore ) = 0;
-  //  virtual int Swap_( int v, bvar & nNodes, int64_t dLimit ) = 0;
-  //  virtual void Shift_( int & pos, bvar & nNodes, int nSwap, int fUp, int & bestPos, bvar & nBestNodes, std::vector<var> & new2old, uint64_t nLimit ) = 0;
+  //  virtual void SwapBvar( bvar a, bool fRestore ) = 0;
+  //  virtual bool Swap_( int v, bvar & nNodes, int64_t dLimit ) = 0;
+  //  virtual void Shift_( int & pos, bvar & nNodes, int nSwap, bool fUp, int & bestPos, bvar & nBestNodes, std::vector<var> & new2old, uint64_t nLimit ) = 0;
   //  virtual void Reorder() = 0;
 };
 /**Function*************************************************************
@@ -182,16 +184,16 @@ private:
   lit    nCacheMask;    // selection mask for computed table
   lit    nMinRemoved;   // the minimum int of removed nodes
 
-  uint64_t nCacheHit;
-  uint64_t nCacheFind;
-  uint64_t nCall;
-  uint64_t nCallThold;
-  double   HitRateOld;
+  size   nCacheHit;
+  size   nCacheFind;
+  size   nCall;
+  size   nCallThold;
+  double HitRateOld;
   
   int    nRefresh;      // the number of refresh tried
-  int    fGC;           // flag of garbage collection
-  int    fRealloc;      // flag of reallocation
-  uint64_t nReo;          // threshold to run reordering
+  bool   fGC;           // flag of garbage collection
+  bool   fRealloc;      // flag of reallocation
+  size   nReo;          // threshold to run reordering
   double MaxGrowth;     // threshold to terminate reordering. 0=off
   edge * pEdges;        // array of number of incoming edges for nodes
   
@@ -258,8 +260,8 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  lit  Bvar2Lit( bvar a, int c ) { return a + a + (int)( c > 0 ); }
-  bvar Lit2Bvar( lit x )         { return x >> 1;                 }
+  lit  Bvar2Lit( bvar a, bool c ) { return a + a + (int)c; }
+  bvar Lit2Bvar( lit x )          { return x >> 1;         }
 
 /**Function*************************************************************
    
@@ -273,9 +275,9 @@ public:
 
 ***********************************************************************/
   bvar BvarIthVar( var v )        { return v + 1;                        }
-  int  BvarIsEq( bvar a, bvar b ) { return a == b;                       }
-  int  BvarIsConst( bvar a )      { return BvarIsEq( a, BvarConst() );   }
-  int  BvarIsInvalid( bvar a )    { return BvarIsEq( a, BvarInvalid() ); }
+  bool BvarIsEq( bvar a, bvar b ) { return a == b;                       }
+  bool BvarIsConst( bvar a )      { return BvarIsEq( a, BvarConst() );   }
+  bool BvarIsInvalid( bvar a )    { return BvarIsEq( a, BvarInvalid() ); }
 
   var  VarOfBvar( bvar a )        { return pVars[a];                     }
   lit  ThenOfBvar( bvar a )       { return pObjs[Bvar2Lit( a, 0 )];      }
@@ -291,9 +293,9 @@ public:
   void SetMarkOfBvar( bvar a, mark m ) { pMarks[a] = m;                }
   void SetEdgeOfBvar( bvar a, edge e ) { pEdges[a] = e;                }
 
-  int  BvarIsRemoved( bvar a )       { return VarOfBvar( a ) == VarInvalid();        }
+  bool BvarIsRemoved( bvar a )       { return VarOfBvar( a ) == VarInvalid();        }
   void SetVarOfBvarRemoved( bvar a ) { SetVarOfBvar( a, VarInvalid() );              }
-  int  BvarIsVar( bvar a )           { return a <= (bvar)nVars && !BvarIsConst( a ); }
+  bool BvarIsVar( bvar a )           { return a <= (bvar)nVars && !BvarIsConst( a ); }
   
 /**Function*************************************************************
    
@@ -306,21 +308,21 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  lit  LitRegular( lit x )        { return x & ~01;                        }
-  lit  LitNot( lit x )            { return x ^ 1;                          }
-  lit  LitNotCond( lit x, int c ) { return x ^ (int)( c > 0 );             }
-  lit  LitConst0()                { return Bvar2Lit( BvarConst(), 0 );     }
-  lit  LitConst1()                { return LitNot( LitConst0() );          }
-  lit  LitInvalid()               { return Bvar2Lit( BvarInvalid(), 0 );   }
-  lit  LitIthVar( var v )         { return Bvar2Lit( BvarIthVar( v ), 0 ); }
-  int  LitIsCompl( lit x )        { return x & 1;                          }
-  int  LitIsEq( lit x, lit y )    { return x == y;                         }
-  int  LitIsConst0( lit x )       { return LitIsEq( x, LitConst0() );      }
-  int  LitIsConst1( lit x )       { return LitIsEq( x, LitConst1() );      }
-  int  LitIsConst( lit x )        { return BvarIsConst( Lit2Bvar( x ) );   }
-  int  LitIsInvalid( lit x )      { return BvarIsInvalid( Lit2Bvar( x ) ); }
-  int  LitIsRemoved( lit x )      { return Var( x ) == VarInvalid();       }
-  int  LitIsVar( lit x )          { return BvarIsVar( Lit2Bvar( x ) );     }
+  lit  LitRegular( lit x )         { return x & ~01;                        }
+  lit  LitNot( lit x )             { return x ^ 1;                          }
+  lit  LitNotCond( lit x, bool c ) { return x ^ (int)c;                     }
+  lit  LitConst0()                 { return Bvar2Lit( BvarConst(), 0 );     }
+  lit  LitConst1()                 { return LitNot( LitConst0() );          }
+  lit  LitInvalid()                { return Bvar2Lit( BvarInvalid(), 0 );   }
+  lit  LitIthVar( var v )          { return Bvar2Lit( BvarIthVar( v ), 0 ); }
+  bool LitIsCompl( lit x )         { return x & 1;                          }
+  bool LitIsEq( lit x, lit y )     { return x == y;                         }
+  bool LitIsConst0( lit x )        { return LitIsEq( x, LitConst0() );      }
+  bool LitIsConst1( lit x )        { return LitIsEq( x, LitConst1() );      }
+  bool LitIsConst( lit x )         { return BvarIsConst( Lit2Bvar( x ) );   }
+  bool LitIsInvalid( lit x )       { return BvarIsInvalid( Lit2Bvar( x ) ); }
+  bool LitIsRemoved( lit x )       { return Var( x ) == VarInvalid();       }
+  bool LitIsVar( lit x )           { return BvarIsVar( Lit2Bvar( x ) );     }
   
   var  Var( lit x )  { return VarOfBvar( Lit2Bvar( x ) ); }
   lit  Then( lit x ) { return LitNotCond( pObjs[LitRegular( x )], LitIsCompl( x ) ); }
@@ -349,7 +351,7 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  int  IsLimit() { return (lit)nObjs == nObjsAlloc || nObjs == BvarInvalid(); }
+  bool IsLimit() { return (lit)nObjs == nObjsAlloc || nObjs == BvarInvalid(); }
   
 /**Function*************************************************************
    
@@ -390,23 +392,23 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  uint64_t Count_rec( lit x )
+  size Count_rec( lit x )
   {
     if ( /*LitIsConst( x ) ||*/ Mark( x ) )
       return 0;
     SetMark( x, 1 );
     return 1 + Count_rec( Else( x ) ) + Count_rec( Then( x ) );
   }
-  uint64_t CountNodes( lit x )
+  size CountNodes( lit x )
   {
-    uint64_t count = Count_rec( x );
+    size count = Count_rec( x );
     Unmark_rec( x );
     SetMark( 0, 0 );
     return count;
   }
-  uint64_t CountNodesArrayShared( std::vector<lit> & vNodes )
+  size CountNodesArrayShared( std::vector<lit> & vNodes )
   {
-    uint64_t count = 0;
+    size count = 0;
     for ( lit x : vNodes )
       count += Count_rec( x );
     //for ( var v = 0; v < nVars; v++ )
@@ -418,9 +420,9 @@ public:
     SetMark( 0, 0 );
     return count; // +4
   }
-  uint64_t CountNodesArrayIndependent( std::vector<lit> & vNodes )
+  size CountNodesArrayIndependent( std::vector<lit> & vNodes )
   {
-    uint64_t count = 0;
+    size count = 0;
     for ( lit x : vNodes )
       {
 	if ( LitIsConst( x ) || LitIsVar( x ) )
@@ -550,8 +552,8 @@ public:
     pVars       = (var *)calloc( nObjsAlloc, sizeof(var) );
     pUnique     = (bvar *)calloc( nUniqueMask + 1, sizeof(bvar) );
     pNexts      = (bvar *)calloc( nUniqueMask + 1, sizeof(bvar) );
-    pCache      = (lit *)calloc( 3 * (uint64_t)( nCacheMask + 1 ), sizeof(lit) );
-    pObjs       = (lit *)calloc( 2 * (uint64_t)nObjsAlloc, sizeof(lit) );
+    pCache      = (lit *)calloc( 3 * (size)( nCacheMask + 1 ), sizeof(lit) );
+    pObjs       = (lit *)calloc( 2 * (size)nObjsAlloc, sizeof(lit) );
     pMarks      = (mark *)calloc( nObjsAlloc, sizeof(mark) );
     if ( !pVars || !pUnique || !pNexts || !pCache || !pObjs || !pMarks )
       throw "Allocation failed";
@@ -582,9 +584,9 @@ public:
     if ( nVerbose )
       {
 	if ( nObjsAlloc > (lit)BvarInvalid() )
-	  std::cout << "Free : Var = " << (uint64_t)nVars << " Obj = " << (uint64_t)nObjs << " Alloc = " << (uint64_t)BvarInvalid() << std::endl;
+	  std::cout << "Free : Var = " << (size)nVars << " Obj = " << (size)nObjs << " Alloc = " << (size)BvarInvalid() << std::endl;
 	else
-	  std::cout << "Free : Var = " << (uint64_t)nVars << " Obj = " << (uint64_t)nObjs << " Alloc = " << (uint64_t)nObjsAlloc << std::endl;
+	  std::cout << "Free : Var = " << (size)nVars << " Obj = " << (size)nObjs << " Alloc = " << (size)nObjsAlloc << std::endl;
       }
     free( pUnique );
     free( pNexts );
@@ -635,7 +637,7 @@ public:
     SetElseOfBvar( *q, x0 );
     SetNextOfBvar( *q, head );
     if ( nVerbose >= 3 )
-      std::cout << "Add " << (uint64_t)*q << " : Var = " << (uint64_t)v << " Then = " << (uint64_t)x1 << " Else = " << (uint64_t)x0 << " MinRemoved = " << (uint64_t)nMinRemoved << std::endl;
+      std::cout << "Add " << (size)*q << " : Var = " << (size)v << " Then = " << (size)x1 << " Else = " << (size)x0 << " MinRemoved = " << (size)nMinRemoved << std::endl;
     return Bvar2Lit( *q, 0 );
   }
   
@@ -675,7 +677,7 @@ public:
   lit CacheLookup( lit Arg1, lit Arg2 )
   {
     nCacheFind++;
-    lit * p = pCache + 3 * (uint64_t)( Hash( 0, Arg1, Arg2 ) & nCacheMask );
+    lit * p = pCache + 3 * (size)( Hash( 0, Arg1, Arg2 ) & nCacheMask );
     if ( p[0] == Arg1 && p[1] == Arg2 )
       {
 	nCacheHit++;
@@ -687,7 +689,7 @@ public:
   {
     if ( LitIsInvalid( Res ) )
       return Res;
-    lit * p = pCache + 3 * (uint64_t)( Hash( 0, Arg1, Arg2 ) & nCacheMask );
+    lit * p = pCache + 3 * (size)( Hash( 0, Arg1, Arg2 ) & nCacheMask );
     p[0] = Arg1;
     p[1] = Arg2;
     p[2] = Res;
@@ -700,8 +702,8 @@ public:
     lit nCacheMaskOld = nCacheMask;
     nCache = nCache + nCache;
     nCacheMask = ( (lit)1 << (int)log2( nCache ) ) - 1;
-    pCache = (lit *)realloc( pCache, sizeof(lit) * 3 * (uint64_t)( nCacheMask + 1 ) );
-    memset( pCache + 3 * (uint64_t)( nCacheMaskOld + 1 ), 0, sizeof(lit) * 3 * (uint64_t)( nCacheMaskOld + 1 ) );
+    pCache = (lit *)realloc( pCache, sizeof(lit) * 3 * (size)( nCacheMask + 1 ) );
+    memset( pCache + 3 * (size)( nCacheMaskOld + 1 ), 0, sizeof(lit) * 3 * (size)( nCacheMaskOld + 1 ) );
     if ( !pCache )
       throw "Allocation failed";
     for ( lit i = 0; i <= nCacheMaskOld; i++ )
@@ -736,7 +738,7 @@ public:
   void CacheClear()
   {
     free( pCache );
-    pCache = (lit *)calloc( 3 * (uint64_t)( nCacheMask + 1 ), sizeof(lit) );
+    pCache = (lit *)calloc( 3 * (size)( nCacheMask + 1 ), sizeof(lit) );
     nCacheHit   = 0;
     nCacheFind  = 0;
     nCall       = 0;
@@ -848,7 +850,7 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  void RefreshConfig( int fRealloc_, int fGC_, int nMaxGrowth )
+  void RefreshConfig( bool fRealloc_, bool fGC_, int nMaxGrowth )
   {
     fRealloc = fRealloc_;
     fGC = fGC_;
@@ -869,7 +871,7 @@ public:
 	liveBvars.resize( nVars + 2 );
       }
   }
-  int Refresh()
+  bool Refresh()
   {
     nRefresh += 1;
     if ( nVerbose )
@@ -879,7 +881,7 @@ public:
 	GarbageCollect();
 	return 0;
       }
-    if ( nRefresh <= 2 && MaxGrowth && (uint64_t)nObjs > nReo )
+    if ( nRefresh <= 2 && MaxGrowth && (size)nObjs > nReo )
       {
 	Reorder();
 	nReo = nReo + nReo;
@@ -941,19 +943,19 @@ public:
     nObjsAlloc  = nObjsAlloc + nObjsAlloc;
     if ( nVerbose )
       std::cout << "\tReallocate " << nObjsAlloc << " nodes" << std::endl;
-    nUniqueMask = ( 1 << (int)log2( nObjsAlloc ) ) - 1;
+    nUniqueMask = ( (lit)1 << (int)log2( nObjsAlloc ) ) - 1;
     assert( ((nUniqueMaskOld << 1) ^ 01) == nUniqueMask );
     pVars       = (var *)realloc( pVars, sizeof(var) * nObjsAlloc );
     pUnique     = (bvar *)realloc( pUnique, sizeof(bvar) * ( nUniqueMask + 1 ) );
     pNexts      = (bvar *)realloc( pNexts, sizeof(bvar) * ( nUniqueMask + 1 ) );
-    pObjs       = (lit *)realloc( pObjs, sizeof(lit) * 2 * (uint64_t)nObjsAlloc );
+    pObjs       = (lit *)realloc( pObjs, sizeof(lit) * 2 * (size)nObjsAlloc );
     pMarks      = (mark *)realloc( pMarks, sizeof(mark) * nObjsAlloc );
     if ( !pVars || !pUnique || !pNexts || !pObjs || !pMarks )
       throw "Reallocation failed";
     memset( pVars + nObjsAllocOld, 0, sizeof(var) * nObjsAllocOld );
     memset( pUnique + ( nUniqueMaskOld + 1 ), 0, sizeof(bvar) * ( nUniqueMaskOld + 1 ) );
     memset( pNexts + ( nUniqueMaskOld + 1 ), 0, sizeof(bvar) * ( nUniqueMaskOld + 1 ) );
-    memset( pObjs + 2 * (uint64_t)nObjsAllocOld, 0, sizeof(lit) * 2 * (uint64_t)nObjsAllocOld );
+    memset( pObjs + 2 * (size)nObjsAllocOld, 0, sizeof(lit) * 2 * (size)nObjsAllocOld );
     memset( pMarks + nObjsAllocOld, 0, sizeof(mark) * nObjsAllocOld );
     Rehash();
     if ( pEdges )
@@ -1057,7 +1059,7 @@ public:
     *next = *q;
     *q = a;
   }
-  void SwapBvar( bvar a, int fRestore )
+  void SwapBvar( bvar a, bool fRestore )
   {
     var v = VarOfBvar( a );
     lit x1 = ThenOfBvar( a );
@@ -1139,7 +1141,7 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  int Swap( var v, bvar & nNodes, int64_t dLimit )
+  bool Swap( var v, bvar & nNodes, ssize dLimit )
   {
     liveBvars[nVars].clear();
     liveBvars[nVars + 1].clear();
@@ -1178,10 +1180,10 @@ public:
 	  {
 	    SwapBvar( a, 0 );
 	    liveBvars[nVars].push_back( a );
-	    if ( (int64_t)liveBvars[nVars].size()
-		 + (int64_t)liveBvars[nVars + 1].size()
-		 - (int64_t)liveBvars[v].size()
-		 - (int64_t)liveBvars[v + 1].size()
+	    if ( (ssize)liveBvars[nVars].size()
+		 + (ssize)liveBvars[nVars + 1].size()
+		 - (ssize)liveBvars[v].size()
+		 - (ssize)liveBvars[v + 1].size()
 		 >
 		 dLimit )
 	      {
@@ -1193,7 +1195,7 @@ public:
     if ( !nOut )
       {
 	// swap liveBvars
-	nNodes += (int64_t)liveBvars[nVars].size() + liveBvars[nVars + 1].size() - liveBvars[v].size() - liveBvars[v + 1].size();
+	nNodes += (ssize)liveBvars[nVars].size() + liveBvars[nVars + 1].size() - liveBvars[v].size() - liveBvars[v + 1].size();
 	std::iter_swap(liveBvars.begin() + v, liveBvars.begin() + nVars);
 	std::iter_swap(liveBvars.begin() + v + 1, liveBvars.begin() + nVars + 1);
 	return 0;
@@ -1262,14 +1264,14 @@ public:
       }
     return -1;
   }
-  void Shift( var & pos, bvar & nNodes, var nSwap, int fUp, var & bestPos, bvar & nBestNodes, std::vector<var> & new2old, uint64_t nLimit )
+  void Shift( var & pos, bvar & nNodes, var nSwap, bool fUp, var & bestPos, bvar & nBestNodes, std::vector<var> & new2old, size nLimit )
   {
     double MaxGrowth_ = MaxGrowth;
     int nRefresh_ = nRefresh;
     MaxGrowth = 0;
     for ( var i = 0; i < nSwap; i++ )
       {
-	int64_t dLimit = nLimit - nNodes;
+	ssize dLimit = nLimit - nNodes;
 	nRefresh = 0;
 	if ( fUp )
 	  pos -= 1;
@@ -1335,7 +1337,7 @@ public:
     bvar nNodes = 0;
     for ( var v = 0; v < nVars; v++ )
       nNodes += liveBvars[v].size();
-    uint64_t nLimit = (uint64_t)nNodes * MaxGrowth + nNodes;
+    size nLimit = (size)nNodes * MaxGrowth + nNodes;
     if ( nVerbose  >= 2 )
       {
 	std::cout << "nNode for each level :" << std::endl;
@@ -1348,12 +1350,12 @@ public:
     for ( var i = 0; i < nVars; i++ )
       {
 	var pos = std::distance( new2old.begin(), std::find( new2old.begin(), new2old.end(), descendingOrder[i] ) );
-	int fUp = 0;
+	bool fUp = 0;
 	var nSwap;
 	var bestPos = pos;
 	bvar nBestNodes = nNodes;
 	if ( nVerbose >= 2 )
-	  std::cout << "\tBegin shift " << (uint64_t)vOrdering[descendingOrder[i]] << " (" << (uint64_t)i + 1 << "/" << (uint64_t)nVars << std::endl;
+	  std::cout << "\tBegin shift " << (size)vOrdering[descendingOrder[i]] << " (" << (size)i + 1 << "/" << (size)nVars << std::endl;
 	if( pos < nVars >> 1 )
 	  {
 	    fUp ^= 1;
