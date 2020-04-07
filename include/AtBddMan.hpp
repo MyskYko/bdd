@@ -11,9 +11,10 @@ namespace Bdd
   {
     // Param
     uint32_t nNodes = 1 << 20; // Pow 0 31
+    uint32_t nUnique = 1 << 22; // Pow 0 31
     uint32_t nCache = 1 << 18; // Pow 10 31 
     int  nVerbose = 0; // None 0
-    bool fGC = 1; // None 1
+    bool fGC = 1; // None 0
     bool fRealloc = 1; // None 1
     int  nMaxGrowth = 0; // None 0
     // end
@@ -26,6 +27,8 @@ namespace Bdd
       std::string str;
       if ( std::getline( f, str ) )
 	nNodes = std::stoul( str );
+      if ( std::getline( f, str ) )
+	nUnique = std::stoul( str );
       if ( std::getline( f, str ) )
 	nCache = std::stoul( str );
       if ( std::getline( f, str ) )
@@ -50,11 +53,11 @@ namespace Bdd
       AtBddParam p;
       if( nVars < (int)std::numeric_limits<uint8_t>::max() )
 	{
-	  man = new AtBdd::BddMan<uint8_t>( nVars, p.nNodes, p.nCache, NULL, p.nVerbose );
+	  man = new AtBdd::BddMan<uint8_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
 	}
       else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
 	{
-	  man = new AtBdd::BddMan<uint16_t>( nVars, p.nNodes, p.nCache, NULL, p.nVerbose );
+	  man = new AtBdd::BddMan<uint16_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
 	}
       else
 	{
@@ -67,11 +70,11 @@ namespace Bdd
     {
       if( nVars < (int)std::numeric_limits<uint8_t>::max() )
 	{
-	  man = new AtBdd::BddMan<uint8_t>( nVars, p.nNodes, p.nCache, NULL, p.nVerbose );
+	  man = new AtBdd::BddMan<uint8_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
 	}
       else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
 	{
-	  man = new AtBdd::BddMan<uint16_t>( nVars, p.nNodes, p.nCache, NULL, p.nVerbose );
+	  man = new AtBdd::BddMan<uint16_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
 	}
       else
 	{

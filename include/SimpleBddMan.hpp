@@ -12,9 +12,9 @@ namespace Bdd
     // Param
     uint32_t  nNodes = 1; // Pow 0 31
     int  nVerbose = 0; // None 0
-    bool fGC = 1; // None 1
+    bool fGC = 1; // None 0
     bool fRealloc = 1; // None 1
-    int  nMaxGrowth = 10; // Int 1 200
+    int  nMaxGrowth = 10; // None 0
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
@@ -57,7 +57,7 @@ namespace Bdd
 	{
 	  assert(0);
 	}
-      man->RefreshConfig( p.fGC, p.fRealloc, p.nMaxGrowth );
+      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
 
     SimpleBddMan( int nVars, SimpleBddParam p )
@@ -74,7 +74,7 @@ namespace Bdd
 	{
 	  assert(0);
 	}
-      man->RefreshConfig( p.fGC, p.fRealloc, p.nMaxGrowth );
+      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }
     SimpleBdd::lit Const0() override { return man->LitConst0(); }

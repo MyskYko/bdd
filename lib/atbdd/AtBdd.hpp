@@ -40,7 +40,8 @@ namespace AtBdd
    SeeAlso     []
 
 ***********************************************************************/
-  lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 12582917 * Arg0 + 4256249 * Arg1 + 741457 * Arg2; }
+//  lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 12582917 * Arg0 + 4256249 * Arg1 + 741457 * Arg2; }
+  lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 12582917 * Arg0 + Arg1 + 4256249 * Arg2; }
   //  lit Hash( lit Arg0, lit Arg1, lit Arg2 ) { return 67280421310721ull * Arg0 + 2147483647ull * Arg1 + 12582917 * Arg2; }
 
 /**Function*************************************************************
@@ -173,7 +174,8 @@ private:
   var    nVars;         // the number of variables
   bvar   nObjs;         // the number of nodes used
   lit    nObjsAlloc;    // the number of nodes allocated
-  lit    nCache;        // the number of cache spots
+  lit    nUnique;       // the number of buckets in unique table
+  lit    nCache;        // the number of cache
   bvar * pUnique;       // unique table for nodes
   bvar * pNexts;        // next pointer for nodes
   lit *  pCache;        // array of triples <arg0, arg1, AND(arg0, arg1)>
@@ -524,7 +526,7 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  BddMan( var nVars, lit nObjsAlloc_, lit nCache_, std::vector<var> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nCache(nCache_), nVerbose(nVerbose)
+  BddMan( var nVars, lit nObjsAlloc_, lit nUnique_, lit nCache_, std::vector<var> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nUnique(nUnique_), nCache(nCache_), nVerbose(nVerbose)
   {
     if ( nVars == VarInvalid() )
       throw "Varable overflow";
@@ -534,6 +536,8 @@ public:
 	  throw "Node overflow just for Variables\n";
 	nObjsAlloc = nObjsAlloc + nObjsAlloc;
       }
+    if ( nUnique < (nObjsAlloc >> 2) )
+      nUnique = nObjsAlloc >> 2;
     if ( nVerbose )
       std::cout << "Allocate " << nObjsAlloc << " nodes" << std::endl;
     nRefresh    = 0;
@@ -544,14 +548,14 @@ public:
     nCacheHit   = 0;
     nCacheFind  = 0;
     nCall       = 0;
-    nCallThold  = 1000000;
-    HitRateOld  = 0;
+    nCallThold  = 2000000;
+    HitRateOld  = 1;
     nMinRemoved = nObjsAlloc;
-    nUniqueMask = ( (lit)1 << (int)log2( nObjsAlloc ) ) - 1;
+    nUniqueMask = ( (lit)1 << (int)log2( nUnique ) ) - 1;
     nCacheMask  = ( (lit)1 << (int)log2( nCache ) ) - 1;
     pVars       = (var *)calloc( nObjsAlloc, sizeof(var) );
     pUnique     = (bvar *)calloc( nUniqueMask + 1, sizeof(bvar) );
-    pNexts      = (bvar *)calloc( nUniqueMask + 1, sizeof(bvar) );
+    pNexts      = (bvar *)calloc( nObjsAlloc, sizeof(bvar) );
     pCache      = (lit *)calloc( 3 * (size)( nCacheMask + 1 ), sizeof(lit) );
     pObjs       = (lit *)calloc( 2 * (size)nObjsAlloc, sizeof(lit) );
     pMarks      = (mark *)calloc( nObjsAlloc, sizeof(mark) );
@@ -730,7 +734,7 @@ public:
     if ( nCall < nCallThold )
       return;
     double HitRate = nCacheHit * 1.0 / nCacheFind;
-    if ( HitRateOld && HitRate > HitRateOld )
+    if ( HitRate > HitRateOld )
       CacheResize();
     HitRateOld = HitRate;
     nCallThold = nCallThold + nCallThold;
@@ -739,11 +743,13 @@ public:
   {
     free( pCache );
     pCache = (lit *)calloc( 3 * (size)( nCacheMask + 1 ), sizeof(lit) );
+    /*
     nCacheHit   = 0;
     nCacheFind  = 0;
     nCall       = 0;
     nCallThold  = 1000000;
     HitRateOld  = 0;
+    */
   }
   
 /**Function*************************************************************
@@ -906,9 +912,17 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  void Rehash()
+  void Resize()
   {
-    lit nUniqueMaskOld = nUniqueMask >> 1; // assuming it has been doubled
+    if ( nUnique > (lit)BvarInvalid() )
+      return;
+    nUnique = nUnique + nUnique;
+    lit nUniqueMaskOld = nUniqueMask;
+    nUniqueMask = ( (lit)1 << (int)log2( nUnique ) ) - 1;
+    pUnique = (bvar *)realloc( pUnique, sizeof(bvar) * ( nUniqueMask + 1 ) );
+    if ( !pUnique )
+      throw "Reallocation failed";
+    memset( pUnique + ( nUniqueMaskOld + 1 ), 0, sizeof(bvar) * ( nUniqueMaskOld + 1 ) );
     for ( lit i = 0; i <= nUniqueMaskOld; i++ )
       {
 	bvar * q = pUnique + i;
@@ -938,26 +952,20 @@ public:
   void Realloc()
   {
     lit nObjsAllocOld = nObjsAlloc;
-    lit nUniqueMaskOld = nUniqueMask;
     assert( nObjsAlloc <= (lit)BvarInvalid() );
     nObjsAlloc  = nObjsAlloc + nObjsAlloc;
     if ( nVerbose )
       std::cout << "\tReallocate " << nObjsAlloc << " nodes" << std::endl;
-    nUniqueMask = ( (lit)1 << (int)log2( nObjsAlloc ) ) - 1;
-    assert( ((nUniqueMaskOld << 1) ^ 01) == nUniqueMask );
     pVars       = (var *)realloc( pVars, sizeof(var) * nObjsAlloc );
-    pUnique     = (bvar *)realloc( pUnique, sizeof(bvar) * ( nUniqueMask + 1 ) );
-    pNexts      = (bvar *)realloc( pNexts, sizeof(bvar) * ( nUniqueMask + 1 ) );
+    pNexts      = (bvar *)realloc( pNexts, sizeof(bvar) * nObjsAlloc );
     pObjs       = (lit *)realloc( pObjs, sizeof(lit) * 2 * (size)nObjsAlloc );
     pMarks      = (mark *)realloc( pMarks, sizeof(mark) * nObjsAlloc );
-    if ( !pVars || !pUnique || !pNexts || !pObjs || !pMarks )
+    if ( !pVars || !pNexts || !pObjs || !pMarks )
       throw "Reallocation failed";
     memset( pVars + nObjsAllocOld, 0, sizeof(var) * nObjsAllocOld );
-    memset( pUnique + ( nUniqueMaskOld + 1 ), 0, sizeof(bvar) * ( nUniqueMaskOld + 1 ) );
-    memset( pNexts + ( nUniqueMaskOld + 1 ), 0, sizeof(bvar) * ( nUniqueMaskOld + 1 ) );
+    memset( pNexts + nObjsAllocOld, 0, sizeof(bvar) * nObjsAllocOld );
     memset( pObjs + 2 * (size)nObjsAllocOld, 0, sizeof(lit) * 2 * (size)nObjsAllocOld );
     memset( pMarks + nObjsAllocOld, 0, sizeof(mark) * nObjsAllocOld );
-    Rehash();
     if ( pEdges )
       {
 	pEdges = (edge *)realloc( pEdges, sizeof(edge) * nObjsAlloc );
@@ -965,6 +973,8 @@ public:
 	  throw "Reallocation failed";
 	memset ( pEdges + nObjsAllocOld, 0, sizeof(edge) * nObjsAllocOld );
       }
+    if ( (nObjsAlloc >> 2) > nUnique )
+      Resize();
   }
   
 /**Function*************************************************************
