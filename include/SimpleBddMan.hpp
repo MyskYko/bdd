@@ -39,51 +39,29 @@ namespace Bdd
   class SimpleBddMan : public BddMan<SimpleBdd::lit>
   {
   private:
-    SimpleBdd::BddManWrap * man;
+    SimpleBdd::BddMan * man;
     
   public:
     SimpleBddMan( int nVars )
     {
       SimpleBddParam p;
-      if( nVars < (int)std::numeric_limits<uint8_t>::max() )
-	{
-	  man = new SimpleBdd::BddMan<uint8_t>( nVars, p.nNodes, NULL, p.nVerbose );
-	}
-      else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
-	{
-	  man = new SimpleBdd::BddMan<uint16_t>( nVars, p.nNodes, NULL, p.nVerbose );
-	}
-      else
-	{
-	  assert(0);
-	}
+      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, p.nVerbose );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
 
     SimpleBddMan( int nVars, SimpleBddParam p )
     {
-      if( nVars < (int)std::numeric_limits<uint8_t>::max() )
-	{
-	  man = new SimpleBdd::BddMan<uint8_t>( nVars, p.nNodes, NULL, p.nVerbose );
-	}
-      else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
-	{
-	  man = new SimpleBdd::BddMan<uint16_t>( nVars, p.nNodes, NULL, p.nVerbose );
-	}
-      else
-	{
-	  assert(0);
-	}
+      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, p.nVerbose );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }
     SimpleBdd::lit Const0() override { return man->LitConst0(); }
     SimpleBdd::lit Const1() override { return man->LitConst1(); }
-    SimpleBdd::lit IthVar( int i ) override { return man->LitIthVar_( i ); }
+    SimpleBdd::lit IthVar( int i ) override { return man->LitIthVar( i ); }
     SimpleBdd::lit Regular( SimpleBdd::lit const & x ) override { return man->LitRegular( x ); }
     bool IsCompl( SimpleBdd::lit const & x ) override { return man->LitIsCompl( x ); }
     SimpleBdd::lit Not( SimpleBdd::lit const & x ) override { return man->LitNot( x ); }
-    int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var_( x ) ); }
+    int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
     SimpleBdd::lit Then( SimpleBdd::lit const & x ) override { return man->Then( x ); }
     SimpleBdd::lit Else( SimpleBdd::lit const & x ) override { return man->Else( x ); }
     void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }

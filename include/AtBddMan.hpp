@@ -45,51 +45,29 @@ namespace Bdd
   class AtBddMan : public BddMan<AtBdd::lit>
   {
   private:
-    AtBdd::BddManWrap * man;
+    AtBdd::BddMan * man;
     
   public:
     AtBddMan( int nVars )
     {
       AtBddParam p;
-      if( nVars < (int)std::numeric_limits<uint8_t>::max() )
-	{
-	  man = new AtBdd::BddMan<uint8_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
-	}
-      else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
-	{
-	  man = new AtBdd::BddMan<uint16_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
-	}
-      else
-	{
-	  assert(0);
-	}
+      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
 
     AtBddMan( int nVars, AtBddParam p )
     {
-      if( nVars < (int)std::numeric_limits<uint8_t>::max() )
-	{
-	  man = new AtBdd::BddMan<uint8_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
-	}
-      else if( nVars < (int)std::numeric_limits<uint16_t>::max() )
-	{
-	  man = new AtBdd::BddMan<uint16_t>( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
-	}
-      else
-	{
-	  assert(0);
-	}
+      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
     ~AtBddMan() { delete man; }
     AtBdd::lit Const0() override { return man->LitConst0(); }
     AtBdd::lit Const1() override { return man->LitConst1(); }
-    AtBdd::lit IthVar( int i ) override { return man->LitIthVar_( i ); }
+    AtBdd::lit IthVar( int i ) override { return man->LitIthVar( i ); }
     AtBdd::lit Regular( AtBdd::lit const & x ) override { return man->LitRegular( x ); }
     bool IsCompl( AtBdd::lit const & x ) override { return man->LitIsCompl( x ); }
     AtBdd::lit Not( AtBdd::lit const & x ) override { return man->LitNot( x ); }
-    int Var( AtBdd::lit const & x ) override { return man->get_order( man->Var_( x ) ); }
+    int Var( AtBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
     AtBdd::lit Then( AtBdd::lit const & x ) override { return man->Then( x ); }
     AtBdd::lit Else( AtBdd::lit const & x ) override { return man->Else( x ); }
     void Ref( AtBdd::lit const & x ) override { man->Ref( x ); }
