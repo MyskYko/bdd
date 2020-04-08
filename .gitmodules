@@ -12,5 +12,5 @@
 	ignore = dirty
 [submodule "lib/cacbdd"]
 	path = lib/cacbdd
-	url = https://github.com/soga-denken/cacBDD.git
+	url = https://github.com/MyskYko/cacBDD.git
 	ignore = dirty

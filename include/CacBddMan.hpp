@@ -11,6 +11,9 @@ namespace Bdd
   struct CacBddParam
   {
     // Param
+    int slotSize = 1000000; // Pow 10 30
+    int uSize = 1 << 18; // Pow 10 30
+    int cSize = 1 << 18; // Pow 10 30
     // end
 
     CacBddParam( std::string fname = "_CacBddMan.hpp_setting.txt" )
@@ -18,6 +21,13 @@ namespace Bdd
       std::ifstream f( fname );
       if ( !f )
 	return;
+      std::string str;
+      if ( std::getline( f, str ) )
+	slotSize = std::stoi( str );
+      if ( std::getline( f, str ) )
+	uSize = std::stoi( str );
+      if ( std::getline( f, str ) )
+	cSize = std::stoi( str );
     }
   };
     
@@ -30,12 +40,12 @@ namespace Bdd
     CacBddMan( int nVars ) {
       CacBddParam p;
       (void)p;
-      man = new cacBDD::XBDDManager( nVars );
+      man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
     };
     CacBddMan( int nVars, CacBddParam p )
     {
       (void)p;
-      man = new cacBDD::XBDDManager( nVars );
+      man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
     };
     ~CacBddMan()
     {
@@ -57,8 +67,7 @@ namespace Bdd
     int  GetNumVar() override { return man->manager()->GetVariableCount(); }
     void PrintStats() override
     {
-      std::cout << "Shared BDD nodes = " << man->NodeCount() << std::endl;
-      std::cout << "Sum of BDD nodes = #####" << std::endl;
+      std::cout << "UTable = " << man->GetUTableCount() << std::endl;
       man->ShowInfo();
     }
 
