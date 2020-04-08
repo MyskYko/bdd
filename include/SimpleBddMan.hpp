@@ -10,10 +10,9 @@ namespace Bdd
   struct SimpleBddParam
   {
     // Param
-    uint32_t  nNodes = 1; // Pow 0 31
-    int  nVerbose = 0; // None 0
-    bool fGC = 1; // None 0
-    bool fRealloc = 1; // None 1
+    uint32_t  nNodes = 1; // Pow 10 30
+    bool fGC = 1; // Bool
+    bool fRealloc = 1; // None True
     int  nMaxGrowth = 10; // None 0
     // end
     
@@ -26,11 +25,9 @@ namespace Bdd
       if ( std::getline( f, str ) )
 	nNodes = std::stoul( str );
       if ( std::getline( f, str ) )
-	nVerbose = std::stoi( str );
+	fGC = ( str == "True" );
       if ( std::getline( f, str ) )
-	fGC = std::stoi( str );
-      if ( std::getline( f, str ) )
-	fRealloc = std::stoi( str );
+	fRealloc = ( str == "True" );
       if ( std::getline( f, str ) )
 	nMaxGrowth = std::stoi( str );
     }
@@ -45,13 +42,13 @@ namespace Bdd
     SimpleBddMan( int nVars )
     {
       SimpleBddParam p;
-      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, p.nVerbose );
+      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
 
     SimpleBddMan( int nVars, SimpleBddParam p )
     {
-      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, p.nVerbose );
+      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }

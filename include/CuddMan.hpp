@@ -12,11 +12,12 @@ namespace Bdd
   struct CuddParam
   {
     // Param
-    int nNodes = CUDD_UNIQUE_SLOTS; // Log 1000 100000000
-    int nCache = CUDD_CACHE_SLOTS; // Log 1000 100000000
-    int nMaxMem = 0; // Log 1000 100000000
-    int nReoScheme = 1; // Switch 0 12
-    int nMaxGrowth = 20; // Int 1 200
+    int nUnique = CUDD_UNIQUE_SLOTS; // Log 1000 1000000000
+    int nCache = CUDD_CACHE_SLOTS; // Log 1000 1000000000
+    int nMaxMem = 0; // Log 1000 1000000000
+    bool fGC = 0; // Bool
+    int nReoScheme = 0; // None 0
+    int nMaxGrowth = 20; // None 0
     // end
     
     CuddParam( std::string fname = "_CuddMan.hpp_setting.txt" )
@@ -26,11 +27,13 @@ namespace Bdd
 	return;
       std::string str;
       if ( std::getline( f, str ) )
-	nNodes = std::stoi( str );
+	nUnique = std::stoi( str );
       if ( std::getline( f, str ) )
 	nCache = std::stoi( str );
       if ( std::getline( f, str ) )
 	nMaxMem = std::stoi( str );
+      if ( std::getline( f, str ) )
+	fGC = ( str == "True" );
       if ( std::getline( f, str ) )
 	nReoScheme = std::stoi( str );
       if ( std::getline( f, str ) )
@@ -47,8 +50,10 @@ namespace Bdd
     CuddMan( int nVars )
     {
       CuddParam p;
-      man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
-      if( p.nReoScheme )
+      man = Cudd_Init( nVars, 0, p.nUnique, p.nCache, p.nMaxMem );
+      if ( !p.fGC )
+	Cudd_DisableGarbageCollection( man );
+      if ( p.nReoScheme )
 	{
 	  Cudd_AutodynEnable( man, (Cudd_ReorderingType)(CUDD_REORDER_SIFT + p.nReoScheme - 1) );
 	  Cudd_SetMaxGrowth( man, 1.0 + p.nMaxGrowth * 0.01 );
@@ -56,8 +61,10 @@ namespace Bdd
     }
     CuddMan( int nVars, CuddParam p )
     {
-      man = Cudd_Init( nVars, 0, p.nNodes, p.nCache, p.nMaxMem );
-      if( p.nReoScheme )
+      man = Cudd_Init( nVars, 0, p.nUnique, p.nCache, p.nMaxMem );
+      if ( !p.fGC )
+	Cudd_DisableGarbageCollection( man );
+      if ( p.nReoScheme )
 	{
 	  Cudd_AutodynEnable( man, (Cudd_ReorderingType)(CUDD_REORDER_SIFT + p.nReoScheme - 1) );
 	  Cudd_SetMaxGrowth( man, 1.0 + p.nMaxGrowth * 0.01 );

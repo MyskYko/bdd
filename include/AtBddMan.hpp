@@ -10,12 +10,11 @@ namespace Bdd
   struct AtBddParam
   {
     // Param
-    uint32_t nNodes = 1 << 20; // Pow 0 31
-    uint32_t nUnique = 1 << 22; // Pow 0 31
-    uint32_t nCache = 1 << 18; // Pow 10 31 
-    int  nVerbose = 0; // None 0
-    bool fGC = 1; // None 0
-    bool fRealloc = 1; // None 1
+    uint32_t nNodes = 1 << 20; // Pow 10 30
+    uint32_t nUnique = 1 << 22; // Pow 10 30
+    uint32_t nCache = 1 << 18; // Pow 10 30
+    bool fGC = 1; // Bool
+    bool fRealloc = 1; // None True
     int  nMaxGrowth = 0; // None 0
     // end
     
@@ -32,11 +31,9 @@ namespace Bdd
       if ( std::getline( f, str ) )
 	nCache = std::stoul( str );
       if ( std::getline( f, str ) )
-	nVerbose = std::stoi( str );
+	fGC = ( str == "True" );
       if ( std::getline( f, str ) )
-	fGC = std::stoi( str );
-      if ( std::getline( f, str ) )
-	fRealloc = std::stoi( str );
+	fRealloc = ( str == "True" );
       if ( std::getline( f, str ) )
 	nMaxGrowth = std::stoi( str );
     }
@@ -51,13 +48,13 @@ namespace Bdd
     AtBddMan( int nVars )
     {
       AtBddParam p;
-      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
+      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, 0 );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
 
     AtBddMan( int nVars, AtBddParam p )
     {
-      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, p.nVerbose );
+      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, 0 );
       man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
     };
     ~AtBddMan() { delete man; }

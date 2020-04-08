@@ -11,6 +11,7 @@ from opentuner import IntegerParameter
 from opentuner.search.manipulator import LogIntegerParameter
 from opentuner.search.manipulator import PowerOfTwoParameter
 from opentuner.search.manipulator import SwitchParameter
+from opentuner.search.manipulator import BooleanParameter
 from opentuner import MeasurementInterface
 from opentuner import Result
 
@@ -38,7 +39,10 @@ class Tuner(MeasurementInterface):
         manipulator.add_parameter(PowerOfTwoParameter(i, 2 ** int(param[1]), 2 ** int(param[2])))
         continue
       if param[0] == "Switch":
-        manipulator.add_parameter(SwitchParameter(i, int(param[1]), int(param[2])))
+        manipulator.add_parameter(SwitchParameter(i, int(param[1])))
+        continue
+      if param[0] == "Bool":
+        manipulator.add_parameter(BooleanParameter(i))
         continue
     return manipulator
 
@@ -60,7 +64,7 @@ class Tuner(MeasurementInterface):
     run_result = self.call_program(self.run_cmd, limit=60)
     print(run_result)
     if run_result['returncode'] != 0:
-      return Result(time=100)
+      return Result(time=float('inf'))
     return Result(time=run_result['time'])
 
   def save_final_config(self, configuration):
@@ -77,6 +81,9 @@ class Tuner(MeasurementInterface):
         continue
       if param[0] == "Pow":
         print(str(2 ** int(param[1])) + " < " + str(cfg[i]) + " < " + str(2 ** int(param[2])))
+        continue
+      if param[0] == "Bool" or param[0] == "Switch":
+        print(cfg[i])
         continue
     f.close()
 

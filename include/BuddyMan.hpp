@@ -17,9 +17,13 @@ namespace Bdd
   struct BuddyParam
   {
     // Param
-    int nNodes = 1250000; // Log 1000 100000000
-    int nCache = 2612440; // Log 1000 100000000
-    int nReoScheme = 1; // Switch 1 6
+    int nNodes = 1250000; // Log 1000 1000000000
+    int nMaxInc = 1000000; // Log 1000 1000000000
+    int nCache = 2612440; // Log 1000 1000000000
+    bool fDynCache = 0; // Bool
+    int nDynCache = 1; // Log 1 1000
+    int nMinFree = 80; // Int 0 100
+    int nReoScheme = 0; // None 0
     // end
 
     BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )
@@ -31,7 +35,15 @@ namespace Bdd
       if ( std::getline( f, str ) )
 	nNodes = std::stoi( str );
       if ( std::getline( f, str ) )
+	nMaxInc = std::stoi( str );
+      if ( std::getline( f, str ) )
 	nCache = std::stoi( str );
+      if ( std::getline( f, str ) )
+	fDynCache = ( str == "True" );
+      if ( std::getline( f, str ) )
+	nDynCache = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nMinFree = std::stoi( str );
       if ( std::getline( f, str ) )
 	nReoScheme = std::stoi( str );
     }
@@ -44,16 +56,30 @@ namespace Bdd
     {
       BuddyParam p;
       Buddy::bdd_init( p.nNodes, p.nCache );
+      Buddy::bdd_setmaxincrease( p.nMaxInc );
+      if ( p.fDynCache )
+	Buddy::bdd_setcacheratio( p.nDynCache );
+      Buddy::bdd_setminfreenodes( p.nMinFree );
       Buddy::bdd_setvarnum( nVars );
-      Buddy::bdd_varblockall();
-      Buddy::bdd_autoreorder( p.nReoScheme );
+      if ( p.nReoScheme )
+	{
+	  Buddy::bdd_varblockall();
+	  Buddy::bdd_autoreorder( p.nReoScheme );
+	}
     };
     BuddyMan( int nVars, BuddyParam p )
     {
       Buddy::bdd_init( p.nNodes, p.nCache );
+      Buddy::bdd_setmaxincrease( p.nMaxInc );
+      if ( p.fDynCache )
+	Buddy::bdd_setcacheratio( p.nDynCache );
+      Buddy::bdd_setminfreenodes( p.nMinFree );
       Buddy::bdd_setvarnum( nVars );
-      Buddy::bdd_varblockall();
-      Buddy::bdd_autoreorder( p.nReoScheme );
+      if ( p.nReoScheme )
+	{
+	  Buddy::bdd_varblockall();
+	  Buddy::bdd_autoreorder( p.nReoScheme );
+	}
     };
     ~BuddyMan() { Buddy::bdd_done(); }
     Buddy::BDD  Const0() override { return Buddy::bdd_false(); }

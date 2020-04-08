@@ -11,7 +11,7 @@ namespace Bdd
   struct CacBddParam
   {
     // Param
-    int slotSize = 1000000; // Pow 10 30
+    int slotSize = 1000000; // Log 1000 1000000000
     int uSize = 1 << 18; // Pow 10 30
     int cSize = 1 << 18; // Pow 10 30
     // end
@@ -39,12 +39,10 @@ namespace Bdd
   public:
     CacBddMan( int nVars ) {
       CacBddParam p;
-      (void)p;
       man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
     };
     CacBddMan( int nVars, CacBddParam p )
     {
-      (void)p;
       man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
     };
     ~CacBddMan()
