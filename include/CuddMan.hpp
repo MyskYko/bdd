@@ -15,7 +15,8 @@ namespace Bdd
     int nUnique = CUDD_UNIQUE_SLOTS; // Log 1000 1000000000
     int nCache = CUDD_CACHE_SLOTS; // Log 1000 1000000000
     int nMaxMem = 0; // Log 1000 1000000000
-    bool fGC = 0; // Bool
+    int nMinHit = 30; // Int 1 99
+    bool fGC = 1; // Bool
     int nReoScheme = 0; // None 0
     int nMaxGrowth = 20; // None 0
     // end
@@ -32,6 +33,8 @@ namespace Bdd
 	nCache = std::stoi( str );
       if ( std::getline( f, str ) )
 	nMaxMem = std::stoi( str );
+      if ( std::getline( f, str ) )
+	nMinHit = std::stoi( str );
       if ( std::getline( f, str ) )
 	fGC = ( str == "True" );
       if ( std::getline( f, str ) )
@@ -51,6 +54,7 @@ namespace Bdd
     {
       CuddParam p;
       man = Cudd_Init( nVars, 0, p.nUnique, p.nCache, p.nMaxMem );
+      Cudd_SetMinHit( man, p.nMinHit );
       if ( !p.fGC )
 	Cudd_DisableGarbageCollection( man );
       if ( p.nReoScheme )
@@ -62,6 +66,7 @@ namespace Bdd
     CuddMan( int nVars, CuddParam p )
     {
       man = Cudd_Init( nVars, 0, p.nUnique, p.nCache, p.nMaxMem );
+      Cudd_SetMinHit( man, p.nMinHit );
       if ( !p.fGC )
 	Cudd_DisableGarbageCollection( man );
       if ( p.nReoScheme )

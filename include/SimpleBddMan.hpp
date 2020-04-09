@@ -10,10 +10,10 @@ namespace Bdd
   struct SimpleBddParam
   {
     // Param
-    uint32_t  nNodes = 1; // Pow 10 30
+    uint32_t  nNodes = 1 << 20; // Pow 10 30
     bool fGC = 1; // Bool
     bool fRealloc = 1; // None True
-    int  nMaxGrowth = 10; // None 0
+    int  nMaxGrowth = 0; // None 0
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )

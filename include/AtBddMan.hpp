@@ -11,7 +11,7 @@ namespace Bdd
   {
     // Param
     uint32_t nNodes = 1 << 20; // Pow 10 30
-    uint32_t nUnique = 1 << 22; // Pow 10 30
+    uint32_t nUnique = 1 << 18; // Pow 10 30
     uint32_t nCache = 1 << 18; // Pow 10 30
     bool fGC = 1; // Bool
     bool fRealloc = 1; // None True
