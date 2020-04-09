@@ -45,7 +45,10 @@ namespace Bdd
 	    auto index = aig.node_to_index( aig.get_node( fanin ) );
 	    pFanouts[index] -= 1;
 	    if ( pFanouts[index] == 0 )
-	      bdd.Deref( m[index] );
+	      {
+		bdd.Deref( m[index] );
+		m[index] = bdd.Const0();
+	      }
 	  });
       });
     aig.foreach_po( [&]( auto po )
@@ -58,7 +61,10 @@ namespace Bdd
 	bdd.Ref( x );
 	pFanouts[index] -= 1;
 	if ( pFanouts[index] == 0 )
-	  bdd.Deref( m[index] );
+	  {
+	    bdd.Deref( m[index] );
+	    m[index] = bdd.Const0();
+	  }
       });
     free( pFanouts );
   }
