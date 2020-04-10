@@ -109,12 +109,12 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  void Ref( lit x ) { if ( pvNodes ) pvNodes->push_back( x ); }
-  void Pop()        { if ( pvNodes ) pvNodes->pop_back();     }
+  void Ref( lit x ) { if ( pvNodes ) pvNodes->push_back( LitRegular( x ) ); }
+  void Pop()        { if ( pvNodes ) pvNodes->pop_back(); }
   void Deref( lit x ) {
     if ( pvNodes )
       {
-	auto it = std::find( pvNodes->begin(), pvNodes->end(), x );
+	auto it = std::find( pvNodes->begin(), pvNodes->end(), LitRegular( x ) );
 	assert( it != pvNodes->end() );
 	pvNodes->erase( it );
       }
