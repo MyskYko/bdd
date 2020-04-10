@@ -13,7 +13,7 @@ namespace Bdd
     uint32_t  nNodes = 1 << 20; // Pow 10 30
     bool fGC = 1; // Bool
     bool fRealloc = 1; // None True
-    int  nMaxGrowth = 20; // Int 1 100
+    int  nMaxGrowth = 0; // Int 1 100
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
@@ -61,9 +61,13 @@ namespace Bdd
     int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
     SimpleBdd::lit Then( SimpleBdd::lit const & x ) override { return man->Then( x ); }
     SimpleBdd::lit Else( SimpleBdd::lit const & x ) override { return man->Else( x ); }
+    
     void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( SimpleBdd::lit const & x ) override { man->Deref( x ); }
+    
     SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
+    SimpleBdd::lit Or( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Or( x, y ); }
+    
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override
     {

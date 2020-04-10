@@ -19,9 +19,13 @@ namespace Bdd
     virtual int  Var( node const & x ) = 0;
     virtual node Then( node const & x ) = 0;
     virtual node Else( node const & x ) = 0;
+    
     virtual void Ref( node const & x ) = 0;
     virtual void Deref( node const & x ) = 0;
+    
     virtual node And( node const & x, node const & y ) = 0;
+    virtual node Or( node const & x, node const & y ) = 0;
+    
     virtual int  GetNumVar() = 0;
     virtual void PrintStats() = 0;
     
