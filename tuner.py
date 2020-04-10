@@ -76,7 +76,7 @@ class Tuner(MeasurementInterface):
         f.write(param[1] + "\n")
         continue
       f.write(str(cfg[i]) + "\n")
-      if param[0] == "Int" or param[0] == "Log" or param[0] == "Switch":
+      if param[0] == "Int" or param[0] == "Log":
         print(str(param[1]) + " < " + str(cfg[i]) + " < " + str(param[2]))
         continue
       if param[0] == "Pow":

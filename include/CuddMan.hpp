@@ -17,8 +17,8 @@ namespace Bdd
     int nMaxMem = 0; // Log 1000 1000000000
     int nMinHit = 30; // Int 1 99
     bool fGC = 1; // Bool
-    int nReoScheme = 0; // None 0
-    int nMaxGrowth = 20; // None 0
+    int nReoScheme = 1; // Switch 13
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     CuddParam( std::string fname = "_CuddMan.hpp_setting.txt" )

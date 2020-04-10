@@ -629,13 +629,6 @@ public:
   {
     free( pCache );
     pCache = (lit *)calloc( 3 * (size)( nCacheMask + 1 ), sizeof(lit) );
-    /*
-    nCacheHit   = 0;
-    nCacheFind  = 0;
-    nCall       = 0;
-    nCallThold  = 1000000;
-    HitRateOld  = 0;
-    */
   }
   
 /**Function*************************************************************

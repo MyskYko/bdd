@@ -13,7 +13,7 @@ namespace Bdd
     uint32_t  nNodes = 1 << 20; // Pow 10 30
     bool fGC = 1; // Bool
     bool fRealloc = 1; // None True
-    int  nMaxGrowth = 0; // None 0
+    int  nMaxGrowth = 20; // Int 1 100
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
