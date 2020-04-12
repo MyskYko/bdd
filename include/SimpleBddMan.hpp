@@ -13,7 +13,8 @@ namespace Bdd
     uint32_t  nNodes = 1 << 20; // Pow 10 30
     bool fGC = 1; // Bool
     bool fRealloc = 1; // None True
-    int  nMaxGrowth = 0; // Int 1 100
+    bool fReo = 0; // None False
+    int  nMaxGrowth = 20; // Int 1 100
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
@@ -29,6 +30,8 @@ namespace Bdd
       if ( std::getline( f, str ) )
 	fRealloc = ( str == "True" );
       if ( std::getline( f, str ) )
+	fReo = ( str == "True" );
+      if ( std::getline( f, str ) )
 	nMaxGrowth = std::stoi( str );
     }
   };
@@ -43,13 +46,13 @@ namespace Bdd
     {
       SimpleBddParam p;
       man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
+      man->RefreshConfig( p.fRealloc, p.fGC, p.fReo, p.nMaxGrowth );
     };
 
     SimpleBddMan( int nVars, SimpleBddParam p )
     {
       man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
+      man->RefreshConfig( p.fRealloc, p.fGC, p.fReo, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }
     SimpleBdd::lit Const0() override { return man->LitConst0(); }
@@ -68,6 +71,8 @@ namespace Bdd
     SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
     SimpleBdd::lit Or( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Or( x, y ); }
     SimpleBdd::lit Xor( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Xor( x, y ); }
+
+    void Reorder() override { man->Reorder(); }
     
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override

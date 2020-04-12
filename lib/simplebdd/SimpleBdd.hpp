@@ -75,8 +75,9 @@ private:
   int    nRefresh;      // the number of refresh tried
   bool   fGC;           // flag of garbage collection
   bool   fRealloc;      // flag of reallocation
+  bool   fReo;          // flag of reordering
   size   nReo;          // threshold to run reordering
-  double MaxGrowth;     // threshold to terminate reordering. 0=off
+  double MaxGrowth;     // threshold to terminate reordering
   edge * pEdges;        // array of number of incoming edges for nodes
   
   std::vector<var>                vOrdering; // variable ordering : new 2 old
@@ -113,7 +114,14 @@ public:
     if ( pvNodes )
       {
 	auto it = std::find( pvNodes->begin(), pvNodes->end(), LitRegular( x ) );
-	assert( it != pvNodes->end() );
+	if ( it == pvNodes->end() )
+	  {
+	    std::cout << "cannot find " << LitRegular( x ) << std::endl;
+	    for ( lit x : *pvNodes )
+	      std::cout << x << ",";
+	    std::cout << std::endl;
+	    throw "Deref non-referenced node";
+	  }
 	pvNodes->erase( it );
       }
   }
@@ -425,6 +433,7 @@ public:
     nRefresh    = 0;
     fRealloc    = 0;
     fGC         = 0;
+    fReo        = 0;
     MaxGrowth   = 0;
     nReo        = 4000;
     nMinRemoved = nObjsAlloc;
@@ -692,10 +701,11 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  void RefreshConfig( bool fRealloc_, bool fGC_, int nMaxGrowth )
+  void RefreshConfig( bool fRealloc_, bool fGC_, bool fReo_, int nMaxGrowth )
   {
     fRealloc = fRealloc_;
     fGC = fGC_;
+    fReo = fReo_;
     MaxGrowth = 0.01 * nMaxGrowth;
     if ( pvNodes )
       delete pvNodes;
@@ -703,9 +713,10 @@ public:
       free( pEdges );
     if ( liveBvars.size() )
       liveBvars.clear();
-    if ( fGC || MaxGrowth )
+    // TODO : nMaxGrowth should not be used below...    
+    if ( fGC || nMaxGrowth )
       pvNodes = new std::vector<lit>;
-    if ( MaxGrowth )
+    if ( nMaxGrowth )
       {
 	pEdges = (edge *)calloc( nObjsAlloc, sizeof(edge) );
 	if ( !pEdges )
@@ -723,7 +734,7 @@ public:
 	GarbageCollect();
 	return 0;
       }
-    if ( nRefresh <= 2 && MaxGrowth && (size)nObjs > nReo )
+    if ( nRefresh <= 2 && fReo && (size)nObjs > nReo )
       {
 	Reorder();
 	nReo = nReo + nReo;
@@ -1110,9 +1121,9 @@ public:
   }
   void Shift( var & pos, bvar & nNodes, var nSwap, bool fUp, var & bestPos, bvar & nBestNodes, std::vector<var> & new2old, size nLimit )
   {
-    double MaxGrowth_ = MaxGrowth;
+    bool fReo_ = fReo;
     int nRefresh_ = nRefresh;
-    MaxGrowth = 0;
+    fReo = 0;
     for ( var i = 0; i < nSwap; i++ )
       {
 	ssize dLimit = nLimit - nNodes;
@@ -1123,7 +1134,7 @@ public:
 	  {
 	    if ( fUp )
 	      pos += 1;
-	    MaxGrowth = MaxGrowth_;
+	    fReo = fReo_;
 	    nRefresh = nRefresh_;
 	    return;
 	  }
@@ -1141,7 +1152,7 @@ public:
 	    PrintOrdering( new2old );
 	  }
       }
-    MaxGrowth = MaxGrowth_;
+    fReo = fReo_;
     nRefresh = nRefresh_;
   }
 
