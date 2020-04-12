@@ -38,6 +38,10 @@ private:
     auto it = vObjs.end();
     for ( int id_ : vvFOs[id] )
       {
+	if ( vvFOs[id_].empty() )
+	  {
+	    continue;
+	  }
 	auto it_ = std::find( vObjs.begin(), vObjs.end(), id_ );
 	if ( it_ < it )
 	  {
@@ -47,6 +51,10 @@ private:
     it = vObjs.insert( it, id );
     for ( int id_ : vvFIs[id] )
       {
+	if ( vvFIs[id_].empty() )
+	  {
+	    continue;
+	  }
 	auto it_ = std::find( vObjs.begin(), vObjs.end(), id_ );
 	if ( it_ > it )
 	  {
@@ -58,10 +66,14 @@ private:
   }
   void Connect( int fanin, int fanout, bool fSort )
   { // uniqueness of conenction must be confirmed beforehand
-    vvFIs[fanout].push_back( fanin );    
+    vvFIs[fanout].push_back( fanin );
     vvFOs[fanin].push_back( fanout );
     if ( fSort )
       {
+	if ( vvFOs[fanout].empty() || vvFIs[fanin].empty() )
+	  {
+	    return;
+	  }
 	auto it_fanin = std::find( vObjs.begin(), vObjs.end(), fanin );
 	auto it_fanout = std::find( vObjs.begin(), vObjs.end(), fanout );
 	if ( it_fanout < it_fanin )
@@ -73,6 +85,12 @@ private:
   }
   void Remove( int id )
   {
+    auto it = std::find( vObjs.begin(), vObjs.end(), id );
+    if ( it == vObjs.end() )
+      {
+	return;
+      }
+    vObjs.erase( it );
     for ( int id_ : vvFIs[id] )
       {
 	auto it = std::find( vvFOs[id_].begin(), vvFOs[id_].end(), id );
@@ -83,8 +101,6 @@ private:
 	auto it = std::find( vvFIs[id_].begin(), vvFIs[id_].end(), id );
 	vvFIs[id_].erase( it );
       }
-    auto it = std::find( vObjs.begin(), vObjs.end(), id );
-    vObjs.erase( it );
     if ( vFs[id] )
       {
 	bdd.Deref( *vFs[id] );
@@ -142,6 +158,24 @@ private:
       }
     list = list_new;
   }
+
+  void MarkDescendant_rec( std::vector<std::vector<int> > & children, int id )
+  {
+    for ( int id_ : children[id] )
+      {
+	if ( !vMarks[id_] && !children[id_].empty() )
+	  {
+	    vMarks[id_] = 1;
+	    MarkDescendant_rec( children, id_ );
+	  }
+      }
+  }
+  void MarkClear()
+  {
+    vMarks.clear();
+    vMarks.resize( nObjsAlloc );
+  }
+  
 
 public:
   TransductionNetwork( mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd_ ) : bdd(bdd_)
@@ -662,7 +696,138 @@ public:
 	  }
       }
   }
-  
+
+  bool TryConnect( int fanin, int fanout )
+  {
+    if ( std::find( vvFIs[fanout].begin(), vvFIs[fanout].end(), fanin ) != vvFIs[fanout].end() )
+      {
+	return 0;
+      }
+    node x = bdd.Or( *vFs[fanout], *vGs[fanout] );
+    bdd.Ref( x );
+    node y = bdd.Or( x, *vFs[fanin] );
+    bdd.Ref( y );
+    bdd.Deref( x );
+    x = y;
+    if ( x == bdd.Const1() )
+      {
+	bdd.Deref( x );
+	Connect( fanin, fanout, 1 );
+	return 1;
+      }
+    bdd.Deref( x );
+    return 0;
+  }
+  void CspfFICone( int id )
+  {
+    CalcC( id );
+    std::vector<int> targets;
+    DescendantList( vvFIs, targets, id );
+    SortList( targets );
+    for ( int i = targets.size() - 1; i >= 0; i-- )
+      {
+	int id_ = targets[i];
+	if ( vvFOs[id_].empty() )
+	  {
+	    Remove( id_ );
+	    continue;
+	  }
+	CalcG( id_ );
+	CalcC( id_ );
+      }
+    Build();
+  }
+  void G1Eager( int fanin, int fanout )
+  {
+    int wire = CountWire();
+    CspfFICone( fanout );
+    if ( wire == CountWire() )
+      {
+	Disconnect( fanin, fanout );
+	CspfFICone( fanout );
+	return;
+      }
+    Build();
+    Cspf();
+  }
+  void G1Weak( int fanin, int fanout )
+  {
+    int wire = CountWire();
+    RemoveRedundantFIs( fanout );
+    if ( wire == CountWire() )
+      Disconnect( fanin, fanout );
+  }
+  void G1( bool fWeak )
+  {
+    std::vector<int> targets = vObjs;
+    for ( int i = targets.size() - 1; i >= 0; i-- )
+      {
+	int id = targets[i];
+	std::cout << "gate" << i << ", id" << id << std::endl;
+	if ( vvFOs[id].empty() )
+	  {
+	    continue;
+	  }
+	MarkClear();
+	vMarks[id] = 1;
+	MarkDescendant_rec( vvFOs, id );
+	// try connecting PI
+	for ( int id_ : vPIs )
+	  {
+	    if ( vvFOs[id].empty() )
+	      {
+		break;
+	      }
+	    if ( TryConnect( id_, id ) )
+	      {
+		if ( fWeak )
+		  {
+		    G1Weak( id_, id );
+		  }
+		//else if ( p->nMspf > 1 )
+		//  Abc_BddNandG1MspfReduce( p, id, idj );	
+		else
+		  {
+		    G1Eager( id_, id );
+		  }
+	      }
+	  }
+	// try connecting gate
+	for ( int j = targets.size() - 1; j >= 0; j-- )
+	  {
+	    if ( vvFOs[id].empty() )
+	      {
+		break;
+	      }
+	    int id_ = targets[j];
+	    if ( vvFOs[id_].empty() || vMarks[id_] )
+	      {
+		continue;
+	      }
+	    if ( TryConnect( id_, id ) )
+	      {
+		if ( fWeak )
+		  {
+		    G1Weak( id_, id );
+		  }
+		//else if ( p->nMspf > 1 )
+		//  Abc_BddNandG1MspfReduce( p, id, idj );	
+		else
+		  {
+		    G1Eager( id_, id );
+		  }
+	      }
+	  }
+	// recalculate for weak
+	if ( fWeak )
+	  {
+	    CspfFICone( id );
+	    Build();
+	  }
+      }
+  }
+    
+    
   int CountGate()
   {
     return vObjs.size();
@@ -716,21 +881,6 @@ static inline void     Abc_BddNandMemIncrease( Abc_NandMan * p ) {
     }
 }
 
-void Abc_BddNandMarkDescendant_rec( Abc_NandMan * p, Vec_Int_t ** children, int id )
-{
-  int j, idj;
-  Vec_IntForEachEntry( children[id], idj, j )
-    if ( !p->pMark[idj] && children[idj] ) // idj is not marked and not leaf
-      {
-	p->pMark[idj] = 1;
-	Abc_BddNandMarkDescendant_rec( p, children, idj );
-      }
-}
-static inline void Abc_BddNandMarkClear( Abc_NandMan * p )
-{
-  ABC_FREE( p->pMark );
-  p->pMark = ABC_CALLOC( char, p->nObjsAlloc );
-}
 
 
 
@@ -809,47 +959,8 @@ static inline int Abc_BddNandDc( Abc_NandMan * p )
 
 
 
-static inline int Abc_BddNandCspfFaninCone( Abc_NandMan * p, int startId )
-{
-  int i, id;
-  Vec_Int_t * targets;
-  targets = Vec_IntAlloc( 1 );
-  if ( Abc_BddNandCFuncCspf( p, startId ) )
-    return -1;
-  Abc_BddNandDescendantSortedList( p, p->pvFanins, targets, startId );
-  Vec_IntForEachEntryReverse( targets, id, i )
-    {
-      if ( Abc_BddNandObjIsDead( p, id ) )
-	{
-	  Abc_BddNandRemoveNode( p, id );
-	  continue;
-	}
-      if ( Abc_BddNandGFunc( p, id ) )
-	return -1;
-      if ( Abc_BddNandCFuncCspf( p, id ) )
-	return -1;
-    }
-  Vec_IntFree( targets );
-  return 0;
-}
 
 
-static inline int Abc_BddNandTryConnect( Abc_NandMan * p, int fanin, int fanout )
-{
-  unsigned x;
-  if ( Vec_IntFind( p->pvFanins[fanout], fanin ) != -1 )
-    return 0; // already connected
-  x = Abc_BddOr( p->pBdd, p->pBddFuncs[fanout], p->pGFuncs[fanout] );
-  x = Abc_BddOr( p->pBdd, x, p->pBddFuncs[fanin] );
-  if( Abc_BddLitIsInvalid( x ) )
-    return -1;
-  if ( Abc_BddLitIsConst1( x ) )
-    {
-      Abc_BddNandConnect( p, fanin, fanout, 1 );
-      return 1;
-    }
-  return 0;
-}
 
 static inline void Abc_BddNandRefresh( Abc_NandMan * p )
 {
@@ -988,114 +1099,11 @@ static inline void Abc_BddNandCspfEager( Abc_NandMan * p )
     }
 }
 
-static inline void Abc_BddNandG1EagerReduce( Abc_NandMan * p, int id, int idj )
-{
-  int wire;
-  wire = Abc_BddNandCountWire( p );
-  Abc_BddNandCspfFaninCone_Refresh( p, id );
-  if ( wire == Abc_BddNandCountWire( p ) )
-    {
-      Abc_BddNandDisconnect( p, idj, id );
-      Abc_BddNandBuildFanoutCone_Refresh( p, id );
-      if ( Abc_BddNandObjIsEmptyOrDead( p, id ) )
-	return;
-      Abc_BddNandCspfFaninCone_Refresh( p, id );
-      return;
-    }
-  Abc_BddNandBuildAll_Refresh( p );
-  if ( p->nMspf )
-    Abc_BddNandMspf_Refresh( p );
-  if ( p->nMspf < 2 )
-    Abc_BddNandCspfEager( p );
-}
-static inline void Abc_BddNandG1WeakReduce( Abc_NandMan * p, int id, int idj )
-{
-  int wire;
-  wire = Abc_BddNandCountWire( p );
-  Abc_BddNandRemoveRedundantFanin_Refresh( p, id );
-  if ( Abc_BddNandObjIsEmptyOrDead( p, id ) ||
-       Abc_BddNandObjIsEmptyOrDead( p, idj ) )
-    return; // If this, we don't need to do below.
-  if ( wire == Abc_BddNandCountWire( p ) ) 
-    Abc_BddNandDisconnect( p, idj, id );
-  Abc_BddNandBuild_Refresh( p, id );
-}
 static inline void Abc_BddNandG1MspfReduce( Abc_NandMan * p, int id, int idj )
 {
   Abc_BddNandBuildFanoutCone_Refresh( p, id );
   Abc_BddNandMspf_Refresh( p );
 }
-static inline void Abc_BddNandG1( Abc_NandMan * p, int fWeak, int fHalf )
-{
-  int i, j, id, idj;
-  Vec_Int_t * targets, * targets2;
-  targets = Vec_IntDup( p->vObjs );
-  if ( fHalf )
-    {
-      targets2 = Vec_IntAlloc( 1 );
-      Abc_BddNandMarkClear( p );  
-      Vec_IntForEachEntryStart( p->vPos, id, i, Vec_IntSize( p->vPos ) / 2 )
-	Abc_BddNandDescendantList_rec( p, p->pvFanins, targets2, id );
-      Abc_BddNandSortList( p, targets2 );
-    }
-  else
-    targets2 = Vec_IntDup( p->vObjs );
-  Vec_IntForEachEntryReverse( targets, id, i )
-    {
-      if ( Abc_BddNandObjIsEmptyOrDead( p, id ) )
-	continue;
-      if ( p->nVerbose >= 3 )
-	printf( "G1(2) for %d in %d gates\n", i, Vec_IntSize(targets) );
-      Abc_BddNandMarkClear( p );
-      p->pMark[id] = 1;
-      Abc_BddNandMarkDescendant_rec( p, p->pvFanouts, id );
-      // try connecting each pi if possible
-      Vec_IntForEachEntry( p->vPis, idj, j )
-	{
-	  if ( Abc_BddNandObjIsEmptyOrDead( p, id ) )
-	    break;
-	  if ( Abc_BddNandTryConnect_Refresh( p, idj, id ) )
-	    {
-	      if ( fWeak )
-		Abc_BddNandG1WeakReduce( p, id, idj );	
-	      else if ( p->nMspf > 1 )
-		Abc_BddNandG1MspfReduce( p, id, idj );	
-	      else
-		Abc_BddNandG1EagerReduce( p, id, idj );
-	    }
-	}
-      // try connecting each candidate if possible
-      Vec_IntForEachEntry( targets2, idj, j )
-	{
-	  if ( Abc_BddNandObjIsEmptyOrDead( p, id ) )
-	    break;
-	  if ( Abc_BddNandObjIsEmptyOrDead( p, idj ) )
-	    continue;
-	  if ( p->pMark[idj] )
-	    continue;
-	  if ( Abc_BddNandTryConnect_Refresh( p, idj, id ) )
-	    {
-	      if ( fWeak )
-		Abc_BddNandG1WeakReduce( p, id, idj );
-	      else if ( p->nMspf > 1 )
-		Abc_BddNandG1MspfReduce( p, id, idj );
-	      else
-		Abc_BddNandG1EagerReduce( p, id, idj );
-	    }
-	}
-      // recalculate fanouts for weak method
-      if ( fWeak )
-	{
-	  if ( Abc_BddNandObjIsEmptyOrDead( p, id ) )
-	    continue;
-	  Abc_BddNandCspfFaninCone_Refresh( p, id );
-	  if ( Abc_BddNandObjIsEmptyOrDead( p, id ) )
-	    continue;
-	  Abc_BddNandBuildAll_Refresh( p );
-	}
-    }
-  Vec_IntFree( targets );
-  Vec_IntFree( targets2 );
 }
 
 static inline void Abc_BddNandG3( Abc_NandMan * p )
@@ -1413,12 +1421,10 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, int nV
   net.Rank();
   net.SortFIs();
 
-  net.Mspf();
+  //  net.Mspf();
   net.Cspf();
-  //if ( p->nMspf )
-  //Abc_BddNandMspf_Refresh( p );
-  //if ( p->nMspf < 2 )
-  //Abc_BddNandCspfEager( p );
+
+  net.G1(1);
   
   std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
   
