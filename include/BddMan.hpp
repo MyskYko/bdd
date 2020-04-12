@@ -25,6 +25,7 @@ namespace Bdd
     
     virtual node And( node const & x, node const & y ) = 0;
     virtual node Or( node const & x, node const & y ) = 0;
+    virtual node Xor( node const & x, node const & y ) = 0;
     
     virtual int  GetNumVar() = 0;
     virtual void PrintStats() = 0;

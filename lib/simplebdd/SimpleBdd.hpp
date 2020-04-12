@@ -87,6 +87,13 @@ public:
   int  get_nVars() { return nVars; }
   int  get_order( int v ) { return vOrdering[v]; }
   int  get_pvNodesExists() { return pvNodes != NULL; }
+  void show_refstat()
+  {
+    for ( lit x : *pvNodes )
+      {
+	std::cout << x << std::endl;
+      }
+  }
   
 /**Function*************************************************************
    
@@ -101,7 +108,8 @@ public:
 ***********************************************************************/
   void Ref( lit x ) { if ( pvNodes ) pvNodes->push_back( LitRegular( x ) ); }
   void Pop()        { if ( pvNodes ) pvNodes->pop_back(); }
-  void Deref( lit x ) {
+  void Deref( lit x )
+  {
     if ( pvNodes )
       {
 	auto it = std::find( pvNodes->begin(), pvNodes->end(), LitRegular( x ) );
@@ -649,6 +657,17 @@ public:
   lit Or( lit x, lit y )
   {
     return LitNot( And_rec( LitNot( x ), LitNot( y ) ) );
+  }
+  lit Xor( lit x, lit y )
+  {
+    lit z1 = And( LitNot( x ), y );
+    Ref( z1 );
+    lit z0 = And( x, LitNot( y ) );
+    Ref( z0 );
+    lit z = Or( z0, z1 );
+    Pop();
+    Pop();
+    return z;
   }
   lit Xnor( lit x, lit y )
   {

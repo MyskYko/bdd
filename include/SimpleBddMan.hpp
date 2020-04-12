@@ -67,6 +67,7 @@ namespace Bdd
     
     SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
     SimpleBdd::lit Or( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Or( x, y ); }
+    SimpleBdd::lit Xor( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Xor( x, y ); }
     
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override
@@ -78,6 +79,8 @@ namespace Bdd
 	}
       std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
+
+      man->show_refstat();
     }
 
     uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }

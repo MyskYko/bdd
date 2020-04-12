@@ -30,6 +30,8 @@ private:
   std::vector<std::optional<node> > vGs;
   std::vector<std::vector<node> > vvCs;
 
+  bool fRemove = 0;
+
 
   void SortEnter( int id )
   {
@@ -107,6 +109,40 @@ private:
     vvFIs[fanout].erase( it_fanin );
   }
 
+  void DescendantList_rec( std::vector<std::vector<int> > & children, std::vector<int> & list, int id )
+  {
+    for ( int id_ : children[id] )
+      {
+	if ( !( vMarks[id_] >> 1 ) && !children[id_].empty() )
+	  {
+	    vMarks[id_] += 2;
+	    list.push_back( id_ );
+	    DescendantList_rec( children, list, id_ );
+	  }
+      }
+  }
+  void DescendantList( std::vector<std::vector<int> > & children, std::vector<int> & list, int id )
+  {
+    DescendantList_rec( children, list, id );
+    for ( int id_ : list )
+      {
+	vMarks[id_] -= 2;
+      }
+  }
+  void SortList( std::vector<int> & list )
+  {
+    std::vector<int> list_new( list.size() );
+    for ( int id : vObjs )
+      {
+	auto it = std::find( list.begin(), list.end(), id );
+	if ( it != list.end() )
+	  {
+	    list_new.push_back( id );
+	  }
+      }
+    list = list_new;
+  }
+
 public:
   TransductionNetwork( mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd_ ) : bdd(bdd_)
   {
@@ -169,13 +205,20 @@ public:
 	id++;
       });
     // remove redundant nodes
-    for ( int i = vObjs.size() - 1; i; i-- )
+    for ( int i = vObjs.size() - 1; i >= 0; i-- )
       {
 	int id = vObjs[i];
 	if ( vvFOs[id].empty() )
 	  {
 	    Remove( id );
 	  }
+      }
+  }
+  ~TransductionNetwork()
+  {
+    for ( int i = vObjs.size() - 1; i >= 0; i-- )
+      {
+	Remove( vObjs[i] );
       }
   }
 
@@ -212,31 +255,31 @@ public:
       }
   }
 
-  void BuildNode( int id )
+  void BuildNode( int id, std::vector<std::optional<node> > & vFs_ )
   {
-    if ( vFs[id] )
+    if ( vFs_[id] )
       {
-	bdd.Deref( *vFs[id] );
+	bdd.Deref( *vFs_[id] );
       }
-    vFs[id] = bdd.Const1();
-    bdd.Ref( *vFs[id] );
+    vFs_[id] = bdd.Const1();
+    bdd.Ref( *vFs_[id] );
     for ( int id_ : vvFIs[id] )
       {
-	node x = bdd.And( *vFs[id], *vFs[id_] );
+	node x = bdd.And( *vFs_[id], *vFs_[id_] );
 	bdd.Ref( x );
-	bdd.Deref( *vFs[id] );
-	vFs[id] = x;
+	bdd.Deref( *vFs_[id] );
+	vFs_[id] = x;
       }
-    node x = bdd.Not( *vFs[id] );
+    node x = bdd.Not( *vFs_[id] );
     bdd.RefNot( x );
-    bdd.DerefNot( *vFs[id] );
-    vFs[id] = x;
+    bdd.DerefNot( *vFs_[id] );
+    vFs_[id] = x;
   }
   void Build()
   {
     for ( int id : vObjs )
       {
-	BuildNode( id );
+	BuildNode( id, vFs );
       }
   }
   
@@ -296,9 +339,11 @@ public:
   }
   void CalcC( int id )
   {
-    //if ( p->fRm )
-    //    if ( RemoveRedundantFanin( p, id ) )
-    for ( auto & x : vvCs[id] )
+    if ( fRemove && RemoveRedundantFIs( id ) )
+      {
+	return;
+      }
+    for ( node & x : vvCs[id] )
       {
 	bdd.Deref( x );
       }
@@ -360,7 +405,7 @@ public:
   }
   void Cspf()
   {
-    for ( int i = vObjs.size() - 1; i; i-- )
+    for ( int i = vObjs.size() - 1; i >= 0; i-- )
       {
 	int id = vObjs[i];
 	if ( vvFOs[id].empty() )
@@ -374,6 +419,250 @@ public:
     Build();
   }
 
+  bool RemoveRedundantFIs( int id )
+  {
+    for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
+      {
+	node x = bdd.Const1();
+	bdd.Ref( x );
+	for ( int j = 0; j < (int)vvFIs[id].size(); j++ )
+	  {
+	    if ( i == j )
+	      {
+		continue;
+	      }
+	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
+	    bdd.Ref( y );
+	    bdd.Deref( x );
+	    x = y;
+	  }
+	node y = bdd.Not( x );
+	bdd.RefNot( y );
+	bdd.DerefNot( x );
+	x = y;
+	y = bdd.Or( x, *vGs[id] );
+	bdd.Ref( y );
+	bdd.Deref( x );
+	x = y;
+	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
+	bdd.Ref( y );
+	bdd.Deref( x );
+	x = y;
+	if ( x == bdd.Const1() )
+	  {
+	    bdd.Deref( x );
+	    Disconnect( vvFIs[id][i], id );
+	    if ( vvFIs[id].empty() )
+	      {
+		for ( int id_ : vvFOs[id] )
+		  {
+		    if ( std::find( vvFIs[id_].begin(), vvFIs[id_].end(), bdd.Const0() ) == vvFIs[id_].end() )
+		      {
+			Connect( Const0, id_, 0 );
+		      }
+		  }
+		Remove( id );
+		return 1;
+	      }
+	    i--;
+	    continue;
+	  }
+	bdd.Deref( x );
+      }
+    return 0;
+  }
+
+  bool IsFOConeShared_rec( int id, int stage )
+  {
+    if ( vvFOs[id].empty() )
+      {
+	return 0;
+      }
+    int m = vMarks[id] >> 1;
+    if ( m == stage )
+      {
+	return 0;
+      }
+    if ( m )
+      {
+	return 1;
+      }
+    vMarks[id] += stage << 1;
+    for ( int id_ : vvFOs[id] )
+      {
+	if ( IsFOConeShared_rec( id_, stage ) )
+	  {
+	    return 1;
+	  }
+      }
+    return 0;
+  }
+  bool IsFOConeShared( int id )
+  {
+    bool r = 0;
+    for ( int i = 0; i < (int)vvFOs[id].size(); i++ )
+      {
+	if ( IsFOConeShared_rec( vvFOs[id][i], i + 1 ) )
+	  {
+	    r = 1;
+	    break;
+	  }
+      }
+    for ( int id_ : vObjs )
+      {
+	if ( vMarks[id_] % 2 )
+	  {
+	    vMarks[id_] = 1;
+	  }
+	else
+	  {
+	    vMarks[id_] = 0;
+	  }
+      }
+    return r;
+  }
+  void BuildPOsInverted( int id, std::vector<node> & vInvFsPO )
+  { 
+    std::vector<int> targets;
+    DescendantList( vvFOs, targets, id );
+    SortList( targets );
+    // insert inverters just after id    
+    std::vector<std::optional<node> > vInvFs = vFs;
+    vInvFs[id] = bdd.Not( *vInvFs[id] );
+    bdd.RefNot( *vInvFs[id] );
+    // build
+    for ( int id_ : targets )
+      {
+	vInvFs[id_] = std::nullopt;
+	BuildNode( id_, vInvFs );
+      }
+    for ( int id_ : vPOs )
+      {
+	node x = *vInvFs[vvFIs[id_][0]];
+	bdd.Ref( x );
+	vInvFsPO.push_back( x );
+      }
+    for ( int id_ : targets )
+      {
+	bdd.Deref( *vInvFs[id_] );
+      }    
+  }
+  void CalcGMspf( int id )
+  {
+    if ( !IsFOConeShared( id ) )
+      {
+	CalcG( id );
+	return;
+      }
+    std::vector<node> vInvFsPO;
+    BuildPOsInverted( id, vInvFsPO );
+    if ( vGs[id] )
+      {
+	bdd.Deref( *vGs[id] );
+      }
+    vGs[id] = bdd.Const1();
+    bdd.Ref( *vGs[id] );
+    for ( int i = 0; i < (int)vPOs.size(); i++ )
+      {
+	int id_ = vvFIs[vPOs[i]][0];
+	node x = bdd.Xor( *vFs[id_], vInvFsPO[i] );
+	bdd.Ref( x );
+	if ( id != id_ )
+	  {
+	    node y = bdd.Not( x );
+	    bdd.RefNot( y );
+	    bdd.DerefNot( x );
+	    x = y;
+	  }
+	node y = bdd.Or( x, *vGs[vPOs[i]] );
+	bdd.Ref( y );
+	bdd.Deref( x );
+	x = y;
+	y = bdd.And( *vGs[id], x );
+	bdd.Ref( y );
+	bdd.Deref( *vGs[id] );
+	bdd.Deref( x );
+	vGs[id] = y;
+      }
+    for ( node & x : vInvFsPO )
+      {
+	bdd.Deref( x );
+      }
+  }
+  bool CalcCMspf( int id )
+  {
+    for ( node & x : vvCs[id] )
+      {
+	bdd.Deref( x );
+      }
+    vvCs[id].clear();
+    for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
+      {
+	node x = bdd.Const1();
+	bdd.Ref( x );
+	for ( int j = 0; j < (int)vvFIs[id].size(); j++ )
+	  {
+	    if ( i == j )
+	      {
+		continue;
+	      }
+	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
+	    bdd.Ref( y );
+	    bdd.Deref( x );
+	    x = y;
+	  }
+	node y = bdd.Not( x );
+	bdd.RefNot( y );
+	bdd.DerefNot( x );
+	x = y;
+	y = bdd.Or( x, *vGs[id] );
+	bdd.Ref( y );
+	bdd.Deref( x );
+	x = y;
+	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
+	bdd.Ref( y );
+	if ( y == bdd.Const1() )
+	  {
+	    bdd.Deref( x );
+	    bdd.Deref( y );
+	    Disconnect( vvFIs[id][i], id );
+	    if ( vvFIs[id].empty() )
+	      {
+		for ( int id_ : vvFOs[id] )
+		  {
+		    if ( std::find( vvFIs[id_].begin(), vvFIs[id_].end(), bdd.Const0() ) == vvFIs[id_].end() )
+		      {
+			Connect( Const0, id_, 0 );
+		      }
+		  }
+		Remove( id );
+	      }
+	    return 1;
+	  }
+	bdd.Deref( y );
+	vvCs[id].push_back( x );
+      }
+    return 0;
+  }
+  void Mspf()
+  {
+    for ( int i = vObjs.size() - 1; i >= 0; i-- )
+      {
+	int id = vObjs[i];
+	if ( vvFOs[id].empty() )
+	  {
+	    Remove( id );
+	    continue;
+	  }
+	CalcGMspf( id );
+	if ( CalcCMspf( id ) )
+	  {
+	    Build();
+	    i = vObjs.size();
+	  }
+      }
+  }
+  
   int CountGate()
   {
     return vObjs.size();
@@ -427,54 +716,6 @@ static inline void     Abc_BddNandMemIncrease( Abc_NandMan * p ) {
     }
 }
 
-static inline void Abc_BddNandPrintNet( Abc_NandMan * p, char * fName )
-{
-  int i, j, id, idj; 
-  FILE *fp;
-  fp = fopen( fName, "w" );
-  fprintf( fp, ".model test\n" );
-  fprintf( fp, ".inputs" );
-  Vec_IntForEachEntry( p->vPis, id, i )
-    fprintf( fp, " pi%d", id - 1 );
-  fprintf( fp, "\n.outputs" );
-  Vec_IntForEachEntry( p->vPos, id, i )
-    fprintf( fp, " po%d", i );
-  fprintf( fp, "\n" );
-  fprintf( fp, ".names const0\n0\n" );
-  Vec_IntForEachEntry( p->vObjs, id, i )
-    {
-      if ( Abc_BddNandObjIsEmptyOrDead( p, id ) )
-	continue;
-      fprintf( fp,".names " );
-      Vec_IntForEachEntry( p->pvFanins[id], idj, j )
-	if ( idj == 0 )
-	  fprintf( fp, "const0 " );	  
-	else if ( idj <= Vec_IntSize( p->vPis ) ) // assuming (id of pi <= num pi)
-	  fprintf( fp, "pi%d ", idj - 1 );
-	else
-	  fprintf( fp, "n%d ", idj );
-      fprintf( fp, "n%d\n", id );
-      for ( j = 0; j < Vec_IntSize( p->pvFanins[id] ); j++ ) 
-	fprintf( fp, "1" );
-      fprintf( fp, " 0\n" );
-    }
-  Vec_IntForEachEntry( p->vPos, id, i )
-    {
-      idj = Vec_IntEntry( p->pvFanins[id], 0 );
-      fprintf( fp, ".names " );
-      if ( idj == 0 )
-	fprintf( fp, "const0 " );	  
-      else if ( idj <= Vec_IntSize( p->vPis ) ) // assuming (id of pi <= num pi)
-	fprintf( fp, "pi%d ", idj - 1 );
-      else
-	fprintf( fp, "n%d ", idj );
-      fprintf( fp, "po%d\n", i );
-      fprintf( fp, "1 1\n" );
-    }
-  fprintf( fp, ".end\n" );
-  fflush( fp );
-}
-
 void Abc_BddNandMarkDescendant_rec( Abc_NandMan * p, Vec_Int_t ** children, int id )
 {
   int j, idj;
@@ -489,45 +730,6 @@ static inline void Abc_BddNandMarkClear( Abc_NandMan * p )
 {
   ABC_FREE( p->pMark );
   p->pMark = ABC_CALLOC( char, p->nObjsAlloc );
-}
-void Abc_BddNandDescendantList_rec( Abc_NandMan * p, Vec_Int_t ** children, Vec_Int_t * list, int id )
-{
-  int j, idj;
-  Vec_IntForEachEntry( children[id], idj, j )
-    if ( !(p->pMark[idj] >> 1) && children[idj] ) // idj is not marked and not leaf
-      {
-	p->pMark[idj] += 2;
-	Vec_IntPush( list, idj );
-	Abc_BddNandDescendantList_rec( p, children, list, idj );
-      }
-}
-static inline void Abc_BddNandSortList( Abc_NandMan * p, Vec_Int_t * list )
-{
-  int i, id, index;
-  Vec_Int_t * listOld;
-  listOld = Vec_IntDup( list );
-  Vec_IntClear( list );
-  Vec_IntForEachEntry( p->vObjs, id, i )
-    {
-      index = Vec_IntFind( listOld, id );
-      if ( index != -1 )
-	{
-	  Vec_IntDrop( listOld, index );      
-	  Vec_IntPush( list, id );
-	  if ( !Vec_IntSize( listOld ) )
-	    break;
-	}
-    }
-  Vec_IntFree( listOld );
-}
-
-static inline void Abc_BddNandDescendantSortedList( Abc_NandMan * p, Vec_Int_t ** children, Vec_Int_t * list, int id )
-{
-  int j, idj;
-  Abc_BddNandDescendantList_rec( p, children, list, id );
-  Vec_IntForEachEntry( list, idj, j )
-    p->pMark[idj] -= 2;
-  Abc_BddNandSortList( p, list );
 }
 
 
@@ -575,36 +777,6 @@ static inline int Abc_BddNandCheck( Abc_NandMan * p )
     }
   return 0;
 }
-static inline int Abc_BddNandBuildInverted( Abc_NandMan * p, int id, int startId )
-{
-  int j, idj;
-  unsigned x;
-  x = Abc_BddLitConst1();
-  Vec_IntForEachEntry( p->pvFanins[id], idj, j )
-    if ( idj == startId )
-      x = Abc_BddAnd( p->pBdd, x, Abc_BddLitNot( p->pBddFuncs[idj] ) );
-    else
-      x = Abc_BddAnd( p->pBdd, x, p->pBddFuncs[idj] );
-  if ( Abc_BddLitIsInvalid( x ) )
-    return -1;
-  p->pBddFuncs[id] = Abc_BddLitNot( x );
-  return 0;
-}
-static inline int Abc_BddNandBuildFanoutConeInverted( Abc_NandMan * p, int startId )
-{ // insert inverters between startId and the fanout node
-  int i, id;
-  Vec_Int_t * targets;
-  targets = Vec_IntAlloc( 1 );
-  Abc_BddNandDescendantSortedList( p, p->pvFanouts, targets, startId );
-  Vec_IntForEachEntry( targets, id, i )
-    if ( Abc_BddNandBuildInverted( p, id, startId ) )
-      {
-	Vec_IntFree( targets );
-	return -1;
-      }
-  Vec_IntFree( targets );
-  return 0;
-}
 
 static inline int Abc_BddNandDc( Abc_NandMan * p )
 {
@@ -636,37 +808,7 @@ static inline int Abc_BddNandDc( Abc_NandMan * p )
 
 
 
-static inline int Abc_BddNandRemoveRedundantFanin( Abc_NandMan * p, int id )
-{
-  int j, k, idj, idk;
-  unsigned x;
-  Vec_IntForEachEntry( p->pvFanins[id], idj, j )
-    {
-      x = Abc_BddLitConst1();
-      Vec_IntForEachEntry( p->pvFanins[id], idk, k )
-	if ( k != j )
-	  x = Abc_BddAnd( p->pBdd, x, p->pBddFuncs[idk] );
-      x = Abc_BddOr( p->pBdd, Abc_BddLitNot( x ), p->pGFuncs[id] );
-      x = Abc_BddOr( p->pBdd, x, p->pBddFuncs[idj] );
-      if ( Abc_BddLitIsInvalid( x ) )
-	return -1;
-      if ( Abc_BddLitIsConst1( x ) )
-	{
-	  Abc_BddNandDisconnect( p, idj, id );
-	  if ( !Vec_IntSize( p->pvFanins[id] ) )
-	    {
-	      Vec_IntForEachEntry( p->pvFanouts[id], idk, k )
-		if ( Vec_IntFind( p->pvFanins[idk], Abc_BddNandConst0() ) == -1 )
-		  Abc_BddNandConnect( p, Abc_BddNandConst0(), idk, 0 );
-	      Abc_BddNandRemoveNode( p, id );
-	      return 0;
-	    }
-	  j--;
-	  continue;
-	}
-    }
-  return 0;
-}
+
 static inline int Abc_BddNandCspfFaninCone( Abc_NandMan * p, int startId )
 {
   int i, id;
@@ -691,134 +833,6 @@ static inline int Abc_BddNandCspfFaninCone( Abc_NandMan * p, int startId )
   return 0;
 }
 
-int Abc_BddNandIsFanoutShared_rec( Abc_NandMan * p, int id, int stage )
-{
-  int j, idj, m;
-  if ( Abc_BddNandObjIsPo( p, id ) )
-    return 0;
-  m = p->pMark[id] >> 1;
-  if ( m == stage )
-    return 0;
-  if ( m )
-    return 1;
-  p->pMark[id] += stage << 1;
-  Vec_IntForEachEntry( p->pvFanouts[id], idj, j )
-    if ( Abc_BddNandIsFanoutShared_rec( p, idj, stage ) )
-      return 1;
-  return 0;
-}
-static inline int Abc_BddNandIsFanoutShared( Abc_NandMan * p, int id )
-{
-  int i, j, idj, r;
-  r = 0;
-  Vec_IntForEachEntry( p->pvFanouts[id], idj, j )
-    if ( Abc_BddNandIsFanoutShared_rec( p, idj, j + 1 ) )
-      {
-	r = 1;
-	break;
-      }
-  for ( i = 0; i < p->nObjsAlloc; i++ )
-    if ( p->pMark[i] % 2 )
-      p->pMark[i] = 1;
-    else
-      p->pMark[i] = 0;
-  return r;
-}
-static inline int Abc_BddNandGFuncMspf( Abc_NandMan * p, int id )
-{
-  int j, idj, idk;
-  unsigned x, y;
-  Vec_Int_t * posOld;
-  if ( !Abc_BddNandIsFanoutShared( p, id ) )
-    return Abc_BddNandGFunc( p, id );
-  posOld = Vec_IntAlloc( Vec_IntSize( p->vPos ) );
-  Vec_IntForEachEntry( p->vPos, idj, j )
-    {
-      idk = Vec_IntEntry( p->pvFanins[idj], 0 );
-      Vec_IntPush( posOld, p->pBddFuncs[idk] );
-    }
-  if ( Abc_BddNandBuildFanoutConeInverted( p, id ) )
-    {
-      Vec_IntFree( posOld );
-      return -1;
-    }
-  x = Abc_BddLitConst1();
-  Vec_IntForEachEntry( p->vPos, idj, j )
-    {
-      idk = Vec_IntEntry( p->pvFanins[idj], 0 );
-      if ( id == idk )
-	y = Abc_BddXnor( p->pBdd, Abc_BddLitNot( p->pBddFuncs[idk] ), Vec_IntEntry( posOld, j ) );
-      else
-	y = Abc_BddXnor( p->pBdd, p->pBddFuncs[idk], Vec_IntEntry( posOld, j ) );
-      y = Abc_BddOr( p->pBdd, y, p->pGFuncs[idj] );
-      x = Abc_BddAnd( p->pBdd, x, y );
-      if ( Abc_BddLitIsInvalid( x ) )
-	{
-	  Vec_IntFree( posOld );
-	  return -1;
-	}
-    }
-  p->pGFuncs[id] = x;
-  Abc_BddNandBuildFanoutCone( p, id );
-  Vec_IntFree( posOld );
-  return 0;
-}
-static inline int Abc_BddNandCFuncMspf( Abc_NandMan * p, int id )
-{
-  int j, k, idj, idk;
-  unsigned x, y;
-  if ( !p->pvCFuncs[id] )
-    p->pvCFuncs[id] = Vec_IntAlloc( Vec_IntSize( p->pvFanins[id] ) );
-  Vec_IntClear( p->pvCFuncs[id] );
-  Vec_IntForEachEntry( p->pvFanins[id], idj, j )
-    {
-      x = Abc_BddLitConst1();
-      Vec_IntForEachEntry( p->pvFanins[id], idk, k )
-	if ( k != j )
-	  x = Abc_BddAnd( p->pBdd, x, p->pBddFuncs[idk] );
-      x = Abc_BddOr( p->pBdd, Abc_BddLitNot( x ), p->pGFuncs[id] );
-      y = Abc_BddOr( p->pBdd, x, p->pBddFuncs[idj] );
-      if ( Abc_BddLitIsInvalid( y ) )
-	return -1;
-      if ( Abc_BddLitIsConst1( y ) )
-	{
-	  Abc_BddNandDisconnect( p, idj, id );
-	  if ( !Vec_IntSize( p->pvFanins[id] ) )
-	    {
-	      Vec_IntForEachEntry( p->pvFanouts[id], idk, k )
-		if ( Vec_IntFind( p->pvFanins[idk], Abc_BddNandConst0() ) == -1 )
-		  Abc_BddNandConnect( p, Abc_BddNandConst0(), idk, 0 );
-	      Abc_BddNandRemoveNode( p, id );
-	    }
-	  return 1;
-	}
-      Vec_IntPush( p->pvCFuncs[id], x );
-    }
-  return 0;
-}
-static inline int Abc_BddNandMspf( Abc_NandMan * p )
-{
-  int i, id, c;
-  Vec_IntForEachEntryReverse( p->vObjs, id, i )
-    {
-      if ( Abc_BddNandObjIsDead( p, id ) )
-	{
-	  Abc_BddNandRemoveNode( p, id );
-	  continue;
-	}
-      if ( Abc_BddNandGFuncMspf( p, id ) )
-	return -1;
-      c = Abc_BddNandCFuncMspf( p, id );
-      if ( c == -1 )
-	return -1;
-      if ( c == 1 )
-	{
-	  Abc_BddNandBuildAll( p );
-	  i = Vec_IntSize( p->vObjs );
-	}
-    }
-  return 0;
-}
 
 static inline int Abc_BddNandTryConnect( Abc_NandMan * p, int fanin, int fanout )
 {
@@ -1392,16 +1406,21 @@ template <typename node>
 void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, int nVerbose )
 {
   auto net = TransductionNetwork( aig, bdd );
-  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node" << net.CountWire() - net.CountGate() << std::endl;
+  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
   
   net.Build();
   net.SetEXDC();
   net.Rank();
   net.SortFIs();
-  
+
+  net.Mspf();
   net.Cspf();
+  //if ( p->nMspf )
+  //Abc_BddNandMspf_Refresh( p );
+  //if ( p->nMspf < 2 )
+  //Abc_BddNandCspfEager( p );
   
-  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node" << net.CountWire() - net.CountGate() << std::endl;
+  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
   
   mockturtle::aig_network aig_new;
   net.Aig( aig_new );
@@ -1449,10 +1468,6 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, int nV
 	printf( "Allocated by 2^%d\n", p->nMem );
       if ( nVerbose )
 	Abc_BddNandPrintStats( p, "initial", clk0 );
-      if ( p->nMspf )
-	Abc_BddNandMspf_Refresh( p );
-      if ( p->nMspf < 2 )
-	Abc_BddNandCspfEager( p );
       if ( nVerbose )
 	Abc_BddNandPrintStats( p, "pf", clk0 );
       int wire = 0;
