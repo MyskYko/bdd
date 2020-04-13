@@ -13,6 +13,7 @@ namespace Bdd
     uint32_t  nNodes = 1 << 20; // Pow 10 30
     bool fGC = 1; // Bool
     bool fRealloc = 1; // None True
+    bool fReo = 0; // None False
     int  nMaxGrowth = 20; // Int 1 100
     // end
     
@@ -29,6 +30,8 @@ namespace Bdd
       if ( std::getline( f, str ) )
 	fRealloc = ( str == "True" );
       if ( std::getline( f, str ) )
+	fReo = ( str == "True" );
+      if ( std::getline( f, str ) )
 	nMaxGrowth = std::stoi( str );
     }
   };
@@ -43,13 +46,13 @@ namespace Bdd
     {
       SimpleBddParam p;
       man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
+      man->RefreshConfig( p.fRealloc, p.fGC, p.fReo, p.nMaxGrowth );
     };
 
     SimpleBddMan( int nVars, SimpleBddParam p )
     {
       man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
+      man->RefreshConfig( p.fRealloc, p.fGC, p.fReo, p.nMaxGrowth );
     };
     ~SimpleBddMan() { delete man; }
     SimpleBdd::lit Const0() override { return man->LitConst0(); }
@@ -61,12 +64,23 @@ namespace Bdd
     int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
     SimpleBdd::lit Then( SimpleBdd::lit const & x ) override { return man->Then( x ); }
     SimpleBdd::lit Else( SimpleBdd::lit const & x ) override { return man->Else( x ); }
+    
     void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( SimpleBdd::lit const & x ) override { man->Deref( x ); }
+    
     SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
+    SimpleBdd::lit Or( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Or( x, y ); }
+    SimpleBdd::lit Xor( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Xor( x, y ); }
+
+    void Reorder() override { man->Reorder(); }
+    
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override
     {
+      if ( !man->get_pvNodesExists() )
+	{
+	  return;
+	}
       uint64_t count = 0;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
 	{
