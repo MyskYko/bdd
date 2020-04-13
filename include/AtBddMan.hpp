@@ -78,7 +78,7 @@ namespace Bdd
     void Reorder() override { throw "undefined"; }
     
     int GetNumVar() override { return man->get_nVars(); }
-    void PrintStats() override
+    void PrintStats( std::vector<AtBdd::lit> & vNodes ) override
     {
       uint64_t count = 0;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )

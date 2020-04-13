@@ -37,7 +37,8 @@ namespace Bdd
     cacBDD::XBDDManager * man;
     
   public:
-    CacBddMan( int nVars ) {
+    CacBddMan( int nVars )
+    {
       CacBddParam p;
       man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
     };
@@ -45,33 +46,30 @@ namespace Bdd
     {
       man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
     };
-    ~CacBddMan()
-    {
-      vNodes.clear();
-      delete man;
-    }
-    cacBDD::BDD  Const0() override { return man->BddZero(); }
-    cacBDD::BDD  Const1() override { return man->BddOne(); }
-    cacBDD::BDD  IthVar( int i ) override { return man->BddVar( i+1 ); }
-    cacBDD::BDD  Regular( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp()? !x: x; }
+    ~CacBddMan() { delete man; }
+    cacBDD::BDD Const0() override { return man->BddZero(); }
+    cacBDD::BDD Const1() override { return man->BddOne(); }
+    cacBDD::BDD IthVar( int i ) override { return man->BddVar( i+1 ); }
+    cacBDD::BDD Regular( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp()? !x: x; }
     bool IsCompl( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp(); }
-    cacBDD::BDD  Not( cacBDD::BDD const & x ) override { return !x; }
-    int  Var( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.Variable()-1; }
-    cacBDD::BDD  Then( cacBDD::BDD const & x ) override { return x.Then(); }
-    cacBDD::BDD  Else( cacBDD::BDD const & x ) override { return x.Else(); }
+    cacBDD::BDD Not( cacBDD::BDD const & x ) override { return !x; }
+    int Var( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.Variable()-1; }
+    cacBDD::BDD Then( cacBDD::BDD const & x ) override { return x.Then(); }
+    cacBDD::BDD Else( cacBDD::BDD const & x ) override { return x.Else(); }
     
     void Ref( cacBDD::BDD const & x ) override { (void)x; }
     void Deref( cacBDD::BDD const & x ) override { (void)x; }
     
-    cacBDD::BDD  And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
-    cacBDD::BDD  Or( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x + y; }
-    cacBDD::BDD  Xor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x ^ y; }
+    cacBDD::BDD And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
+    cacBDD::BDD Or( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x + y; }
+    cacBDD::BDD Xor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x ^ y; }
 
     void Reorder() override { throw "undefined"; }
     
-    int  GetNumVar() override { return man->manager()->GetVariableCount(); }
-    void PrintStats() override
+    int GetNumVar() override { return man->manager()->GetVariableCount(); }
+    void PrintStats( std::vector<cacBDD::BDD> & vNodes ) override
     {
+      (void)vNodes;
       std::cout << "UTable = " << man->GetUTableCount() << std::endl;
       man->ShowInfo();
     }

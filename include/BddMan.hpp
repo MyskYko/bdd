@@ -9,7 +9,6 @@ namespace Bdd
   class BddMan
   {
   public:
-    std::vector<node> vNodes;
     virtual node Const0() = 0;
     virtual node Const1() = 0;
     virtual node IthVar( int i ) = 0;
@@ -30,7 +29,7 @@ namespace Bdd
     virtual void Reorder() = 0;
     
     virtual int  GetNumVar() = 0;
-    virtual void PrintStats() = 0;
+    virtual void PrintStats( std::vector<node> & vNodes ) = 0;
     
     virtual uint64_t Id( node const & x ) = 0;
     

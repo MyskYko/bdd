@@ -75,12 +75,8 @@ namespace Bdd
     void Reorder() override { man->Reorder(); }
     
     int GetNumVar() override { return man->get_nVars(); }
-    void PrintStats() override
+    void PrintStats( std::vector<SimpleBdd::lit> & vNodes ) override
     {
-      if ( !man->get_pvNodesExists() )
-	{
-	  return;
-	}
       uint64_t count = 0;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
 	{

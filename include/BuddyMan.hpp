@@ -58,7 +58,9 @@ namespace Bdd
       Buddy::bdd_init( p.nNodes, p.nCache );
       Buddy::bdd_setmaxincrease( p.nMaxInc );
       if ( p.fDynCache )
-	Buddy::bdd_setcacheratio( p.nDynCache );
+	{
+	  Buddy::bdd_setcacheratio( p.nDynCache );
+	}
       Buddy::bdd_setminfreenodes( p.nMinFree );
       Buddy::bdd_setvarnum( nVars );
       if ( p.nReoScheme )
@@ -72,7 +74,9 @@ namespace Bdd
       Buddy::bdd_init( p.nNodes, p.nCache );
       Buddy::bdd_setmaxincrease( p.nMaxInc );
       if ( p.fDynCache )
-	Buddy::bdd_setcacheratio( p.nDynCache );
+	{
+	  Buddy::bdd_setcacheratio( p.nDynCache );
+	}
       Buddy::bdd_setminfreenodes( p.nMinFree );
       Buddy::bdd_setvarnum( nVars );
       if ( p.nReoScheme )
@@ -82,27 +86,27 @@ namespace Bdd
 	}
     };
     ~BuddyMan() { Buddy::bdd_done(); }
-    Buddy::BDD  Const0() override { return Buddy::bdd_false(); }
-    Buddy::BDD  Const1() override { return Buddy::bdd_true(); }
-    Buddy::BDD  IthVar( int i ) override { return Buddy::bdd_ithvar( i ); }
-    Buddy::BDD  Regular( Buddy::BDD const & x ) override { return x; }
+    Buddy::BDD Const0() override { return Buddy::bdd_false(); }
+    Buddy::BDD Const1() override { return Buddy::bdd_true(); }
+    Buddy::BDD IthVar( int i ) override { return Buddy::bdd_ithvar( i ); }
+    Buddy::BDD Regular( Buddy::BDD const & x ) override { return x; }
     bool IsCompl( Buddy::BDD const & x ) override { (void)x; return 0; }
-    Buddy::BDD  Not( Buddy::BDD const & x ) override { return Buddy::bdd_not( x ); }
-    int  Var( Buddy::BDD const & x ) override { return Buddy::bdd_var( x ); }
-    Buddy::BDD  Then( Buddy::BDD const & x ) override { return Buddy::bdd_high( x ); }
-    Buddy::BDD  Else( Buddy::BDD const & x ) override { return Buddy::bdd_low( x ); }
+    Buddy::BDD Not( Buddy::BDD const & x ) override { return Buddy::bdd_not( x ); }
+    int Var( Buddy::BDD const & x ) override { return Buddy::bdd_var( x ); }
+    Buddy::BDD Then( Buddy::BDD const & x ) override { return Buddy::bdd_high( x ); }
+    Buddy::BDD Else( Buddy::BDD const & x ) override { return Buddy::bdd_low( x ); }
     
     void Ref( Buddy::BDD const & x ) override { Buddy::bdd_addref( x ); }
     void Deref( Buddy::BDD const & x ) override { Buddy::bdd_delref( x ); }
     
-    Buddy::BDD  And( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_and( x, y ); }
-    Buddy::BDD  Or( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_or( x, y ); }
-    Buddy::BDD  Xor( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_xor( x, y ); }
+    Buddy::BDD And( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_and( x, y ); }
+    Buddy::BDD Or( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_or( x, y ); }
+    Buddy::BDD Xor( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_xor( x, y ); }
 
     void Reorder() override { Buddy::bdd_reorder( 3 ); }
     
     int  GetNumVar() override { return Buddy::bdd_varnum(); }
-    void PrintStats() override
+    void PrintStats( std::vector<Buddy::BDD> & vNodes ) override
     {
       uint64_t count = 0;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
