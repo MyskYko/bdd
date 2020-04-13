@@ -482,12 +482,9 @@ public:
     free( pNexts );
     free( pCache );
     free( pObjs );
-    if ( pVars )
-      free( pVars );
+    free( pVars );
     if ( pvNodes )
       delete pvNodes;
-    if ( pEdges )
-      free( pEdges );
   }
 
 /**Function*************************************************************
@@ -701,28 +698,20 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
+  void SupportRef()
+  {
+    if ( pvNodes )
+      return;
+    pvNodes = new std::vector<lit>;
+  }
   void RefreshConfig( bool fRealloc_, bool fGC_, bool fReo_, int nMaxGrowth )
   {
     fRealloc = fRealloc_;
     fGC = fGC_;
     fReo = fReo_;
     MaxGrowth = 0.01 * nMaxGrowth;
-    if ( pvNodes )
-      delete pvNodes;
-    if ( pEdges )
-      free( pEdges );
-    if ( liveBvars.size() )
-      liveBvars.clear();
-    // TODO : nMaxGrowth should not be used below...    
-    if ( fGC || nMaxGrowth )
-      pvNodes = new std::vector<lit>;
-    if ( nMaxGrowth )
-      {
-	pEdges = (edge *)calloc( nObjsAlloc, sizeof(edge) );
-	if ( !pEdges )
-	  throw "Allocation failed";
-	liveBvars.resize( nVars + 2 );
-      }
+    if ( fGC || fReo )
+      SupportRef();
   }
   bool Refresh()
   {
@@ -1169,8 +1158,10 @@ public:
 ***********************************************************************/
   void Reorder()
   {
-    std::vector<var> descendingOrder;
-    std::vector<var> new2old;
+    pEdges = (edge *)calloc( nObjsAlloc, sizeof(edge) );
+    if ( !pEdges )
+      throw "Allocation failed";
+    liveBvars.resize( nVars + 2 );
     if ( nVerbose )
       std::cout << "\tReordering" << std::endl;
     // initialize
@@ -1180,6 +1171,8 @@ public:
 	liveBvars[v].reserve( nObjs / nVars );
       }
     CountEdgeAndBvar( *pvNodes );
+    std::vector<var> descendingOrder;
+    std::vector<var> new2old;
     for ( var v = 0; v < nVars; v++ )
       {
 	new2old.push_back( v );
@@ -1242,7 +1235,8 @@ public:
     vOrdering.clear();
     for ( var i : new2old )
       vOrdering.push_back( vTmp[i] );
-    UncountEdge( *pvNodes ); // may slow it
+    free( pEdges );
+    liveBvars.clear();
     CacheClear();
   }
 };

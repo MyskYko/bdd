@@ -23,7 +23,8 @@ namespace Bdd
     bool fDynCache = 1; // Bool
     int nDynCache = 4; // Log 1 1000
     int nMinFree = 20; // Int 0 100
-    int nReoScheme = 3; // Switch 7
+    bool fReo = 0; // None False
+    int nReoScheme = 3; // Switch 6
     // end
 
     BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )
@@ -45,46 +46,35 @@ namespace Bdd
       if ( std::getline( f, str ) )
 	nMinFree = std::stoi( str );
       if ( std::getline( f, str ) )
+	fReo = ( str == "True" );
+      if ( std::getline( f, str ) )
 	nReoScheme = std::stoi( str );
     }
   };
     
   class BuddyMan : public BddMan<Buddy::BDD>
   {
+  private:
+    BuddyParam param;
+    
   public:
-    BuddyMan( int nVars )
+    BuddyMan( int nVars, BuddyParam param ) : param( param )
     {
-      BuddyParam p;
-      Buddy::bdd_init( p.nNodes, p.nCache );
-      Buddy::bdd_setmaxincrease( p.nMaxInc );
-      if ( p.fDynCache )
+      Buddy::bdd_init( param.nNodes, param.nCache );
+      Buddy::bdd_setmaxincrease( param.nMaxInc );
+      if ( param.fDynCache )
 	{
-	  Buddy::bdd_setcacheratio( p.nDynCache );
+	  Buddy::bdd_setcacheratio( param.nDynCache );
 	}
-      Buddy::bdd_setminfreenodes( p.nMinFree );
+      Buddy::bdd_setminfreenodes( param.nMinFree );
       Buddy::bdd_setvarnum( nVars );
-      if ( p.nReoScheme )
+      Buddy::bdd_varblockall();
+      if ( param.fReo )
 	{
-	  Buddy::bdd_varblockall();
-	  Buddy::bdd_autoreorder( p.nReoScheme );
+	  Buddy::bdd_autoreorder( param.nReoScheme + 1 );
 	}
     };
-    BuddyMan( int nVars, BuddyParam p )
-    {
-      Buddy::bdd_init( p.nNodes, p.nCache );
-      Buddy::bdd_setmaxincrease( p.nMaxInc );
-      if ( p.fDynCache )
-	{
-	  Buddy::bdd_setcacheratio( p.nDynCache );
-	}
-      Buddy::bdd_setminfreenodes( p.nMinFree );
-      Buddy::bdd_setvarnum( nVars );
-      if ( p.nReoScheme )
-	{
-	  Buddy::bdd_varblockall();
-	  Buddy::bdd_autoreorder( p.nReoScheme );
-	}
-    };
+    BuddyMan( int nVars ) : BuddyMan( nVars, BuddyParam() ) {}
     ~BuddyMan() { Buddy::bdd_done(); }
     Buddy::BDD Const0() override { return Buddy::bdd_false(); }
     Buddy::BDD Const1() override { return Buddy::bdd_true(); }
@@ -103,7 +93,7 @@ namespace Bdd
     Buddy::BDD Or( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_or( x, y ); }
     Buddy::BDD Xor( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_xor( x, y ); }
 
-    void Reorder() override { Buddy::bdd_reorder( 3 ); }
+    void Reorder() override { Buddy::bdd_reorder( param.nReoScheme + 1 ); }
     
     int  GetNumVar() override { return Buddy::bdd_varnum(); }
     void PrintStats( std::vector<Buddy::BDD> & vNodes ) override

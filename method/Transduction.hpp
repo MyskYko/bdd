@@ -871,6 +871,11 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, int nV
   auto net = TransductionNetwork( aig, bdd );
   std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
   
+  if ( net.fReo )
+    {
+      bdd.SupportRef();
+    }
+  
   net.Build();
 
   if ( net.fReo )

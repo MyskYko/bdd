@@ -35,17 +35,14 @@ namespace Bdd
   {
   private:
     cacBDD::XBDDManager * man;
+    CacBddParam param;
     
   public:
-    CacBddMan( int nVars )
+    CacBddMan( int nVars, CacBddParam param ) : param( param )
     {
-      CacBddParam p;
-      man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
+      man = new cacBDD::XBDDManager( nVars, param.slotSize, param.uSize, param.cSize );
     };
-    CacBddMan( int nVars, CacBddParam p )
-    {
-      man = new cacBDD::XBDDManager( nVars, p.slotSize, p.uSize, p.cSize );
-    };
+    CacBddMan( int nVars ) : CacBddMan( nVars, CacBddParam() ) {}
     ~CacBddMan() { delete man; }
     cacBDD::BDD Const0() override { return man->BddZero(); }
     cacBDD::BDD Const1() override { return man->BddOne(); }

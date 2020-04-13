@@ -43,20 +43,15 @@ namespace Bdd
   {
   private:
     AtBdd::BddMan * man;
+    AtBddParam param;
     
   public:
-    AtBddMan( int nVars )
+    AtBddMan( int nVars, AtBddParam param ) : param( param )
     {
-      AtBddParam p;
-      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
+      man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, NULL, 0 );
+      man->RefreshConfig( param.fRealloc, param.fGC, param.nMaxGrowth );
     };
-
-    AtBddMan( int nVars, AtBddParam p )
-    {
-      man = new AtBdd::BddMan( nVars, p.nNodes, p.nUnique, p.nCache, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.nMaxGrowth );
-    };
+    AtBddMan( int nVars ) : AtBddMan( nVars, AtBddParam() ) {}
     ~AtBddMan() { delete man; }
     AtBdd::lit Const0() override { return man->LitConst0(); }
     AtBdd::lit Const1() override { return man->LitConst1(); }

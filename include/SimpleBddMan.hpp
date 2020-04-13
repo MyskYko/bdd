@@ -10,11 +10,11 @@ namespace Bdd
   struct SimpleBddParam
   {
     // Param
-    uint32_t  nNodes = 1 << 20; // Pow 10 30
+    uint32_t nNodes = 1 << 20; // Pow 10 30
     bool fGC = 1; // Bool
     bool fRealloc = 1; // None True
-    bool fReo = 0; // None False
-    int  nMaxGrowth = 20; // Int 1 100
+    bool fReo = 1; // None False
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
@@ -40,20 +40,15 @@ namespace Bdd
   {
   private:
     SimpleBdd::BddMan * man;
+    SimpleBddParam param;
     
   public:
-    SimpleBddMan( int nVars )
+    SimpleBddMan( int nVars, SimpleBddParam param ) : param( param )
     {
-      SimpleBddParam p;
-      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.fReo, p.nMaxGrowth );
+      man = new SimpleBdd::BddMan( nVars, param.nNodes, NULL, 0 );
+      man->RefreshConfig( param.fRealloc, param.fGC, param.fReo, param.nMaxGrowth );
     };
-
-    SimpleBddMan( int nVars, SimpleBddParam p )
-    {
-      man = new SimpleBdd::BddMan( nVars, p.nNodes, NULL, 0 );
-      man->RefreshConfig( p.fRealloc, p.fGC, p.fReo, p.nMaxGrowth );
-    };
+    SimpleBddMan( int nVars ) : SimpleBddMan( nVars, SimpleBddParam() ) {}
     ~SimpleBddMan() { delete man; }
     SimpleBdd::lit Const0() override { return man->LitConst0(); }
     SimpleBdd::lit Const1() override { return man->LitConst1(); }
@@ -87,6 +82,8 @@ namespace Bdd
     }
 
     uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }
+
+    void SupportRef() { man->SupportRef(); }
   };
 }
 

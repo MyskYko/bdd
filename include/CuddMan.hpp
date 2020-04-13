@@ -17,7 +17,8 @@ namespace Bdd
     int nMaxMem = 0; // Log 1000 1000000000
     int nMinHit = 30; // Int 1 99
     bool fGC = 1; // Bool
-    int nReoScheme = 1; // Switch 13
+    bool fReo = 0; // None False
+    int nReoScheme = 0; // Switch 12
     int nMaxGrowth = 20; // Int 1 100
     // end
     
@@ -38,6 +39,8 @@ namespace Bdd
       if ( std::getline( f, str ) )
 	fGC = ( str == "True" );
       if ( std::getline( f, str ) )
+	fReo = ( str == "True" );
+      if ( std::getline( f, str ) )
 	nReoScheme = std::stoi( str );
       if ( std::getline( f, str ) )
 	nMaxGrowth = std::stoi( str );
@@ -48,33 +51,24 @@ namespace Bdd
   {
   private:
     DdManager * man;
+    CuddParam param;
     
   public:
-    CuddMan( int nVars )
+    CuddMan( int nVars, CuddParam param ) : param( param )
     {
-      CuddParam p;
-      man = Cudd_Init( nVars, 0, p.nUnique, p.nCache, p.nMaxMem );
-      Cudd_SetMinHit( man, p.nMinHit );
-      if ( !p.fGC )
-	Cudd_DisableGarbageCollection( man );
-      if ( p.nReoScheme )
+      man = Cudd_Init( nVars, 0, param.nUnique, param.nCache, param.nMaxMem );
+      Cudd_SetMinHit( man, param.nMinHit );
+      if ( !param.fGC )
 	{
-	  Cudd_AutodynEnable( man, (Cudd_ReorderingType)(CUDD_REORDER_SIFT + p.nReoScheme - 1) );
-	  Cudd_SetMaxGrowth( man, 1.0 + p.nMaxGrowth * 0.01 );
+	  Cudd_DisableGarbageCollection( man );
 	}
-    }
-    CuddMan( int nVars, CuddParam p )
-    {
-      man = Cudd_Init( nVars, 0, p.nUnique, p.nCache, p.nMaxMem );
-      Cudd_SetMinHit( man, p.nMinHit );
-      if ( !p.fGC )
-	Cudd_DisableGarbageCollection( man );
-      if ( p.nReoScheme )
+      if ( param.fReo )
 	{
-	  Cudd_AutodynEnable( man, (Cudd_ReorderingType)(CUDD_REORDER_SIFT + p.nReoScheme - 1) );
-	  Cudd_SetMaxGrowth( man, 1.0 + p.nMaxGrowth * 0.01 );
+	  Cudd_AutodynEnable( man, (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) );
 	}
+      Cudd_SetMaxGrowth( man, 1.0 + param.nMaxGrowth * 0.01 );
     }
+    CuddMan( int nVars ) : CuddMan( nVars, CuddParam() ) {}
     ~CuddMan() { Cudd_Quit( man ); }
     DdNode * Const0() override { return Cudd_Not( Cudd_ReadOne( man ) ); }
     DdNode * Const1() override { return Cudd_ReadOne( man ); }
@@ -93,7 +87,7 @@ namespace Bdd
     DdNode * Or( DdNode * const & x, DdNode * const & y ) override { return Cudd_bddOr( man, x, y ); }
     DdNode * Xor( DdNode * const & x, DdNode * const & y ) override { return Cudd_bddXor( man, x, y ); }
 
-    void Reorder() override { Cudd_ReduceHeap( man, CUDD_REORDER_SIFT, 0 ); }
+    void Reorder() override { Cudd_ReduceHeap( man, (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ), 0 ); }
     
     int GetNumVar() override { return Cudd_ReadSize( man ); }
     void PrintStats( std::vector<DdNode *> & vNodes ) override
