@@ -881,6 +881,7 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, int nV
   if ( net.fReo )
     {
       bdd.Reorder();
+      bdd.UnsupportRef();
     }
 
   net.SetEXDC();

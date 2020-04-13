@@ -84,6 +84,7 @@ namespace Bdd
     uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }
 
     void SupportRef() { man->SupportRef(); }
+    void UnsupportRef() { man->UnsupportRef(); }
   };
 }
 

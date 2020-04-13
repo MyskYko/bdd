@@ -37,6 +37,7 @@ namespace Bdd
     virtual void DerefNot( node const & x ) { (void)x; }
 
     virtual void SupportRef() {}
+    virtual void UnsupportRef() {}
   };
 }
 

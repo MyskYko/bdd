@@ -700,9 +700,13 @@ public:
 ***********************************************************************/
   void SupportRef()
   {
-    if ( pvNodes )
-      return;
-    pvNodes = new std::vector<lit>;
+    if ( !pvNodes )
+      pvNodes = new std::vector<lit>;
+  }
+  void UnsupportRef()
+  {
+    if ( !fGC && !fReo && pvNodes )
+      delete pvNodes;
   }
   void RefreshConfig( bool fRealloc_, bool fGC_, bool fReo_, int nMaxGrowth )
   {
@@ -710,6 +714,8 @@ public:
     fGC = fGC_;
     fReo = fReo_;
     MaxGrowth = 0.01 * nMaxGrowth;
+    if ( pvNodes )
+      delete pvNodes;
     if ( fGC || fReo )
       SupportRef();
   }
