@@ -67,9 +67,16 @@ namespace Bdd
     int Var( AtBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
     AtBdd::lit Then( AtBdd::lit const & x ) override { return man->Then( x ); }
     AtBdd::lit Else( AtBdd::lit const & x ) override { return man->Else( x ); }
+    
     void Ref( AtBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( AtBdd::lit const & x ) override { man->Deref( x ); }
+    
     AtBdd::lit And( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->And( x, y ); }
+    AtBdd::lit Or( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->Or( x, y ); }
+    AtBdd::lit Xor( AtBdd::lit const & x, AtBdd::lit const & y ) override { throw "undefined"; }
+
+    void Reorder() override { throw "undefined"; }
+    
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats() override
     {

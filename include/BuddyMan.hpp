@@ -91,9 +91,16 @@ namespace Bdd
     int  Var( Buddy::BDD const & x ) override { return Buddy::bdd_var( x ); }
     Buddy::BDD  Then( Buddy::BDD const & x ) override { return Buddy::bdd_high( x ); }
     Buddy::BDD  Else( Buddy::BDD const & x ) override { return Buddy::bdd_low( x ); }
+    
     void Ref( Buddy::BDD const & x ) override { Buddy::bdd_addref( x ); }
     void Deref( Buddy::BDD const & x ) override { Buddy::bdd_delref( x ); }
+    
     Buddy::BDD  And( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_and( x, y ); }
+    Buddy::BDD  Or( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_or( x, y ); }
+    Buddy::BDD  Xor( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_xor( x, y ); }
+
+    void Reorder() override { Buddy::bdd_reorder( 3 ); }
+    
     int  GetNumVar() override { return Buddy::bdd_varnum(); }
     void PrintStats() override
     {

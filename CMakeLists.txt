@@ -18,27 +18,25 @@ endif()
 
 add_subdirectory(lib)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/method)
+
 add_executable(test_simplebdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
 target_link_libraries(test_simplebdd mockturtle simplebdd)
-target_include_directories(test_simplebdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(test_simplebdd PUBLIC SIMPLEBDD)
 
 add_executable(test_cudd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
 target_link_libraries(test_cudd mockturtle cudd)
-target_include_directories(test_cudd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(test_cudd PUBLIC CUDD)
 
 add_executable(test_buddy ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
 target_link_libraries(test_buddy mockturtle buddy)
-target_include_directories(test_buddy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(test_buddy PUBLIC BUDDY)
 
 add_executable(test_cacbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
 target_link_libraries(test_cacbdd mockturtle cacbdd)
-target_include_directories(test_cacbdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(test_cacbdd PUBLIC CACBDD)
 
 add_executable(test_atbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
 target_link_libraries(test_atbdd mockturtle atbdd)
-target_include_directories(test_atbdd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(test_atbdd PUBLIC ATBDD)
