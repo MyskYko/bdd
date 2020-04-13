@@ -43,12 +43,12 @@ int main( int argc, char ** argv )
       Bdd::AtBddMan bdd( aig.num_pis() );
 #endif
       
-      Bdd::Aig2Bdd( aig, bdd );
+      Aig2Bdd( aig, bdd );
       if ( !filename2.empty() )
 	{
 	  bdd.PrintStats();
 	  mockturtle::aig_network aig2;
-	  Bdd::Bdd2Aig( aig2, bdd );
+	  Bdd2Aig( aig2, bdd );
 	  mockturtle::write_bench( aig2, filename2 );
 	}
     }
