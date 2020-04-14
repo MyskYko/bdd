@@ -675,17 +675,6 @@ public:
     Pop();
     return z;
   }
-  lit Xnor( lit x, lit y )
-  {
-    lit z1 = And( x, y );
-    Ref( z1 );
-    lit z0 = And( LitNot( x ), LitNot( y ) );
-    Ref( z0 );
-    lit z = Or( z0, z1 );
-    Pop();
-    Pop();
-    return z;
-  }
   
 /**Function*************************************************************
 
