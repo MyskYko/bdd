@@ -54,14 +54,9 @@ namespace Bdd
     cacBDD::BDD Then( cacBDD::BDD const & x ) override { return x.Then(); }
     cacBDD::BDD Else( cacBDD::BDD const & x ) override { return x.Else(); }
     
-    void Ref( cacBDD::BDD const & x ) override { (void)x; }
-    void Deref( cacBDD::BDD const & x ) override { (void)x; }
-    
     cacBDD::BDD And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
     cacBDD::BDD Or( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x + y; }
     cacBDD::BDD Xor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x ^ y; }
-
-    void Reorder() override { throw "undefined"; }
     
     int GetNumVar() override { return man->manager()->GetVariableCount(); }
     void PrintStats( std::vector<cacBDD::BDD> & vNodes ) override

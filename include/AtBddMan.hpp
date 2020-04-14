@@ -68,10 +68,7 @@ namespace Bdd
     
     AtBdd::lit And( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->And( x, y ); }
     AtBdd::lit Or( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->Or( x, y ); }
-    AtBdd::lit Xor( AtBdd::lit const & x, AtBdd::lit const & y ) override { throw "undefined"; }
 
-    void Reorder() override { throw "undefined"; }
-    
     int GetNumVar() override { return man->get_nVars(); }
     void PrintStats( std::vector<AtBdd::lit> & vNodes ) override
     {
