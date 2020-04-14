@@ -30,6 +30,7 @@ namespace Bdd
     virtual void SupportRef() {}
     virtual void UnsupportRef() {}
 
+    virtual int Perm( int i ) { return i; }
     virtual void Reorder() {};
         
     virtual node And( node const & x, node const & y );
@@ -41,7 +42,7 @@ namespace Bdd
     virtual node AndExist( node const & x, node const & y, node const & cube );
     virtual node Restrict( node const & x, node const & c );
     virtual node Compose( node const & x, int i, node const & c );
-    virtual node VecCompose( node const & x, const std::vector<node> & cs );
+    virtual node VecCompose( node const & x, std::vector<node> & cs );
 
     virtual void Support( node const & x, std::vector<int> & vVars );
     
@@ -264,7 +265,7 @@ namespace Bdd
     return y;
   }
   template <typename node>
-  node BddMan<node>::VecCompose( node const & x, const std::vector<node> & cs )
+  node BddMan<node>::VecCompose( node const & x, std::vector<node> & cs )
   {
     if ( x == Const0() || x == Const1() )
       {

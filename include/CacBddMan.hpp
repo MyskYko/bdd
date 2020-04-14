@@ -44,29 +44,39 @@ namespace Bdd
     };
     CacBddMan( int nVars ) : CacBddMan( nVars, CacBddParam() ) {}
     ~CacBddMan() { delete man; }
+    
+    int GetNumVar() override { return man->manager()->GetVariableCount(); }
+    uint64_t Id( cacBDD::BDD const & x ) { return (uint64_t)x.Node(); }
+    
     cacBDD::BDD Const0() override { return man->BddZero(); }
     cacBDD::BDD Const1() override { return man->BddOne(); }
-    cacBDD::BDD IthVar( int i ) override { return man->BddVar( i+1 ); }
+    cacBDD::BDD IthVar( int i ) override { return man->BddVar( i + 1 ); }
     cacBDD::BDD Regular( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp()? !x: x; }
-    bool IsCompl( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp(); }
-    cacBDD::BDD Not( cacBDD::BDD const & x ) override { return !x; }
-    int Var( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.Variable()-1; }
+    bool IsCompl( cacBDD::BDD const & x ) override { cacBDD::BDD x_ = x; return x_.IsComp(); }
+    int Var( cacBDD::BDD const & x ) override { cacBDD::BDD x_ = x; return x_.Variable() - 1; }
     cacBDD::BDD Then( cacBDD::BDD const & x ) override { return x.Then(); }
     cacBDD::BDD Else( cacBDD::BDD const & x ) override { return x.Else(); }
+    cacBDD::BDD Not( cacBDD::BDD const & x ) override { return !x; }
     
     cacBDD::BDD And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
     cacBDD::BDD Or( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x + y; }
     cacBDD::BDD Xor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x ^ y; }
+    cacBDD::BDD Ite( cacBDD::BDD const & c, cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return man->Ite( c, x, y ); }
+    cacBDD::BDD Exist( cacBDD::BDD const & x, cacBDD::BDD const & cube ) override { cacBDD::BDD x_ = x; return x_.Exist( cube ); }
+    cacBDD::BDD Univ( cacBDD::BDD const & x, cacBDD::BDD const & cube ) override { cacBDD::BDD x_ = x; return x_.Universal( cube ); }
+    cacBDD::BDD AndExist( cacBDD::BDD const & x, cacBDD::BDD const & y, cacBDD::BDD const & cube ) override { cacBDD::BDD x_ = x; return x_.AndExist( y, cube ); }
+    cacBDD::BDD Restrict( cacBDD::BDD const & x, cacBDD::BDD const & c ) override { return x.Restrict( c ); }
+    cacBDD::BDD Compose( cacBDD::BDD const & x, int i, cacBDD::BDD const & c ) override { return x.Compose( i, c ); }
+    // cacBDD::BDD VecCompose( cacBDD::BDD const & x, std::vector<cacBDD::BDD> & cs ) override {}
     
-    int GetNumVar() override { return man->manager()->GetVariableCount(); }
+    void Support( cacBDD::BDD const & x, std::vector<int> & vVars ) override { cacBDD::BDD x_ = x; x_.Support( vVars ); }
+    
     void PrintStats( std::vector<cacBDD::BDD> & vNodes ) override
     {
       (void)vNodes;
       std::cout << "UTable = " << man->GetUTableCount() << std::endl;
       man->ShowInfo();
     }
-
-    uint64_t Id( cacBDD::BDD const & x ) { return (uint64_t)x.Node(); }
   };
 }
 

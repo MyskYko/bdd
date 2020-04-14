@@ -50,26 +50,32 @@ namespace Bdd
     };
     SimpleBddMan( int nVars ) : SimpleBddMan( nVars, SimpleBddParam() ) {}
     ~SimpleBddMan() { delete man; }
+    
+    int GetNumVar() override { return man->get_nVars(); }
+    uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }
+    
     SimpleBdd::lit Const0() override { return man->LitConst0(); }
     SimpleBdd::lit Const1() override { return man->LitConst1(); }
     SimpleBdd::lit IthVar( int i ) override { return man->LitIthVar( i ); }
     SimpleBdd::lit Regular( SimpleBdd::lit const & x ) override { return man->LitRegular( x ); }
     bool IsCompl( SimpleBdd::lit const & x ) override { return man->LitIsCompl( x ); }
-    SimpleBdd::lit Not( SimpleBdd::lit const & x ) override { return man->LitNot( x ); }
     int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
     SimpleBdd::lit Then( SimpleBdd::lit const & x ) override { return man->Then( x ); }
     SimpleBdd::lit Else( SimpleBdd::lit const & x ) override { return man->Else( x ); }
+    SimpleBdd::lit Not( SimpleBdd::lit const & x ) override { return man->LitNot( x ); }
     
     void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( SimpleBdd::lit const & x ) override { man->Deref( x ); }
+    void SupportRef() override { man->SupportRef(); }
+    void UnsupportRef() override { man->UnsupportRef(); }
+
+    int Perm( int i ) override { return man->Var( IthVar( i ) ); }
+    void Reorder() override { man->Reorder(); }
     
     SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
     SimpleBdd::lit Or( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Or( x, y ); }
     SimpleBdd::lit Xor( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Xor( x, y ); }
-
-    void Reorder() override { man->Reorder(); }
     
-    int GetNumVar() override { return man->get_nVars(); }
     void PrintStats( std::vector<SimpleBdd::lit> & vNodes ) override
     {
       uint64_t count = 0;
@@ -80,11 +86,6 @@ namespace Bdd
       std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
-
-    uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }
-
-    void SupportRef() { man->SupportRef(); }
-    void UnsupportRef() { man->UnsupportRef(); }
   };
 }
 

@@ -76,26 +76,62 @@ namespace Bdd
     };
     BuddyMan( int nVars ) : BuddyMan( nVars, BuddyParam() ) {}
     ~BuddyMan() { Buddy::bdd_done(); }
+    
+    int  GetNumVar() override { return Buddy::bdd_varnum(); }
+    uint64_t Id( Buddy::BDD const & x ) { return (uint64_t)x; }
+    
     Buddy::BDD Const0() override { return Buddy::bdd_false(); }
     Buddy::BDD Const1() override { return Buddy::bdd_true(); }
     Buddy::BDD IthVar( int i ) override { return Buddy::bdd_ithvar( i ); }
     Buddy::BDD Regular( Buddy::BDD const & x ) override { return x; }
     bool IsCompl( Buddy::BDD const & x ) override { (void)x; return 0; }
-    Buddy::BDD Not( Buddy::BDD const & x ) override { return Buddy::bdd_not( x ); }
     int Var( Buddy::BDD const & x ) override { return Buddy::bdd_var( x ); }
     Buddy::BDD Then( Buddy::BDD const & x ) override { return Buddy::bdd_high( x ); }
     Buddy::BDD Else( Buddy::BDD const & x ) override { return Buddy::bdd_low( x ); }
+    Buddy::BDD Not( Buddy::BDD const & x ) override { return Buddy::bdd_not( x ); }
     
     void Ref( Buddy::BDD const & x ) override { Buddy::bdd_addref( x ); }
     void Deref( Buddy::BDD const & x ) override { Buddy::bdd_delref( x ); }
-    
+    void RefNot( Buddy::BDD const & x ) override { Buddy::bdd_addref( x ); }
+    void DerefNot( Buddy::BDD const & x ) override { Buddy::bdd_delref( x ); }
+
+    int Perm( int i ) override { return Buddy::bdd_var2level( i ); }
+    void Reorder() override { Buddy::bdd_reorder( param.nReoScheme + 1 ); }
+
     Buddy::BDD And( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_and( x, y ); }
     Buddy::BDD Or( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_or( x, y ); }
     Buddy::BDD Xor( Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_xor( x, y ); }
-
-    void Reorder() override { Buddy::bdd_reorder( param.nReoScheme + 1 ); }
+    Buddy::BDD Ite( Buddy::BDD const & c, Buddy::BDD const & x, Buddy::BDD const & y ) override { return Buddy::bdd_ite( c, x, y ); }
+    Buddy::BDD Exist( Buddy::BDD const & x, Buddy::BDD const & cube ) override { return Buddy::bdd_exist( x, cube ); }
+    Buddy::BDD Univ( Buddy::BDD const & x, Buddy::BDD const & cube ) override { return Buddy::bdd_forall( x, cube ); }
+    Buddy::BDD AndExist( Buddy::BDD const & x, Buddy::BDD const & y, Buddy::BDD const & cube ) override { return Buddy::bdd_appex( x, y, bddop_and, cube ); }
+    Buddy::BDD Restrict( Buddy::BDD const & x, Buddy::BDD const & c ) override { return Buddy::bdd_simplify( x, c ); }
+    Buddy::BDD Compose( Buddy::BDD const & x, int i, Buddy::BDD const & c ) override { return Buddy::bdd_compose( x, c, IthVar( i ) ); }
+    Buddy::BDD VecCompose( Buddy::BDD const & x, std::vector<Buddy::BDD> & cs ) override
+    {
+      auto ps = Buddy::bdd_newpair();
+      for ( int i = 0; i < GetNumVar(); i++ )
+	{
+	  Buddy::bdd_setbddpair( ps, i, cs[i] );
+	}
+      Buddy::BDD y = Buddy::bdd_veccompose( x, ps );
+      Buddy::bdd_freepair( ps );
+      return y;
+    }
     
-    int  GetNumVar() override { return Buddy::bdd_varnum(); }
+    void Support( Buddy::BDD const & x, std::vector<int> & vVars ) override
+    {
+      Buddy::BDD y = Buddy::bdd_support( x );
+      int * pVars;
+      int nVars;
+      Buddy::bdd_scanset( y, &pVars, &nVars );
+      for( int i = 0; i < nVars; i++ )
+	{
+	  vVars.push_back( pVars[i] );
+	}
+      free( pVars );
+    }
+
     void PrintStats( std::vector<Buddy::BDD> & vNodes ) override
     {
       uint64_t count = 0;
@@ -106,11 +142,6 @@ namespace Bdd
       std::cout << "Shared BDD nodes = " << Buddy::bdd_anodecount( vNodes.data(), vNodes.size() ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
-
-    uint64_t Id( Buddy::BDD const & x ) { return (uint64_t)x; }
-    
-    void RefNot( Buddy::BDD const & x ) override { Buddy::bdd_addref( x ); }
-    void DerefNot( Buddy::BDD const & x ) override { Buddy::bdd_delref( x ); }
   };
 }
 
