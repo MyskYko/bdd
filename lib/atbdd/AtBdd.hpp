@@ -434,6 +434,8 @@ public:
       }
     while ( nUnique < nObjsAlloc * UniqueMinRate )
       {
+	if ( nUnique > (lit)BvarInvalid() )
+	  break;
 	nUnique = nUnique + nUnique;
 	if ( !nUnique )
 	  throw "Unique overflow just for init\n";

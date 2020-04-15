@@ -88,7 +88,7 @@ private:
 public:
   int  get_nVars() { return nVars; }
   int  get_order( int v ) { return vOrdering[v]; }
-  bool  get_pvNodesExists() { return pvNodes != NULL; }
+  bool get_pvNodesExists() { return pvNodes != NULL; }
   void show_refstat()
   {
     for ( lit x : *pvNodes )
@@ -426,7 +426,7 @@ public:
     while ( nObjsAlloc <= (lit)nVars )
       {
 	nObjsAlloc = nObjsAlloc + nObjsAlloc;
-	if ( !nObjsAlloc || nObjsAlloc > (lit)BvarInvalid() + 1 )
+	if ( !nObjsAlloc )
 	  throw "Node overflow just for Variables";
       }
     if ( nVerbose )
@@ -586,6 +586,26 @@ public:
     free( pCache );
     pCache = (lit *)calloc( 3 * (size)nObjsAlloc, sizeof(lit) );
   }
+  void Recache( lit nObjsAllocOld )
+  {
+    for ( lit i = 0; i < nObjsAllocOld; i++ )
+      {
+	lit * p = pCache + i + i + i;
+	if ( !p[0] && !p[1] )
+	  continue;
+	lit hash = Hash( 0, p[0], p[1] ) & nCacheMask;
+	if ( i !=  hash )
+	  {
+	    lit * q = pCache + hash + hash + hash;
+	    q[0] = p[0];
+	    q[1] = p[1];
+	    q[2] = p[2];
+	    p[0] = 0;
+	    p[1] = 0;
+	    p[2] = 0;
+	  }
+      }
+  }
   
 /**Function*************************************************************
    
@@ -733,7 +753,7 @@ public:
 	GarbageCollect();
 	return 0;
       }
-    if ( fRealloc && nObjsAlloc <= (lit)BvarInvalid() )
+    if ( fRealloc )
       {
 	Realloc();
 	return 0;
@@ -784,26 +804,28 @@ public:
   {
     lit nObjsAllocOld = nObjsAlloc;
     nObjsAlloc  = nObjsAlloc + nObjsAlloc;
-    if ( !nObjsAlloc || nObjsAlloc > (lit)BvarInvalid() + 1 )
-      throw "Node overflow\n";
+    if ( !nObjsAlloc )
+      throw "Node overflow";
     if ( nVerbose )
       std::cout << "\tReallocate " << nObjsAlloc << " nodes" << std::endl;
     nUniqueMask = nObjsAlloc - 1;
     nCacheMask  = nObjsAlloc - 1;
     pUnique     = (bvar *)realloc( pUnique, sizeof(bvar) * nObjsAlloc );
     pNexts      = (bvar *)realloc( pNexts, sizeof(bvar) * nObjsAlloc );
+    pCache      = (lit  *)realloc( pCache, sizeof(lit) * 3 * (size)nObjsAlloc );
     pVars       = (var  *)realloc( pVars, sizeof(var) * nObjsAlloc );
     pObjs       = (lit  *)realloc( pObjs, sizeof(lit) * 2 * (size)nObjsAlloc );
     pMarks      = (mark *)realloc( pMarks, sizeof(mark) * nObjsAlloc );
-    if ( !pUnique || !pNexts || !pVars || !pObjs || !pMarks )
+    if ( !pUnique || !pNexts || !pCache || !pVars || !pObjs || !pMarks )
       throw "Reallocation failed";
     memset( pUnique + nObjsAllocOld, 0, sizeof(bvar) * nObjsAllocOld );
     memset( pNexts + nObjsAllocOld, 0, sizeof(bvar) * nObjsAllocOld );
+    memset( pCache + 3 * (size)nObjsAllocOld, 0, sizeof(lit) * 3 * (size)nObjsAllocOld );
     memset( pVars + nObjsAllocOld, 0, sizeof(var) * nObjsAllocOld );
     memset( pObjs + 2 * (size)nObjsAllocOld, 0, sizeof(lit) * 2 * (size)nObjsAllocOld );
     memset( pMarks + nObjsAllocOld, 0, sizeof(mark) * nObjsAllocOld );
-    CacheClear();
     Rehash( nObjsAllocOld );
+    Recache( nObjsAllocOld );
     if ( pEdges )
       {
 	pEdges = (edge *)realloc( pEdges, sizeof(edge) * nObjsAlloc );
