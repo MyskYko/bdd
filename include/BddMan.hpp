@@ -25,8 +25,10 @@ namespace Bdd
     
     virtual void Ref( node const & x ) { (void)x; }
     virtual void Deref( node const & x ) { (void)x; }
+    virtual void Pop( node const & x ) { Deref( x ); }
     virtual void RefNot( node const & x ) { (void)x; }
     virtual void DerefNot( node const & x ) { (void)x; }
+    virtual void PopNot( node const & x ) { DerefNot( x ); }
     virtual void SupportRef() {}
     virtual void UnsupportRef() {}
 

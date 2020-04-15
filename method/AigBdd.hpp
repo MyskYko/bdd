@@ -36,12 +36,12 @@ std::vector<node> Aig2Bdd( mockturtle::aig_network & aig_, Bdd::BddMan<node> & b
 	      bdd.RefNot( y );
 	    }
 	  node z = bdd.And( x, y );
-	  bdd.Ref( z );
-	  bdd.Deref( x );
 	  if ( aig.is_complemented( fanin ) )
 	    {
-	      bdd.DerefNot( y );
+	      bdd.PopNot( y );
 	    }
+	  bdd.Pop( x );
+	  bdd.Ref( z );
 	  x = z;
 	});
       m[aig.node_to_index( gate )] = x;

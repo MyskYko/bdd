@@ -74,6 +74,7 @@ namespace Bdd
     
     void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( SimpleBdd::lit const & x ) override { man->Deref( x ); }
+    void Pop( SimpleBdd::lit const & x ) override { (void)x; man->Pop(); }
     void SupportRef() override { man->SupportRef(); }
     void UnsupportRef() override { man->UnsupportRef(); }
 
