@@ -49,7 +49,7 @@ int main( int argc, char ** argv )
 	  bdd.PrintStats( vNodes );
 	  mockturtle::aig_network aig2;
 	  Bdd2Aig( aig2, bdd, vNodes );
-	  mockturtle::write_bench( aig2, filename2 );
+	  mockturtle::write_blif( aig2, filename2 );
 	}
     }
   catch ( char const * error )
