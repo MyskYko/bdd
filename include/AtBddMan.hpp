@@ -13,26 +13,46 @@ namespace Bdd
     uint32_t nNodes = 1 << 20; // Pow 10 30
     uint32_t nUnique = 1 << 18; // Pow 10 30
     uint32_t nCache = 1 << 18; // Pow 10 30
-    bool fGC = 1; // Bool
+    int nUniqueMinRate = 25; // Int 1 100
+    int nCallThold = 200000; // Log 1000 1000000000
     bool fRealloc = 1; // None True
+    bool fGC = 1; // Bool
+    uint32_t nGC = 1 << 25; // Log 1000 1000000000
+    bool fReo = 0; // None False
+    uint32_t nReo = 4000; // Log 1000 1000000000
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     AtBddParam( std::string fname = "_AtBddMan.hpp_setting.txt" )
     {
       std::ifstream f( fname );
       if ( !f )
-	return;
+	{
+	  return;
+	}
       std::string str;
-      if ( std::getline( f, str ) )
-	nNodes = std::stoul( str );
-      if ( std::getline( f, str ) )
-	nUnique = std::stoul( str );
-      if ( std::getline( f, str ) )
-	nCache = std::stoul( str );
-      if ( std::getline( f, str ) )
-	fGC = ( str == "True" );
-      if ( std::getline( f, str ) )
-	fRealloc = ( str == "True" );
+      std::getline( f, str );
+      nNodes = std::stoul( str );
+      std::getline( f, str );
+      nUnique = std::stoul( str );
+      std::getline( f, str );
+      nCache = std::stoul( str );
+      std::getline( f, str );
+      nUniqueMinRate = std::stoi( str );
+      std::getline( f, str );
+      nCallThold = std::stoi( str );
+      std::getline( f, str );
+      fRealloc = ( str == "True" );
+      std::getline( f, str );
+      fGC = ( str == "True" );
+      std::getline( f, str );
+      nGC = std::stoul( str );
+      std::getline( f, str );
+      fReo = ( str == "True" );
+      std::getline( f, str );
+      nReo = std::stoul( str );
+      std::getline( f, str );
+      nMaxGrowth = std::stoi( str );
     }
   };
   
@@ -45,8 +65,8 @@ namespace Bdd
   public:
     AtBddMan( int nVars, AtBddParam param ) : param( param )
     {
-      man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, NULL, 0 );
-      man->RefreshConfig( param.fRealloc, param.fGC, 0 );
+      man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, param.nUniqueMinRate, param.nCallThold, NULL, 0 );
+      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, param.fReo, param.nReo, param.nMaxGrowth );
     };
     AtBddMan( int nVars ) : AtBddMan( nVars, AtBddParam() ) {}
     ~AtBddMan() { delete man; }
