@@ -38,7 +38,7 @@ namespace Bdd
       std::getline( f, str );
       nNodes = std::stoi( str );
       std::getline( f, str );
-      MaxInc = std::stoi( str );
+      nMaxInc = std::stoi( str );
       std::getline( f, str );
       nCache = std::stoi( str );
       std::getline( f, str );

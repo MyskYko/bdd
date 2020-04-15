@@ -86,8 +86,13 @@ namespace Bdd
     
     void Ref( AtBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( AtBdd::lit const & x ) override { man->Deref( x ); }
+    void Pop( AtBdd::lit const & x ) override { (void)x; man->Pop(); }
+    void SupportRef() { man->SupportRef(); }
+    void UnsupportRef() { man->UnsupportRef(); }
     
     AtBdd::lit And( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->And( x, y ); }
+    AtBdd::lit Or( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->Or( x, y ); }
+    AtBdd::lit Xor( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->Xor( x, y ); }
 
     void PrintStats( std::vector<AtBdd::lit> & vNodes ) override
     {
