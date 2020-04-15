@@ -67,14 +67,15 @@ private:
   lit *  pObjs;         // array of pairs cof0 for nodes
   var *  pVars;         // array of variables for nodes
   mark * pMarks;        // array of marks for nodes
-  lit    nUniqueMask;   // selection mask for unique table
-  lit    nCacheMask;    // selection mask for computed table
+  bvar   nUniqueMask;   // selection mask for unique table
+  bvar   nCacheMask;    // selection mask for computed table
   lit    nMinRemoved;   // the minimum int of removed nodes
   int    nVerbose;      // the level of verbosing information
 
   int    nRefresh;      // the number of refresh tried
-  bool   fGC;           // flag of garbage collection
   bool   fRealloc;      // flag of reallocation
+  bool   fGC;           // flag of garbage collection
+  lit    nGC;           // threshold to run garbage collection
   bool   fReo;          // flag of reordering
   size   nReo;          // threshold to run reordering
   double MaxGrowth;     // threshold to terminate reordering
@@ -87,13 +88,11 @@ private:
 public:
   int  get_nVars() { return nVars; }
   int  get_order( int v ) { return vOrdering[v]; }
-  int  get_pvNodesExists() { return pvNodes != NULL; }
+  bool  get_pvNodesExists() { return pvNodes != NULL; }
   void show_refstat()
   {
     for ( lit x : *pvNodes )
-      {
-	std::cout << x << std::endl;
-      }
+      std::cout << x << std::endl;
   }
   
 /**Function*************************************************************
@@ -350,13 +349,13 @@ public:
     CountEdge_rec( Else( x ) );
     CountEdge_rec( Then( x ) );
   }
-  void CountEdge( std::vector<lit> & vNodes )
+  void CountEdge()
   {
-    for ( lit x : vNodes )
+    for ( lit x : *pvNodes )
       CountEdge_rec( x );
     for ( var v = 0; v < nVars; v++ )
       CountEdge_rec( LitIthVar( v ) );
-    for ( lit x : vNodes )
+    for ( lit x : *pvNodes )
       Unmark_rec( x );
     for ( var v = 0; v < nVars; v++ )
       Unmark_rec( LitIthVar( v ) );
@@ -372,13 +371,13 @@ public:
     UncountEdge_rec( Else( x ) );
     UncountEdge_rec( Then( x ) );
   }
-  void UncountEdge( std::vector<lit> & vNodes )
+  void UncountEdge()
   {
-    for ( lit x : vNodes )
+    for ( lit x : *pvNodes )
     UncountEdge_rec( x );
     for ( var v = 0; v < nVars; v++ )
       UncountEdge_rec( LitIthVar( v ) );
-    for ( lit x : vNodes )
+    for ( lit x : *pvNodes )
       Unmark_rec( x );
     for ( var v = 0; v < nVars; v++ )
       Unmark_rec( LitIthVar( v ) );
@@ -395,13 +394,13 @@ public:
     CountEdgeAndBvar_rec( Else( x ) );
     CountEdgeAndBvar_rec( Then( x ) );
   }
-  void CountEdgeAndBvar( std::vector<lit> & vNodes )
+  void CountEdgeAndBvar()
   {
-    for ( lit x : vNodes )
+    for ( lit x : *pvNodes )
       CountEdgeAndBvar_rec( x );
     for ( var v = 0; v < nVars; v++ )
       CountEdgeAndBvar_rec( LitIthVar( v ) );
-    for ( lit x : vNodes )
+    for ( lit x : *pvNodes )
       Unmark_rec( x );
     for ( var v = 0; v < nVars; v++ )
       Unmark_rec( LitIthVar( v ) );
@@ -418,34 +417,37 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  BddMan( var nVars, lit nObjsAlloc_, std::vector<var> * pvOrdering, int nVerbose ) : nVars(nVars), nObjsAlloc(nObjsAlloc_), nVerbose(nVerbose)
+  BddMan( var nVars, lit nObjsAlloc_, std::vector<var> * pvOrdering, int nVerbose ) : nVars( nVars ), nObjsAlloc( nObjsAlloc_ ), nVerbose( nVerbose )
   {
     if ( nVars == VarInvalid() )
       throw "Varable overflow";
-    while ( nObjsAlloc < (lit)nVars + 1 )
+    if( !nObjsAlloc || nObjsAlloc & ( nObjsAlloc - 1 ) )
+      throw "nObjsAlloc must be power of 2";
+    while ( nObjsAlloc <= (lit)nVars )
       {
-	if ( !nObjsAlloc || nObjsAlloc > (lit)BvarInvalid() )
-	  throw "Node overflow just for Variables\n";
 	nObjsAlloc = nObjsAlloc + nObjsAlloc;
+	if ( !nObjsAlloc || nObjsAlloc > (lit)BvarInvalid() + 1 )
+	  throw "Node overflow just for Variables";
       }
     if ( nVerbose )
       std::cout << "Allocate " << nObjsAlloc << " nodes" << std::endl;
     nRefresh    = 0;
     fRealloc    = 0;
     fGC         = 0;
+    nGC         = 0;
     fReo        = 0;
+    nReo        = 0;
     MaxGrowth   = 0;
-    nReo        = 4000;
     nMinRemoved = nObjsAlloc;
-    nUniqueMask = ( (lit)1 << (int)log2( nObjsAlloc ) ) - 1;
-    nCacheMask  = ( (lit)1 << (int)log2( nObjsAlloc ) ) - 1;
-    pVars       = (var *)calloc( nObjsAlloc, sizeof(var) );
-    pUnique     = (bvar *)calloc( nUniqueMask + 1, sizeof(bvar) );
-    pNexts      = (bvar *)calloc( nUniqueMask + 1, sizeof(bvar) );
-    pCache      = (lit *)calloc( 3 * (size)( nCacheMask + 1 ), sizeof(lit) );
-    pObjs       = (lit *)calloc( 2 * (size)nObjsAlloc, sizeof(lit) );
+    nUniqueMask = nObjsAlloc - 1;
+    nCacheMask  = nObjsAlloc - 1;
+    pUnique     = (bvar *)calloc( nObjsAlloc, sizeof(bvar) );
+    pNexts      = (bvar *)calloc( nObjsAlloc, sizeof(bvar) );
+    pCache      = (lit  *)calloc( 3 * (size)nObjsAlloc, sizeof(lit) );
+    pVars       = (var  *)calloc( nObjsAlloc, sizeof(var) );
+    pObjs       = (lit  *)calloc( 2 * (size)nObjsAlloc, sizeof(lit) );
     pMarks      = (mark *)calloc( nObjsAlloc, sizeof(mark) );
-    if ( !pVars || !pUnique || !pNexts || !pCache || !pObjs || !pMarks )
+    if ( !pUnique || !pNexts || !pCache || !pVars || !pObjs || !pMarks )
       throw "Allocation failed";
     pvNodes     = NULL;
     pEdges      = NULL;
@@ -462,12 +464,13 @@ public:
     else
       for ( var v = 0; v < nVars; v++ )
 	vOrdering.push_back( v );
-    for ( var v = 0; v < nVars; v++ ) {
-      var u = std::distance( vOrdering.begin(), std::find( vOrdering.begin(), vOrdering.end(), v ) );
-      if( u == nVars )
-	throw "Invalid Ordering";
-      UniqueCreate( u, LitConst1(), LitConst0() );
-    }
+    for ( var v = 0; v < nVars; v++ )
+      {
+	var u = std::distance( vOrdering.begin(), std::find( vOrdering.begin(), vOrdering.end(), v ) );
+	if( u == nVars )
+	  throw "Invalid Ordering";
+	UniqueCreate( u, LitConst1(), LitConst0() );
+      }
   }
   ~BddMan()
   {
@@ -481,8 +484,9 @@ public:
     free( pUnique );
     free( pNexts );
     free( pCache );
-    free( pObjs );
     free( pVars );
+    free( pObjs );
+    free( pMarks );
     if ( pvNodes )
       delete pvNodes;
   }
@@ -527,7 +531,6 @@ public:
       std::cout << "Add " << (size)*q << " : Var = " << (size)v << " Then = " << (size)x1 << " Else = " << (size)x0 << " MinRemoved = " << (size)nMinRemoved << std::endl;
     return Bvar2Lit( *q, 0 );
   }
-  
   lit UniqueCreate( var v, lit x1, lit x0 )
   {
     if ( LitIsEq( x1, x0 ) )
@@ -581,7 +584,7 @@ public:
   void CacheClear()
   {
     free( pCache );
-    pCache = (lit *)calloc( 3 * (size)( nCacheMask + 1 ), sizeof(lit) );
+    pCache = (lit *)calloc( 3 * (size)nObjsAlloc, sizeof(lit) );
   }
   
 /**Function*************************************************************
@@ -662,7 +665,7 @@ public:
   }
   lit Or( lit x, lit y )
   {
-    return LitNot( And_rec( LitNot( x ), LitNot( y ) ) );
+    return LitNot( And( LitNot( x ), LitNot( y ) ) );
   }
   lit Xor( lit x, lit y )
   {
@@ -697,32 +700,38 @@ public:
     if ( !fGC && !fReo && pvNodes )
       delete pvNodes;
   }
-  void RefreshConfig( bool fRealloc_, bool fGC_, bool fReo_, int nMaxGrowth )
+  void RefreshConfig( bool fRealloc_, bool fGC_, lit nGC_, bool fReo_, lit nReo_, int nMaxGrowth )
   {
     fRealloc = fRealloc_;
     fGC = fGC_;
+    nGC = nGC_;
     fReo = fReo_;
+    nReo = nReo_;
     MaxGrowth = 0.01 * nMaxGrowth;
-    if ( pvNodes )
-      delete pvNodes;
+    UnsupportRef();
     if ( fGC || fReo )
       SupportRef();
   }
   bool Refresh()
   {
-    nRefresh += 1;
     if ( nVerbose )
-      std::cout << "Refresh " << nRefresh << std::endl;
-    if ( nRefresh <= 1 && fGC )
-      {
-	GarbageCollect();
-	return 0;
-      }
-    if ( nRefresh <= 2 && fReo && (size)nObjs > nReo )
+      std::cout << "Refresh" << std::endl;
+    if ( fReo && (size)nObjs > nReo )
       {
 	Reorder();
 	nReo = nReo + nReo;
 	return 1;
+      }
+    if ( fRealloc && nObjsAlloc < nGC )
+      {
+	Realloc();
+	return 0;
+      }
+    nRefresh += 1;
+    if ( fGC && nRefresh <= 1 )
+      {
+	GarbageCollect();
+	return 0;
       }
     if ( fRealloc && nObjsAlloc <= (lit)BvarInvalid() )
       {
@@ -743,14 +752,13 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  void Rehash()
+  void Rehash( lit nObjsAllocOld )
   {
-    lit nUniqueMaskOld = nUniqueMask >> 1; // assuming it has been doubled
-    for ( lit i = 0; i <= nUniqueMaskOld; i++ )
+    for ( lit i = 0; i < nObjsAllocOld; i++ )
       {
 	bvar * q = pUnique + i;
 	bvar * tail1 = q;
-	bvar * tail2 = q + nUniqueMaskOld + 1;
+	bvar * tail2 = q + nObjsAllocOld;
 	while ( *q )
 	  {
 	    lit hash = Hash( VarOfBvar( *q ), ThenOfBvar( *q ), ElseOfBvar( *q ) ) & nUniqueMask;
@@ -775,28 +783,27 @@ public:
   void Realloc()
   {
     lit nObjsAllocOld = nObjsAlloc;
-    lit nUniqueMaskOld = nUniqueMask;
-    assert( nObjsAlloc <= (lit)BvarInvalid() );
     nObjsAlloc  = nObjsAlloc + nObjsAlloc;
+    if ( !nObjsAlloc || nObjsAlloc > (lit)BvarInvalid() + 1 )
+      throw "Node overflow\n";
     if ( nVerbose )
       std::cout << "\tReallocate " << nObjsAlloc << " nodes" << std::endl;
-    nUniqueMask = ( (lit)1 << (int)log2( nObjsAlloc ) ) - 1;
-    nCacheMask  = ( (lit)1 << (int)log2( nObjsAlloc ) ) - 1;
-    assert( ((nUniqueMaskOld << 1) ^ 01) == nUniqueMask );
-    pVars       = (var *)realloc( pVars, sizeof(var) * nObjsAlloc );
-    pUnique     = (bvar *)realloc( pUnique, sizeof(bvar) * ( nUniqueMask + 1 ) );
-    pNexts      = (bvar *)realloc( pNexts, sizeof(bvar) * ( nUniqueMask + 1 ) );
-    pObjs       = (lit *)realloc( pObjs, sizeof(lit) * 2 * (size)nObjsAlloc );
+    nUniqueMask = nObjsAlloc - 1;
+    nCacheMask  = nObjsAlloc - 1;
+    pUnique     = (bvar *)realloc( pUnique, sizeof(bvar) * nObjsAlloc );
+    pNexts      = (bvar *)realloc( pNexts, sizeof(bvar) * nObjsAlloc );
+    pVars       = (var  *)realloc( pVars, sizeof(var) * nObjsAlloc );
+    pObjs       = (lit  *)realloc( pObjs, sizeof(lit) * 2 * (size)nObjsAlloc );
     pMarks      = (mark *)realloc( pMarks, sizeof(mark) * nObjsAlloc );
-    if ( !pVars || !pUnique || !pNexts || !pObjs || !pMarks )
+    if ( !pUnique || !pNexts || !pVars || !pObjs || !pMarks )
       throw "Reallocation failed";
+    memset( pUnique + nObjsAllocOld, 0, sizeof(bvar) * nObjsAllocOld );
+    memset( pNexts + nObjsAllocOld, 0, sizeof(bvar) * nObjsAllocOld );
     memset( pVars + nObjsAllocOld, 0, sizeof(var) * nObjsAllocOld );
-    memset( pUnique + ( nUniqueMaskOld + 1 ), 0, sizeof(bvar) * ( nUniqueMaskOld + 1 ) );
-    memset( pNexts + ( nUniqueMaskOld + 1 ), 0, sizeof(bvar) * ( nUniqueMaskOld + 1 ) );
     memset( pObjs + 2 * (size)nObjsAllocOld, 0, sizeof(lit) * 2 * (size)nObjsAllocOld );
     memset( pMarks + nObjsAllocOld, 0, sizeof(mark) * nObjsAllocOld );
     CacheClear();
-    Rehash();
+    Rehash( nObjsAllocOld );
     if ( pEdges )
       {
 	pEdges = (edge *)realloc( pEdges, sizeof(edge) * nObjsAlloc );
@@ -1153,19 +1160,19 @@ public:
 ***********************************************************************/
   void Reorder()
   {
+    if ( nVerbose )
+      std::cout << "\tReordering" << std::endl;
+    // initialize
     pEdges = (edge *)calloc( nObjsAlloc, sizeof(edge) );
     if ( !pEdges )
       throw "Allocation failed";
     liveBvars.resize( nVars + 2 );
-    if ( nVerbose )
-      std::cout << "\tReordering" << std::endl;
-    // initialize
     for ( var v = 0; v <= nVars + 1; v++ )
       {
 	liveBvars[v].clear();
 	liveBvars[v].reserve( nObjs / nVars );
       }
-    CountEdgeAndBvar( *pvNodes );
+    CountEdgeAndBvar();
     std::vector<var> descendingOrder;
     std::vector<var> new2old;
     for ( var v = 0; v < nVars; v++ )
