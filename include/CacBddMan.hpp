@@ -20,14 +20,16 @@ namespace Bdd
     {
       std::ifstream f( fname );
       if ( !f )
-	return;
+	{
+	  return;
+	}
       std::string str;
-      if ( std::getline( f, str ) )
-	slotSize = std::stoi( str );
-      if ( std::getline( f, str ) )
-	uSize = std::stoi( str );
-      if ( std::getline( f, str ) )
-	cSize = std::stoi( str );
+      std::getline( f, str );
+      slotSize = std::stoi( str );
+      std::getline( f, str );
+      uSize = std::stoi( str );
+      std::getline( f, str );
+      cSize = std::stoi( str );
     }
   };
     

@@ -18,32 +18,34 @@ namespace Bdd
     int nMinHit = 30; // Int 1 99
     bool fGC = 1; // Bool
     bool fReo = 0; // None False
-    int nReoScheme = 0; // Switch 12
-    int nMaxGrowth = 20; // Int 1 100
+    int nReoScheme = 0; // None 12
+    int nMaxGrowth = 20; // None 1 100
     // end
     
     CuddParam( std::string fname = "_CuddMan.hpp_setting.txt" )
     {
       std::ifstream f( fname );
       if ( !f )
-	return;
+	{
+	  return;
+	}
       std::string str;
-      if ( std::getline( f, str ) )
-	nUnique = std::stoi( str );
-      if ( std::getline( f, str ) )
-	nCache = std::stoi( str );
-      if ( std::getline( f, str ) )
-	nMaxMem = std::stoi( str );
-      if ( std::getline( f, str ) )
-	nMinHit = std::stoi( str );
-      if ( std::getline( f, str ) )
-	fGC = ( str == "True" );
-      if ( std::getline( f, str ) )
-	fReo = ( str == "True" );
-      if ( std::getline( f, str ) )
-	nReoScheme = std::stoi( str );
-      if ( std::getline( f, str ) )
-	nMaxGrowth = std::stoi( str );
+      std::getline( f, str );
+      nUnique = std::stoi( str );
+      std::getline( f, str );
+      nCache = std::stoi( str );
+      std::getline( f, str );
+      nMaxMem = std::stoi( str );
+      std::getline( f, str );
+      nMinHit = std::stoi( str );
+      std::getline( f, str );
+      fGC = ( str == "True" );
+      std::getline( f, str );
+      fReo = ( str == "True" );
+      std::getline( f, str );
+      nReoScheme = std::stoi( str );
+      std::getline( f, str );
+      nMaxGrowth = std::stoi( str );
     }
   };
     

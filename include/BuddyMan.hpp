@@ -21,34 +21,36 @@ namespace Bdd
     int nMaxInc = 1000000; // Log 1000 1000000000
     int nCache = 10000; // Log 1000 1000000000
     bool fDynCache = 1; // Bool
-    int nDynCache = 4; // Log 1 1000
-    int nMinFree = 20; // Int 0 100
+    int nDynCache = 4; // Int 1 100
+    int nMinFree = 20; // Int 1 100
     bool fReo = 0; // None False
-    int nReoScheme = 3; // Switch 6
+    int nReoScheme = 3; // None 6
     // end
 
     BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )
     {
       std::ifstream f( fname );
       if ( !f )
-	return;
+	{
+	  return;
+	}
       std::string str;
-      if ( std::getline( f, str ) )
-	nNodes = std::stoi( str );
-      if ( std::getline( f, str ) )
-	nMaxInc = std::stoi( str );
-      if ( std::getline( f, str ) )
-	nCache = std::stoi( str );
-      if ( std::getline( f, str ) )
-	fDynCache = ( str == "True" );
-      if ( std::getline( f, str ) )
-	nDynCache = std::stoi( str );
-      if ( std::getline( f, str ) )
-	nMinFree = std::stoi( str );
-      if ( std::getline( f, str ) )
-	fReo = ( str == "True" );
-      if ( std::getline( f, str ) )
-	nReoScheme = std::stoi( str );
+      std::getline( f, str );
+      nNodes = std::stoi( str );
+      std::getline( f, str );
+      MaxInc = std::stoi( str );
+      std::getline( f, str );
+      nCache = std::stoi( str );
+      std::getline( f, str );
+      fDynCache = ( str == "True" );
+      std::getline( f, str );
+      nDynCache = std::stoi( str );
+      std::getline( f, str );
+      nMinFree = std::stoi( str );
+      std::getline( f, str );
+      fReo = ( str == "True" );
+      std::getline( f, str );
+      nReoScheme = std::stoi( str );
     }
   };
     
