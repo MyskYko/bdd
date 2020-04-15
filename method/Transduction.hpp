@@ -303,13 +303,13 @@ public:
     for ( int id_ : vvFIs[id] )
       {
 	node x = bdd.And( *vFs_[id], *vFs_[id_] );
+	bdd.Pop( *vFs_[id] );
 	bdd.Ref( x );
-	bdd.Deref( *vFs_[id] );
 	vFs_[id] = x;
       }
     node x = bdd.Not( *vFs_[id] );
+    bdd.PopNot( *vFs_[id] );
     bdd.RefNot( x );
-    bdd.DerefNot( *vFs_[id] );
     vFs_[id] = x;
   }
   void Build()
@@ -369,8 +369,8 @@ public:
 	auto it = std::find( vvFIs[id_].begin(), vvFIs[id_].end(), id );
 	int index = std::distance( vvFIs[id_].begin(), it );
 	node x = bdd.And( *vGs[id], vvCs[id_][index] );
+	bdd.Pop( *vGs[id] );
 	bdd.Ref( x );
-	bdd.Deref( *vGs[id] );
 	vGs[id] = x;
     }
   }
@@ -393,33 +393,31 @@ public:
 	for ( int j = i + 1; j < (int)vvFIs[id].size(); j++ )
 	  {
 	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
+	    bdd.Pop( x );
 	    bdd.Ref( y );
-	    bdd.Deref( x );
 	    x = y;
 	  }
 	// c = (not x) or (f[id] and f[idi]) or g[id]
 	node y = bdd.Not( x );
+	bdd.PopNot( x );
 	bdd.RefNot( y );
-	bdd.DerefNot( x );
 	x = y;
 	y = bdd.And( *vFs[id], *vFs[vvFIs[id][i]] );
 	bdd.Ref( y );
 	node z = bdd.Or( x, y );
+	bdd.Pop( y );
+	bdd.Pop( x );
 	bdd.Ref( z );
-	bdd.Deref( x );
-	bdd.Deref( y );
 	x = z;
 	y = bdd.Or( x, *vGs[id] );
+	bdd.Pop( x );
 	bdd.Ref( y );
-	bdd.Deref( x );
 	x = y;
 	// c or f[idi] == const1 -> redundant
 	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
 	if ( y == bdd.Const1() )
 	  {
-	    bdd.Deref( x );
-	    bdd.Deref( y );
+	    bdd.Pop( x );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -436,7 +434,6 @@ public:
 	    i--;
 	    continue;
 	  }
-	bdd.Deref( y );
 	vvCs[id].push_back( x );
       }
   }
@@ -469,25 +466,22 @@ public:
 		continue;
 	      }
 	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
+	    bdd.Pop( x );
 	    bdd.Ref( y );
-	    bdd.Deref( x );
 	    x = y;
 	  }
 	node y = bdd.Not( x );
+	bdd.PopNot( x );
 	bdd.RefNot( y );
-	bdd.DerefNot( x );
 	x = y;
 	y = bdd.Or( x, *vGs[id] );
+	bdd.Pop( x );
 	bdd.Ref( y );
-	bdd.Deref( x );
 	x = y;
 	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
-	if ( x == bdd.Const1() )
+	bdd.Pop( x );
+	if ( y == bdd.Const1() )
 	  {
-	    bdd.Deref( x );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -504,7 +498,6 @@ public:
 	    i--;
 	    continue;
 	  }
-	bdd.Deref( x );
       }
     return 0;
   }
@@ -607,18 +600,18 @@ public:
 	if ( id != id_ )
 	  {
 	    node y = bdd.Not( x );
+	    bdd.PopNot( x );
 	    bdd.RefNot( y );
-	    bdd.DerefNot( x );
 	    x = y;
 	  }
 	node y = bdd.Or( x, *vGs[vPOs[i]] );
+	bdd.Pop( x );
 	bdd.Ref( y );
-	bdd.Deref( x );
 	x = y;
 	y = bdd.And( *vGs[id], x );
+	bdd.Pop( x );
+	bdd.Pop( *vGs[id] );
 	bdd.Ref( y );
-	bdd.Deref( *vGs[id] );
-	bdd.Deref( x );
 	vGs[id] = y;
       }
     for ( node & x : vInvFsPO )
@@ -644,24 +637,22 @@ public:
 		continue;
 	      }
 	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
+	    bdd.Pop( x );
 	    bdd.Ref( y );
-	    bdd.Deref( x );
 	    x = y;
 	  }
 	node y = bdd.Not( x );
+	bdd.PopNot( x );
 	bdd.RefNot( y );
-	bdd.DerefNot( x );
 	x = y;
 	y = bdd.Or( x, *vGs[id] );
+	bdd.Pop( x );
 	bdd.Ref( y );
-	bdd.Deref( x );
 	x = y;
 	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
 	if ( y == bdd.Const1() )
 	  {
-	    bdd.Deref( x );
-	    bdd.Deref( y );
+	    bdd.Pop( x );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -676,7 +667,6 @@ public:
 	      }
 	    return 1;
 	  }
-	bdd.Deref( y );
 	vvCs[id].push_back( x );
       }
     return 0;
@@ -709,16 +699,12 @@ public:
     node x = bdd.Or( *vFs[fanout], *vGs[fanout] );
     bdd.Ref( x );
     node y = bdd.Or( x, *vFs[fanin] );
-    bdd.Ref( y );
-    bdd.Deref( x );
-    x = y;
-    if ( x == bdd.Const1() )
+    bdd.Pop( x );
+    if ( y == bdd.Const1() )
       {
-	bdd.Deref( x );
 	Connect( fanin, fanout, 1 );
 	return 1;
       }
-    bdd.Deref( x );
     return 0;
   }
   void CspfFICone( int id )
