@@ -14,9 +14,9 @@ namespace Bdd
     bool fRealloc = 1; // None True
     bool fGC = 1; // Bool
     uint32_t nGC = 1 << 25; // Log 1000 1000000000
-    bool fReo = 0; // None False
-    uint32_t nReo = 4000; // None 1000 1000000000
-    int nMaxGrowth = 20; // None 1 100
+    bool fReo = 1; // None True
+    uint32_t nReo = 4000; // Log 1000 1000000000
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
