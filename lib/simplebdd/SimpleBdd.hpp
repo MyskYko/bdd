@@ -112,8 +112,8 @@ public:
   {
     if ( pvNodes )
       {
-	auto it = std::find( pvNodes->begin(), pvNodes->end(), LitRegular( x ) );
-	if ( it == pvNodes->end() )
+	auto it = std::find( pvNodes->rbegin(), pvNodes->rend(), LitRegular( x ) );
+	if ( it == pvNodes->rend() )
 	  {
 	    std::cout << "cannot find " << LitRegular( x ) << std::endl;
 	    for ( lit x : *pvNodes )
@@ -121,7 +121,7 @@ public:
 	    std::cout << std::endl;
 	    throw "Deref non-referenced node";
 	  }
-	pvNodes->erase( it );
+	pvNodes->erase( (++it).base() );
       }
   }
 

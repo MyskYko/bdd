@@ -86,7 +86,6 @@ namespace Bdd
     
     void Ref( AtBdd::lit const & x ) override { man->Ref( x ); }
     void Deref( AtBdd::lit const & x ) override { man->Deref( x ); }
-    void Pop( AtBdd::lit const & x ) override { (void)x; man->Pop(); }
     void SupportRef() { man->SupportRef(); }
     void UnsupportRef() { man->UnsupportRef(); }
     

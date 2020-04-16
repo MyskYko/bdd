@@ -118,9 +118,9 @@ public:
   void Deref( lit x ) {
     if ( pvNodes )
       {
-	auto it = std::find( pvNodes->begin(), pvNodes->end(), LitRegular( x ) );
-	assert( it != pvNodes->end() );
-	pvNodes->erase( it );
+	auto it = std::find( pvNodes->rbegin(), pvNodes->rend(), LitRegular( x ) );
+	assert( it != pvNodes->rend() );
+	pvNodes->erase( (++it).base() );
       }
   }
 
