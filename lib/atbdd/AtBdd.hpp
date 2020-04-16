@@ -642,9 +642,6 @@ public:
   }
   void CacheClear()
   {
-    nCacheHit = 0;
-    nCacheFind = 0;
-    HitRateOld = 1;
     free( pCache );
     pCache = (lit *)calloc( 3 * (size)nCache, sizeof(lit) );
   }
