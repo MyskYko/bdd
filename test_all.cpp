@@ -1,56 +1,60 @@
-#if defined(SIMPLEBDD)
-#include <SimpleBddMan.hpp>
-#elif defined(CUDD)
-#include <CuddMan.hpp>
-#elif defined(BUDDY)
-#include <BuddyMan.hpp>
-#elif defined(CACBDD)
-#include <CacBddMan.hpp>
-#elif defined(ATBDD)
 #include <AtBddMan.hpp>
-#else
-#error
-#endif
-
 #include <AigBdd.hpp>
+#include <LutBdd.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 #include <string>
 
 int main( int argc, char ** argv )
 {
-  if ( argc == 1 )
-    return 1;
+  if ( argc <= 2 )
+    {
+      std::cout << "usage : aig2bdd <input aig> <output blif>" << std::endl;
+      return 1;
+    }
   std::string filename = argv[1];
-  std::string filename2;
-  if ( argc > 2 )
-    filename2 = argv[2];
+  std::string filename2 = argv[2];
   
   mockturtle::aig_network aig;
   lorina::read_aiger( filename, mockturtle::aiger_reader( aig ) );
 
   try
     {
-#if defined(SIMPLEBDD)
-      Bdd::SimpleBddMan bdd( aig.num_pis() );
-#elif defined(CUDD)
-      Bdd::CuddMan bdd( aig.num_pis() );
-#elif defined(BUDDY)
-      Bdd::BuddyMan bdd( aig.num_pis() );
-#elif defined(CACBDD)
-      Bdd::CacBddMan bdd( aig.num_pis() );
-#elif defined(ATBDD)
-      Bdd::AtBddMan bdd( aig.num_pis() );
+      Bdd::AtBddParam p;
+      p.nNodes = 16777216;
+      p.nUnique = 8388608;
+      p.nCache = 65536;
+      p.nUniqueMinRate = 35;
+      p.nCallThold = 100476;
+      p.fRealloc = 1;
+      p.fGC = 0;
+      p.nGC;
+      p.fReo = 0;
+      p.nReo;
+      p.nMaxGrowth;
+#if defined(GARBAGE_COLLECT)
+      p.fGC = 1;
+      p.nGC = 1 << 30;
+#elif defined(REORDER)
+      p.nNodes = 8192;
+      p.nUnique = 2097152;
+      p.nCache = 16384;
+      p.nUniqueMinRate = 11;
+      p.nCallThold = 33382;
+      p.fRealloc = 1;
+      p.fGC = 1;
+      p.nGC = 744068;
+      p.fReo = 1;
+      p.nReo = 1000;
+      p.nMaxGrowth = 59;
 #endif
       
+      Bdd::AtBddMan bdd( aig.num_pis(), p );
       auto vNodes = Aig2Bdd( aig, bdd );
-      if ( !filename2.empty() )
-	{
-	  bdd.PrintStats( vNodes );
-	  mockturtle::aig_network aig2;
-	  Bdd2Aig( aig2, bdd, vNodes );
-	  mockturtle::write_blif( aig2, filename2 );
-	}
+      bdd.PrintStats( vNodes );
+      mockturtle::klut_network lut;
+      Bdd2Lut( lut, bdd, vNodes );
+      mockturtle::write_blif( lut, filename2 );
     }
   catch ( char const * error )
     {
