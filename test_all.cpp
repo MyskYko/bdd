@@ -12,7 +12,7 @@
 #error
 #endif
 
-#include <AigBdd.hpp>
+#include <Transduction.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 #include <string>
@@ -43,13 +43,10 @@ int main( int argc, char ** argv )
       Bdd::AtBddMan bdd( aig.num_pis() );
 #endif
       
-      auto vNodes = Aig2Bdd( aig, bdd );
+      Transduction( aig, bdd );
       if ( !filename2.empty() )
 	{
-	  bdd.PrintStats( vNodes );
-	  mockturtle::aig_network aig2;
-	  Bdd2Aig( aig2, bdd, vNodes );
-	  mockturtle::write_blif( aig2, filename2 );
+	  mockturtle::write_blif( aig, filename2 );
 	}
     }
   catch ( char const * error )
