@@ -63,6 +63,7 @@ namespace Bdd
     BuddyMan( int nVars, BuddyParam param ) : param( param )
     {
       Buddy::bdd_init( param.nNodes, param.nCache );
+      Buddy::bdd_gbc_hook( NULL );
       Buddy::bdd_setmaxincrease( param.nMaxInc );
       if ( param.fDynCache )
 	{
