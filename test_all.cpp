@@ -45,10 +45,13 @@ int main( int argc, char ** argv )
       Bdd::AtBddMan bdd( aig.num_pis() );
 #endif
       
-      Transduction( aig, bdd );
-      if ( !filename2.empty() )
+      if ( filename2.empty() )
 	{
-	  mockturtle::write_blif( aig, filename2 );
+	  Transduction( aig, bdd );
+	}
+      else
+	{
+	  Transduction( aig, bdd, 0, 1, 1 );
 	}
     }
   catch ( char const * error )
