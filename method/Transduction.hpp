@@ -865,10 +865,13 @@ public:
 };
 
 template <typename node>
-void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd )
+void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool fRepeat = 0, bool fCheck = 0, bool fVerbose = 0 )
 {
   auto net = TransductionNetwork( aig, bdd );
-  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+  if ( fVerbose )
+    {
+      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+    }
   
   if ( net.fReo )
     {
@@ -898,33 +901,37 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd )
 
   while ( 1 )
     {
-      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+      if ( fVerbose )
+	{
+	  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+	}
       int wire = net.CountWire();
       net.G1();
-      if ( wire == net.CountWire() )
+      if ( !fRepeat || wire == net.CountWire() )
 	{
 	  break;
 	}
     }
 
-  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
-  
   mockturtle::aig_network aig_new;
   net.Aig( aig_new );
-  
-  auto miter = *mockturtle::miter<mockturtle::aig_network>( aig, aig_new );
-  auto result = mockturtle::equivalence_checking( miter );
-  if ( result && *result )
+
+  if ( fCheck )
     {
-      std::cout << "networks are equivalent\n";
-    }
-  else if ( result )
-    {
-      std::cout << "networks are NOT equivalent\n";
-    }
-  else
-    {
-      std::cout << "equivalence checking unfinished\n";
+      auto miter = *mockturtle::miter<mockturtle::aig_network>( aig, aig_new );
+      auto result = mockturtle::equivalence_checking( miter );
+      if ( result && *result )
+	{
+	  std::cout << "networks are equivalent\n";
+	}
+      else if ( result )
+	{
+	  std::cout << "networks are NOT equivalent\n";
+	}
+      else
+	{
+	  std::cout << "equivalence checking unfinished\n";
+	}
     }
   
   aig = aig_new;
