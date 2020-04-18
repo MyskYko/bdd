@@ -186,7 +186,7 @@ public:
   {
     mockturtle::topo_view aig{aig_};
     int nRegular = aig.size();
-    nObjsAlloc = nRegular << 1 + aig.num_pos();
+    nObjsAlloc = ( nRegular << 1 ) + aig.num_pos();
     vvFIs.resize( nObjsAlloc );
     vvFOs.resize( nObjsAlloc );
     vRanks.resize( nObjsAlloc );
@@ -780,7 +780,7 @@ public:
     for ( int i = targets.size() - 1; i >= 0; i-- )
       {
 	int id = targets[i];
-	std::cout << "gate" << i << ", id" << id << std::endl;
+	//std::cout << "gate" << i << ", id" << id << std::endl;
 	if ( vvFOs[id].empty() )
 	  {
 	    continue;
