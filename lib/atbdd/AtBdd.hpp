@@ -1305,6 +1305,7 @@ public:
     for ( var i : new2old )
       vOrdering.push_back( vTmp[i] );
     free( pEdges );
+    pEdges = NULL;
     liveBvars.clear();
     CacheClear();
   }
