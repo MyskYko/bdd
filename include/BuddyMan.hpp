@@ -24,7 +24,7 @@ namespace Bdd
     int nDynCache = 4; // Int 1 100
     int nMinFree = 20; // Int 1 100
     bool fReo = 0; // None False
-    int nReoScheme = 3; // None 6
+    int nReoScheme = 3; // Switch 6
     // end
 
     BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )

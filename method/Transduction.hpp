@@ -15,7 +15,7 @@ public:
   bool fRemove = 0;
   bool fWeak = 0;
   bool fMspf = 0;
-  bool fReo = 0;
+  bool fReo = 1;
 
 private:
   int nObjsAlloc;

@@ -20,7 +20,7 @@ namespace Bdd
     uint32_t nGC = 1 << 25; // Log 1000 1000000000
     bool fReo = 0; // None False
     uint32_t nReo = 4000; // None 1000 1000000000
-    int nMaxGrowth = 20; // None 1 100
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     AtBddParam( std::string fname = "_AtBddMan.hpp_setting.txt" )
