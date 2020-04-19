@@ -88,6 +88,9 @@ namespace Bdd
     void Deref( AtBdd::lit const & x ) override { man->Deref( x ); }
     void SupportRef() { man->SupportRef(); }
     void UnsupportRef() { man->UnsupportRef(); }
+
+    int Perm( int i ) override { return man->Var( IthVar( i ) ); }
+    void Reorder() override { man->Reorder(); }
     
     AtBdd::lit And( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->And( x, y ); }
     AtBdd::lit Or( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->Or( x, y ); }
