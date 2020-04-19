@@ -16,8 +16,19 @@ int main( int argc, char ** argv )
   std::string filename2 = argv[2];
   
   mockturtle::aig_network aig;
-  lorina::read_aiger( filename, mockturtle::aiger_reader( aig ) );
-
+  mockturtle::NameMap<mockturtle::aig_network> namemap;
+  lorina::read_aiger( filename, mockturtle::aiger_reader( aig , &namemap ) );
+  std::vector<std::string> pi_names( aig.num_pis() );
+  std::vector<std::string> po_names( aig.num_pos() );
+  for ( int i = 0; i < aig.num_pis(); i++ )
+    {
+      pi_names[i] = namemap.get_name( aig.make_signal( aig.pi_at( i ) ) )[0];
+    }
+  for ( int i = 0; i < aig.num_pos(); i++ )
+    {
+      po_names[i] = namemap.get_name( aig.po_at( i ) )[0];
+    }
+  
   try
     {
       Bdd::AtBddParam p;
@@ -51,10 +62,35 @@ int main( int argc, char ** argv )
       
       Bdd::AtBddMan bdd( aig.num_pis(), p );
       auto vNodes = Aig2Bdd( aig, bdd );
+      
       bdd.PrintStats( vNodes );
+      
+#if defined(REORDER)
+      std::cout << "Ordering :" << std::endl;
+      std::vector<int> v( aig.num_pis() );
+      for ( int i = 0; i < aig.num_pis(); i++ )
+	{
+	  v[bdd.Perm( i )] = i;
+	}
+      for ( int i : v )
+	{
+	  std::cout << pi_names[i] << " ";
+	}
+      std::cout << std::endl;
+#endif
+      
       mockturtle::klut_network lut;
       Bdd2Lut( lut, bdd, vNodes );
-      mockturtle::write_blif( lut, filename2 );
+      mockturtle::names_view lut_{lut};
+      for ( int i = 0; i < aig.num_pis(); i++ )
+	{
+	  lut_.set_name( lut_.make_signal( lut_.pi_at( i ) ), pi_names[i] );
+	}
+      for ( int i = 0; i < aig.num_pos(); i++ )
+	{
+	  lut_.set_output_name( i, po_names[i] );
+	}
+      mockturtle::write_blif( lut_, filename2 );
     }
   catch ( char const * error )
     {
