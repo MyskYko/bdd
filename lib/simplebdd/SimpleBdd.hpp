@@ -718,7 +718,10 @@ public:
   void UnsupportRef()
   {
     if ( !fGC && !fReo && pvNodes )
-      delete pvNodes;
+      {
+	delete pvNodes;
+	pvNodes = NULL;
+      }
   }
   void RefreshConfig( bool fRealloc_, bool fGC_, lit nGC_, bool fReo_, lit nReo_, int nMaxGrowth )
   {
