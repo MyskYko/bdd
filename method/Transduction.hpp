@@ -527,10 +527,14 @@ public:
     for ( int i = 0; i < (int)vPOs.size(); i++ )
       {
 	int id_ = vvFIs[vPOs[i]][0];
-	node x = bdd.Xor( *vFs[id_], vInvFsPO[i] );
-	// ?
+	node x;
 	if ( id != id_ )
 	  {
+	    x = bdd.Const0();
+	  }
+	else
+	  {
+	    x = bdd.Xor( *vFs[id_], vInvFsPO[i] );
 	    x = bdd.Not( x );
 	  }
 	x = bdd.Or( x, *vGs[vPOs[i]] );
@@ -638,6 +642,12 @@ public:
 	BuildNode( id_, vFs );
       }
   }
+  //void CspfEager()
+  //{
+  //Rank();
+  //SortFIs();
+  //Cspf();
+  //}
   void G1Eager( int fanin, int fanout )
   {
     int wire = CountWire();
@@ -648,7 +658,6 @@ public:
 	CspfFICone( fanout );
 	return;
       }
-    Build();
     Cspf();
   }
   void G1Weak( int fanin, int fanout )
@@ -731,7 +740,6 @@ public:
 	if ( fWeak )
 	  {
 	    CspfFICone( id );
-	    Build();
 	  }
       }
   }
@@ -775,17 +783,10 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
     }
 
   net.SetEXDC();
+
   net.Rank();
   net.SortFIs();
-
-  if ( net.fMspf )
-    {
-      net.Mspf();
-    }
-  else
-    {
-      net.Cspf();
-    }
+  net.Cspf();
 
   while ( 1 )
     {
