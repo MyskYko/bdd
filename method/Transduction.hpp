@@ -107,17 +107,11 @@ private:
       }
     if ( vFs[id] )
       {
-	bdd.Deref( *vFs[id] );
 	vFs[id] = std::nullopt;
       }
     if ( vGs[id] )
       {
-	bdd.Deref( *vGs[id] );
 	vGs[id] = std::nullopt;
-      }
-    for ( auto & x : vvCs[id] )
-      {
-	bdd.Deref( x );
       }
     vvCs[id].clear();
   }
@@ -295,23 +289,12 @@ public:
 
   void BuildNode( int id, std::vector<std::optional<node> > & vFs_ )
   {
-    if ( vFs_[id] )
-      {
-	bdd.Deref( *vFs_[id] );
-      }
     vFs_[id] = bdd.Const1();
-    bdd.Ref( *vFs_[id] );
     for ( int id_ : vvFIs[id] )
       {
-	node x = bdd.And( *vFs_[id], *vFs_[id_] );
-	bdd.Ref( x );
-	bdd.Deref( *vFs_[id] );
-	vFs_[id] = x;
+	vFs_[id] = bdd.And( *vFs_[id], *vFs_[id_] );
       }
-    node x = bdd.Not( *vFs_[id] );
-    bdd.RefNot( x );
-    bdd.DerefNot( *vFs_[id] );
-    vFs_[id] = x;
+    vFs_[id] = bdd.Not( *vFs_[id] );
   }
   void Build()
   {
@@ -359,20 +342,12 @@ public:
 
   void CalcG( int id )
   {
-    if ( vGs[id] )
-      {
-	bdd.Deref( *vGs[id] );
-      }
     vGs[id] = bdd.Const1();
-    bdd.Ref( *vGs[id] );
     for (int id_ : vvFOs[id] )
       {
 	auto it = std::find( vvFIs[id_].begin(), vvFIs[id_].end(), id );
 	int index = std::distance( vvFIs[id_].begin(), it );
-	node x = bdd.And( *vGs[id], vvCs[id_][index] );
-	bdd.Ref( x );
-	bdd.Deref( *vGs[id] );
-	vGs[id] = x;
+	vGs[id] = bdd.And( *vGs[id], vvCs[id_][index] );
       }
   }
   void CalcC( int id )
@@ -381,46 +356,24 @@ public:
       {
 	return;
       }
-    for ( node & x : vvCs[id] )
-      {
-	bdd.Deref( x );
-      }
     vvCs[id].clear();
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
 	// x = and ( FIs with smaller rank )
 	node x = bdd.Const1();
-	bdd.Ref( x );
 	for ( int j = i + 1; j < (int)vvFIs[id].size(); j++ )
 	  {
-	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
-	    bdd.Ref( y );
-	    bdd.Deref( x );
-	    x = y;
+	    x = bdd.And( x, *vFs[vvFIs[id][j]] );
 	  }
 	// c = (not x) or (f[id] and f[idi]) or g[id]
-	node y = bdd.Not( x );
-	bdd.RefNot( y );
-	bdd.DerefNot( x );
-	x = y;
-	y = bdd.And( *vFs[id], *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
-	node z = bdd.Or( x, y );
-	bdd.Ref( z );
-	bdd.Deref( x );
-	bdd.Deref( y );
-	x = z;
-	y = bdd.Or( x, *vGs[id] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
+	x = bdd.Not( x );
+	node y = bdd.And( *vFs[id], *vFs[vvFIs[id][i]] );
+	x = bdd.Or( x, y );
+	x = bdd.Or( x, *vGs[id] );
 	// c or f[idi] == const1 -> redundant
 	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
 	if ( y == bdd.Const1() )
 	  {
-	    bdd.Deref( x );
-	    bdd.Deref( y );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -437,7 +390,6 @@ public:
 	    i--;
 	    continue;
 	  }
-	bdd.Deref( y );
 	vvCs[id].push_back( x );
       }
   }
@@ -462,32 +414,19 @@ public:
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
 	node x = bdd.Const1();
-	bdd.Ref( x );
 	for ( int j = 0; j < (int)vvFIs[id].size(); j++ )
 	  {
 	    if ( i == j )
 	      {
 		continue;
 	      }
-	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
-	    bdd.Ref( y );
-	    bdd.Deref( x );
-	    x = y;
+	    x = bdd.And( x, *vFs[vvFIs[id][j]] );
 	  }
-	node y = bdd.Not( x );
-	bdd.RefNot( y );
-	bdd.DerefNot( x );
-	x = y;
-	y = bdd.Or( x, *vGs[id] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
-	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	if ( y == bdd.Const1() )
+	x = bdd.Not( x );
+	x = bdd.Or( x, *vGs[id] );
+	x = bdd.Or( x, *vFs[vvFIs[id][i]] );
+	if ( x == bdd.Const1() )
 	  {
-	    bdd.Deref( y );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -504,11 +443,10 @@ public:
 	    i--;
 	    continue;
 	  }
-	bdd.Deref( y );
       }
     return 0;
   }
-
+  
   bool IsFOConeShared_rec( int id, int stage )
   {
     if ( vvFOs[id].empty() )
@@ -566,23 +504,15 @@ public:
     // insert inverters just after id    
     std::vector<std::optional<node> > vInvFs = vFs;
     vInvFs[id] = bdd.Not( *vInvFs[id] );
-    bdd.RefNot( *vInvFs[id] );
     // build
     for ( int id_ : targets )
       {
-	vInvFs[id_] = std::nullopt;
 	BuildNode( id_, vInvFs );
       }
     for ( int id_ : vPOs )
       {
-	node x = *vInvFs[vvFIs[id_][0]];
-	bdd.Ref( x );
-	vInvFsPO.push_back( x );
+	vInvFsPO.push_back( *vInvFs[vvFIs[id_][0]] );
       }
-    for ( int id_ : targets )
-      {
-	bdd.Deref( *vInvFs[id_] );
-      }    
   }
   void CalcGMspf( int id )
   {
@@ -593,75 +523,39 @@ public:
       }
     std::vector<node> vInvFsPO;
     BuildPOsInverted( id, vInvFsPO );
-    if ( vGs[id] )
-      {
-	bdd.Deref( *vGs[id] );
-      }
     vGs[id] = bdd.Const1();
-    bdd.Ref( *vGs[id] );
     for ( int i = 0; i < (int)vPOs.size(); i++ )
       {
 	int id_ = vvFIs[vPOs[i]][0];
 	node x = bdd.Xor( *vFs[id_], vInvFsPO[i] );
-	bdd.Ref( x );
+	// ?
 	if ( id != id_ )
 	  {
-	    node y = bdd.Not( x );
-	    bdd.RefNot( y );
-	    bdd.DerefNot( x );
-	    x = y;
+	    x = bdd.Not( x );
 	  }
-	node y = bdd.Or( x, *vGs[vPOs[i]] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
-	y = bdd.And( *vGs[id], x );
-	bdd.Ref( y );
-	bdd.Deref( *vGs[id] );
-	bdd.Deref( x );
-	vGs[id] = y;
-      }
-    for ( node & x : vInvFsPO )
-      {
-	bdd.Deref( x );
+	x = bdd.Or( x, *vGs[vPOs[i]] );
+	vGs[id] = bdd.And( *vGs[id], x );
       }
   }
   bool CalcCMspf( int id )
   {
-    for ( node & x : vvCs[id] )
-      {
-	bdd.Deref( x );
-      }
     vvCs[id].clear();
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
 	node x = bdd.Const1();
-	bdd.Ref( x );
 	for ( int j = 0; j < (int)vvFIs[id].size(); j++ )
 	  {
 	    if ( i == j )
 	      {
 		continue;
 	      }
-	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
-	    bdd.Ref( y );
-	    bdd.Deref( x );
-	    x = y;
+	    x = bdd.And( x, *vFs[vvFIs[id][j]] );
 	  }
-	node y = bdd.Not( x );
-	bdd.RefNot( y );
-	bdd.DerefNot( x );
-	x = y;
-	y = bdd.Or( x, *vGs[id] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
-	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
+	x = bdd.Not( x );
+	x = bdd.Or( x, *vGs[id] );
+	node y = bdd.Or( x, *vFs[vvFIs[id][i]] );
 	if ( y == bdd.Const1() )
 	  {
-	    bdd.Deref( x );
-	    bdd.Deref( y );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -676,7 +570,6 @@ public:
 	      }
 	    return 1;
 	  }
-	bdd.Deref( y );
 	vvCs[id].push_back( x );
       }
     return 0;
@@ -707,17 +600,12 @@ public:
 	return 0;
       }
     node x = bdd.Or( *vFs[fanout], *vGs[fanout] );
-    bdd.Ref( x );
-    node y = bdd.Or( x, *vFs[fanin] );
-    bdd.Ref( y );
-    bdd.Deref( x );
-    if ( y == bdd.Const1() )
+    x = bdd.Or( x, *vFs[fanin] );
+    if ( x == bdd.Const1() )
       {
-	bdd.Deref( y );
 	Connect( fanin, fanout, 1 );
 	return 1;
       }
-    bdd.Deref( y );
     return 0;
   }
   void CspfFICone( int id )
@@ -913,6 +801,11 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 	}
     }
 
+  if ( fVerbose )
+    {
+      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+    }
+  
   mockturtle::aig_network aig_new;
   net.Aig( aig_new );
 
@@ -926,7 +819,8 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 	}
       else if ( result )
 	{
-	  std::cout << "networks are NOT equivalent\n";
+	  std::cout << "##### networks are NOT equivalent #####\n";
+	  throw "networks are NOT equivalent";
 	}
       else
 	{
