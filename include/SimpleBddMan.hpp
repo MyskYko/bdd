@@ -43,8 +43,58 @@ namespace Bdd
       nMaxGrowth = std::stoi( str );
     }
   };
+
+  class SimpleBddNode
+  {
+  private:
+    friend class SimpleBddMan;
+    SimpleBdd::BddMan * man;
+    SimpleBdd::lit val;
+    
+  public:
+    SimpleBddNode( SimpleBdd::BddMan * man, SimpleBdd::lit val ) : man( man ), val( val )
+    {
+      man->Ref( val );
+    }
+    SimpleBddNode()
+    {
+      man = NULL;
+    }
+    SimpleBddNode( const SimpleBddNode & right )
+    {
+      man = right.man;
+      val = right.val;
+      man->Ref( val );
+    }
+    ~SimpleBddNode()
+    {
+      if ( man )
+	{
+	  man->Deref( val );
+	}
+    }
+    SimpleBddNode & operator=( const SimpleBddNode & right )
+    {
+      if (this == &right)
+	{
+	  return *this;
+	}
+      if ( man )
+	{
+	  man->Deref( val );
+	}
+      val = right.val;
+      man = right.man;
+      man->Ref( val );
+      return *this;
+    }
+    bool operator==( const SimpleBddNode & other ) const
+    {
+      return val == other.val;
+    }
+  };
   
-  class SimpleBddMan : public BddMan<SimpleBdd::lit>
+  class SimpleBddMan : public BddMan<SimpleBddNode>
   {
   private:
     SimpleBdd::BddMan * man;
@@ -60,38 +110,35 @@ namespace Bdd
     ~SimpleBddMan() { delete man; }
     
     int GetNumVar() override { return man->get_nVars(); }
-    uint64_t Id( SimpleBdd::lit const & x ) { return (uint64_t)x; }
+    uint64_t Id( SimpleBddNode const & x ) { return (uint64_t)x.val; }
     
-    SimpleBdd::lit Const0() override { return man->LitConst0(); }
-    SimpleBdd::lit Const1() override { return man->LitConst1(); }
-    SimpleBdd::lit IthVar( int i ) override { return man->LitIthVar( i ); }
-    SimpleBdd::lit Regular( SimpleBdd::lit const & x ) override { return man->LitRegular( x ); }
-    bool IsCompl( SimpleBdd::lit const & x ) override { return man->LitIsCompl( x ); }
-    int Var( SimpleBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
-    SimpleBdd::lit Then( SimpleBdd::lit const & x ) override { return man->Then( x ); }
-    SimpleBdd::lit Else( SimpleBdd::lit const & x ) override { return man->Else( x ); }
-    SimpleBdd::lit Not( SimpleBdd::lit const & x ) override { return man->LitNot( x ); }
+    SimpleBddNode Const0() override { return SimpleBddNode( man, man->LitConst0() ); }
+    SimpleBddNode Const1() override { return SimpleBddNode( man, man->LitConst1() ); }
+    SimpleBddNode IthVar( int i ) override { return SimpleBddNode( man, man->LitIthVar( i ) ); }
+    SimpleBddNode Regular( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitRegular( x.val ) ); }
+    bool IsCompl( SimpleBddNode const & x ) override { return man->LitIsCompl( x.val ); }
+    int Var( SimpleBddNode const & x ) override { return man->get_order( man->Var( x.val ) ); }
+    SimpleBddNode Then( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->Then( x.val ) ); }
+    SimpleBddNode Else( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->Else( x.val ) ); }
+    SimpleBddNode Not( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitNot( x.val ) ); }
     
-    void Ref( SimpleBdd::lit const & x ) override { man->Ref( x ); }
-    void Deref( SimpleBdd::lit const & x ) override { man->Deref( x ); }
-    void SupportRef() override { man->SupportRef(); }
-    void UnsupportRef() override { man->UnsupportRef(); }
-
-    int Perm( int i ) override { return man->Var( IthVar( i ) ); }
+    int Perm( int i ) override { return man->Var( man->LitIthVar( i ) ); }
     void Reorder() override { man->Reorder(); }
     
-    SimpleBdd::lit And( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->And( x, y ); }
-    SimpleBdd::lit Or( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Or( x, y ); }
-    SimpleBdd::lit Xor( SimpleBdd::lit const & x, SimpleBdd::lit const & y ) override { return man->Xor( x, y ); }
+    SimpleBddNode And( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->And( x.val, y.val ) ); }
+    SimpleBddNode Or( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Or( x.val, y.val ) ); }
+    SimpleBddNode Xor( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Xor( x.val, y.val ) ); }
     
-    void PrintStats( std::vector<SimpleBdd::lit> & vNodes ) override
+    void PrintStats( std::vector<SimpleBddNode> & vNodes ) override
     {
       uint64_t count = 0;
+      std::vector<SimpleBdd::lit> v;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
 	{
-	  count += man->CountNodes( vNodes[i] );
+	  count += man->CountNodes( vNodes[i].val );
+	  v.push_back( vNodes[i].val );
 	}
-      std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes ) << std::endl;
+      std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( v ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
   };

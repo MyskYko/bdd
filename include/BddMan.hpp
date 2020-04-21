@@ -23,10 +23,6 @@ namespace Bdd
     virtual node Else( node const & x ) = 0;
     virtual node Not( node const & x ) = 0;
     
-    virtual void Ref( node const & x ) { (void)x; }
-    virtual void Deref( node const & x ) { (void)x; }
-    virtual void RefNot( node const & x ) { (void)x; }
-    virtual void DerefNot( node const & x ) { (void)x; }
     virtual void SupportRef() {}
     virtual void UnsupportRef() {}
 
@@ -57,49 +53,21 @@ namespace Bdd
   template <typename node>
   node BddMan<node>::Or( node const & x, node const & y )
   {
-    node nx = Not( x );
-    RefNot( nx );
-    node ny = Not( y );
-    RefNot( ny );
-    node z = And( nx, ny );
-    RefNot( z );
-    DerefNot( nx );
-    DerefNot( ny );
-    node nz = Not( z );
-    DerefNot( z );
-    return nz;
+    return Not( And( Not( x ), Not( y ) ) );
   }
   template <typename node>
   node BddMan<node>::Xor( node const & x, node const & y )
   {
-    node nx = Not( x );
-    RefNot( x );
-    node z0 = And( nx, y );
-    Ref( z0 );
-    DerefNot( x );
-    node ny = Not( y );
-    RefNot( ny );
-    node z1 = And( x, ny );
-    Ref( z1 );
-    node z = Or( z0, z1 );
-    Deref( z0 );
-    Deref( z1 );
-    return z;
+    node z0 = And( Not( x ), y );
+    node z1 = And( x, Not( y ) );
+    return Or( z0, z1 );
   }
   template <typename node>
   node BddMan<node>::Ite( node const & c, node const & x, node const & y )
   {
     node z0 = And( c, x );
-    Ref( z0 );
-    node nc = Not( c );
-    RefNot( nc );
-    node z1 = And( nc, y );
-    Ref( z1 );
-    DerefNot( nc );
-    node z = Or( z0, z1 );
-    Deref( z0 );
-    Deref( z1 );
-    return z;
+    node z1 = And( Not( c ), y );
+    return Or( z0, z1 );
   }
   template <typename node>
   node BddMan<node>::Exist( node const & x, node const & cube )
@@ -110,8 +78,7 @@ namespace Bdd
 	return x;
       }
     node c = cube;
-    // TODO : var may be different from level, perm
-    while ( Var( x ) > Var( c ) )
+    while ( Perm( Var( x ) ) > Perm( Var( c ) ) )
       { 
 	c = Then( c );
 	if ( c == Const1() )
@@ -119,66 +86,26 @@ namespace Bdd
 	    return x;
 	  }
       }
-    Ref( c );
-    node z;
     if ( Var( x ) == Var( c ) )
       {
-	node tc = Then( c );
-	Ref( tc );
-	node tx = Then( x );
-	Ref( tx );
-	node z0 = Exist( tc, tx );
-	Ref( z0 );
-	Deref( tx );
-	node ex = Else( x );
-	Ref( ex );
-	node z1 = Exist( tx, ex );
-	Ref( z1 );
-	Deref( ex );
-	Deref( tc );
-	z = Or( z0, z1 );
-	Deref( z0 );
-	Deref( z1 );
+	node z0 = Exist( Then( x ), Then( c ) );
+	node z1 = Exist( Else( x ), Then( c ) );
+	return Or( z0, z1 );
       }
-    else
-      {
-	node tx = Then( x );
-	Ref( tx );
-	node t = Exist( tx, c );
-	Ref( t );
-	Deref( tx );
-	node ex = Else( x );
-	Ref( ex );
-	node e = Exist( ex, c );
-	Ref( e );
-	Deref( ex );
-	z = Ite( IthVar( Var( x ) ), t, e );
-	Deref( t );
-	Deref( e );
-      }
-    Deref( c );
-    return z;
+    node t = Exist( Then( x ), c );
+    node e = Exist( Else( x ), c );
+    return Ite( IthVar( Var( x ) ), t, e );
   }
   template <typename node>
   node BddMan<node>::Univ( node const & x, node const & cube )
   {
-    node nx = Not( x );
-    RefNot( nx );
-    node y = Exist( nx, cube );
-    RefNot( y );
-    DerefNot( nx );
-    node ny = Not( y );
-    DerefNot( y );
-    return ny;
+    return Not( Exist( Not( x ), cube ) );
   }
   template <typename node>
   node BddMan<node>::AndExist( node const & x, node const & y, node const & cube )
   {
     node z = And( x, y );
-    Ref( z );
-    node ez = Exist( z, cube );
-    Deref( z );
-    return ez;
+    return Exist( z, cube );
   }
   template <typename node>
   node BddMan<node>::Restrict( node const & x, node const & c )
@@ -190,79 +117,34 @@ namespace Bdd
   node BddMan<node>::Compose( node const & x, int i, node const & c )
   {
     // TODO : reo must be disabled
-    // TODO : var may be different from level, perm
-    if ( Var( x ) > i )
+    if ( Perm( Var( x ) ) > Perm( i ) )
       {
 	return x;
       }
     if ( Var( x ) == i )
       {
-	node tx = Then( x );
-	Ref( tx );
-	node ex = Else( x );
-	Ref( ex );
-	node y = Ite( c, tx, ex );
-	Deref( tx );
-	Deref( ex );
-	return y;
+	return Ite( c, Then( x ), Else( x ) );
       }
-    // TODO : var may be different from level, perm
-    node y;
-    if ( Var( x ) < Var( c ) )
+    node v, t, e;
+    if ( Perm( Var( x ) ) < Perm( Var( c ) ) )
       {
-	node tx = Then( x );
-	Ref( tx );
-	node t = Compose( tx, i, c );
-	Ref( t );
-	Deref( tx );
-	node ex = Else( x );
-	Ref( ex );
-	node e = Compose( ex, i, c );
-	Ref( e );
-	Deref( ex );
-	y = Ite( IthVar( Var( x ) ), t, e );
-	Deref( t );
-	Deref( e );
+	v = IthVar( Var( x ) );
+	t = Compose( Then( x ), i, c );
+	e = Compose( Else( x ), i, c );
       }
-    else if ( Var( x ) > Var( c ) )
+    else if ( Perm( Var( x ) ) > Perm( Var( c ) ) )
       {
-	node tc = Then( c );
-	Ref( tc );
-	node t = Compose( x, i, tc );
-	Ref( t );
-	Deref( tc );
-	node ec = Else( c );
-	Ref( ec );
-	node e = Compose( x, i, ec );
-	Ref( e );
-	Deref( ec );
-	y = Ite( IthVar( Var( c ) ), t, e );
-	Deref( t );
-	Deref( e );
+	v = IthVar( Var( c ) );
+	t = Compose( x, i, Then( c ) );
+	e = Compose( x, i, Else( c ) );
       }
     else // if ( Var( x ) == Var( c ) )
       {
-	node tx = Then( x );
-	Ref( tx );
-	node tc = Then( c );
-	Ref( tc );
-	node t = Compose( tx, i, tc );
-	Ref( t );
-	Deref( tx );
-	Deref( tc );
-	node ex = Else( x );
-	Ref( ex );
-	node ec = Else( c );
-	Ref( ec );
-	node e = Compose( ex, i, ec );
-	Ref( e );
-	Deref( ex );
-	Deref( ec );
-	y = Ite( IthVar( Var( x ) ), t, e );
-	Deref( t );
-	Deref( e );
+	v = IthVar( Var( x ) );
+	t = Compose( Then( x ), i, Then( c ) );
+	e = Compose( Else( x ), i, Else( c ) );
       }
-    return y;
+    return Ite( v, t, e );
   }
   template <typename node>
   node BddMan<node>::VecCompose( node const & x, std::vector<node> & cs )
@@ -271,20 +153,9 @@ namespace Bdd
       {
 	return x;
       }
-    node tx = Then( x );
-    Ref( tx );
-    node t = VecCompose( tx, cs );
-    Ref( t );
-    Deref( tx );
-    node ex = Else( x );
-    Ref( ex );
-    node e = VecCompose( ex, cs );
-    Ref( e );
-    Deref( ex );
-    node y = Ite( cs[Var( x )], t, e );
-    Deref( t );
-    Deref( e );
-    return y;
+    node t = VecCompose( Then( x ), cs );
+    node e = VecCompose( Else( x ), cs );
+    return Ite( cs[Var( x )], t, e );
   }
   template <typename node>
   void BddMan<node>::Support( node const & x, std::vector<int> & vVars )
