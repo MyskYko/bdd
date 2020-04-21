@@ -55,8 +55,58 @@ namespace Bdd
       nMaxGrowth = std::stoi( str );
     }
   };
+
+  class AtBddNode
+  {
+  private:
+    friend class AtBddMan;
+    AtBdd::BddMan * man;
+    AtBdd::lit val;
+    
+  public:
+    AtBddNode( AtBdd::BddMan * man, AtBdd::lit val ) : man( man ), val( val )
+    {
+      man->Ref( val );
+    }
+    AtBddNode()
+    {
+      man = NULL;
+    }
+    AtBddNode( const AtBddNode & right )
+    {
+      man = right.man;
+      val = right.val;
+      man->Ref( val );
+    }
+    ~AtBddNode()
+    {
+      if ( man )
+	{
+	  man->Deref( val );
+	}
+    }
+    AtBddNode & operator=( const AtBddNode & right )
+    {
+      if (this == &right)
+	{
+	  return *this;
+	}
+      if ( man )
+	{
+	  man->Deref( val );
+	}
+      val = right.val;
+      man = right.man;
+      man->Ref( val );
+      return *this;
+    }
+    bool operator==( const AtBddNode & other ) const
+    {
+      return val == other.val;
+    }
+  };
   
-  class AtBddMan : public BddMan<AtBdd::lit>
+  class AtBddMan : public BddMan<AtBddNode>
   {
   private:
     AtBdd::BddMan * man;
@@ -72,38 +122,35 @@ namespace Bdd
     ~AtBddMan() { delete man; }
     
     int GetNumVar() override { return man->get_nVars(); }
-    uint64_t Id( AtBdd::lit const & x ) { return (uint64_t)x; }
+    uint64_t Id( AtBddNode const & x ) { return (uint64_t)x.val; }
     
-    AtBdd::lit Const0() override { return man->LitConst0(); }
-    AtBdd::lit Const1() override { return man->LitConst1(); }
-    AtBdd::lit IthVar( int i ) override { return man->LitIthVar( i ); }
-    AtBdd::lit Regular( AtBdd::lit const & x ) override { return man->LitRegular( x ); }
-    bool IsCompl( AtBdd::lit const & x ) override { return man->LitIsCompl( x ); }
-    int Var( AtBdd::lit const & x ) override { return man->get_order( man->Var( x ) ); }
-    AtBdd::lit Then( AtBdd::lit const & x ) override { return man->Then( x ); }
-    AtBdd::lit Else( AtBdd::lit const & x ) override { return man->Else( x ); }
-    AtBdd::lit Not( AtBdd::lit const & x ) override { return man->LitNot( x ); }
+    AtBddNode Const0() override { return AtBddNode( man, man->LitConst0() ); }
+    AtBddNode Const1() override { return AtBddNode( man, man->LitConst1() ); }
+    AtBddNode IthVar( int i ) override { return AtBddNode( man, man->LitIthVar( i ) ); }
+    AtBddNode Regular( AtBddNode const & x ) override { return AtBddNode( man, man->LitRegular( x.val ) ); }
+    bool IsCompl( AtBddNode const & x ) override { return man->LitIsCompl( x.val ); }
+    int Var( AtBddNode const & x ) override { return man->get_order( man->Var( x.val ) ); }
+    AtBddNode Then( AtBddNode const & x ) override { return AtBddNode( man, man->Then( x.val ) ); }
+    AtBddNode Else( AtBddNode const & x ) override { return AtBddNode( man, man->Else( x.val ) ); }
+    AtBddNode Not( AtBddNode const & x ) override { return AtBddNode( man, man->LitNot( x.val ) ); }
     
-    void Ref( AtBdd::lit const & x ) override { man->Ref( x ); }
-    void Deref( AtBdd::lit const & x ) override { man->Deref( x ); }
-    void SupportRef() { man->SupportRef(); }
-    void UnsupportRef() { man->UnsupportRef(); }
-
-    int Perm( int i ) override { return man->Var( IthVar( i ) ); }
+    int Perm( int i ) override { return man->Var( man->LitIthVar( i ) ); }
     void Reorder() override { man->Reorder(); }
     
-    AtBdd::lit And( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->And( x, y ); }
-    AtBdd::lit Or( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->Or( x, y ); }
-    AtBdd::lit Xor( AtBdd::lit const & x, AtBdd::lit const & y ) override { return man->Xor( x, y ); }
+    AtBddNode And( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->And( x.val, y.val ) ); }
+    AtBddNode Or( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Or( x.val, y.val ) ); }
+    AtBddNode Xor( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Xor( x.val, y.val ) ); }
 
-    void PrintStats( std::vector<AtBdd::lit> & vNodes ) override
+    void PrintStats( std::vector<AtBddNode> & vNodes ) override
     {
       uint64_t count = 0;
+      std::vector<AtBdd::lit> v;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
 	{
-	  count += man->CountNodes( vNodes[i] );
+	  count += man->CountNodes( vNodes[i].val );
+	  v.push_back( vNodes[i].val );
 	}
-      std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( vNodes ) << std::endl;
+      std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( v ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }
   };
