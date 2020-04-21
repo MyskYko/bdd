@@ -1,6 +1,7 @@
 #ifndef AIG_BDD_HPP_
 #define AIG_BDD_HPP_
 
+#include <optional>
 #include <BddMan.hpp>
 #include <mockturtle/mockturtle.hpp>
 
@@ -17,42 +18,32 @@ std::vector<node> Aig2Bdd( mockturtle::aig_network & aig_, Bdd::BddMan<node> & b
     {
       pFanouts[aig.node_to_index( gate )] = aig.fanout_size( gate );
     });
-  std::map<uint32_t, node> m;
+  std::map<uint32_t, std::optional<node> > m;
   m[aig.node_to_index( aig.get_node( aig.get_constant( 0 ) ) )] = bdd.Const0();
   aig.foreach_pi( [&]( auto pi, int i )
     {
-      m[aig.node_to_index( pi )] =  bdd.IthVar( i );
+      m[aig.node_to_index( pi )] = bdd.IthVar( i );
     });
   aig.foreach_gate( [&]( auto gate )
     {
       node x = bdd.Const1();
-      bdd.Ref( x );
       aig.foreach_fanin( gate, [&]( auto fanin )
         {
-	  node y = m[aig.node_to_index( aig.get_node( fanin ) )];
+	  node y = *m[aig.node_to_index( aig.get_node( fanin ) )];
 	  if ( aig.is_complemented( fanin ) )
 	    {
 	      y = bdd.Not( y );
-	      bdd.RefNot( y );
 	    }
-	  node z = bdd.And( x, y );
-	  bdd.Ref( z );
-	  bdd.Deref( x );
-	  if ( aig.is_complemented( fanin ) )
-	    {
-	      bdd.DerefNot( y );
-	    }
-	  x = z;
+	  x = bdd.And( x, y );
 	});
       m[aig.node_to_index( gate )] = x;
       aig.foreach_fanin( gate, [&]( auto fanin )
         {
 	  auto index = aig.node_to_index( aig.get_node( fanin ) );
 	  pFanouts[index] -= 1;
-	  if ( pFanouts[index] == 0 )
+	  if ( !pFanouts[index] )
 	    {
-	      bdd.Deref( m[index] );
-	      m[index] = bdd.Const0();
+	      m[index] = std::nullopt;
 	    }
 	});
     });
@@ -60,18 +51,16 @@ std::vector<node> Aig2Bdd( mockturtle::aig_network & aig_, Bdd::BddMan<node> & b
   aig.foreach_po( [&]( auto po )
     {
       auto index = aig.node_to_index( aig.get_node( po ) );
-      node x = m[index];
+      node x = *m[index];
       if ( aig.is_complemented( po ) )
 	{
 	  x = bdd.Not( x );
 	}
       vNodes.push_back( x );
-      bdd.Ref( x );
       pFanouts[index] -= 1;
-      if ( pFanouts[index] == 0 )
+      if ( !pFanouts[index] )
 	{
-	  bdd.Deref( m[index] );
-	  m[index] = bdd.Const0();
+	  m[index] = std::nullopt;
 	}
     });
   free( pFanouts );
