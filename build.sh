@@ -1,7 +1,7 @@
 cd lib
 cd cudd
 autoreconf -i
-./configure
+./configure --enable-obj
 make clean
 make
 cd ..
