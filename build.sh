@@ -16,9 +16,9 @@ make cl
 make
 cd ..
 cd ..
+rm -rf build
 mkdir build
 cd build
-cmake ..
-make clean
+cmake -DBUILD_TEST=ON ..
 make
 cd ..

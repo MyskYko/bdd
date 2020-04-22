@@ -1,7 +1,4 @@
-add_subdirectory(mockturtle/lib)
-add_library(mockturtle INTERFACE)
-target_include_directories(mockturtle INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/mockturtle/include)
-target_link_libraries(mockturtle INTERFACE ez kitty lorina sparsepp percy)
+add_subdirectory(mockturtle)
 
 add_library(simplebdd INTERFACE)
 set_target_properties(simplebdd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/simplebdd)

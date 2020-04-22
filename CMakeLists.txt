@@ -6,25 +6,30 @@ add_compile_options(-g -O3)
 
 add_subdirectory(lib)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/method)
+add_library(bdd INTERFACE)
+target_include_directories(bdd INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_SOURCE_DIR}/method")
+
+option(BUILD_TEST "build test" OFF)
+if(BUILD_TEST)
 
 add_executable(test_simplebdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_simplebdd mockturtle simplebdd)
+target_link_libraries(test_simplebdd mockturtle bdd simplebdd)
 target_compile_definitions(test_simplebdd PUBLIC SIMPLEBDD)
 
 add_executable(test_cudd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_cudd mockturtle cudd)
+target_link_libraries(test_cudd mockturtle bdd cudd)
 target_compile_definitions(test_cudd PUBLIC CUDD)
 
 add_executable(test_buddy ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_buddy mockturtle buddy)
+target_link_libraries(test_buddy mockturtle bdd buddy)
 target_compile_definitions(test_buddy PUBLIC BUDDY)
 
 add_executable(test_cacbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_cacbdd mockturtle cacbdd)
+target_link_libraries(test_cacbdd mockturtle bdd cacbdd)
 target_compile_definitions(test_cacbdd PUBLIC CACBDD)
 
 add_executable(test_atbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_atbdd mockturtle atbdd)
+target_link_libraries(test_atbdd mockturtle bdd atbdd)
 target_compile_definitions(test_atbdd PUBLIC ATBDD)
+
+endif()
