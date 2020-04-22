@@ -32,6 +32,9 @@ namespace Bdd
     virtual node And( node const & x, node const & y );
     virtual node Or( node const & x, node const & y );
     virtual node Xor( node const & x, node const & y );
+    virtual node Nand( node const & x, node const & y );
+    virtual node Nor( node const & x, node const & y );
+    virtual node Xnor( node const & x, node const & y );
     virtual node Ite( node const & c, node const & x, node const & y );
     virtual node Exist( node const & x, node const & cube );
     virtual node Univ( node const & x, node const & cube );
@@ -61,6 +64,21 @@ namespace Bdd
     node z0 = And( Not( x ), y );
     node z1 = And( x, Not( y ) );
     return Or( z0, z1 );
+  }
+  template <typename node>
+  node BddMan<node>::Nand( node const & x, node const & y )
+  {
+    return Not( And( x, y ) );
+  }
+  template <typename node>
+  node BddMan<node>::Nor( node const & x, node const & y )
+  {
+    return Not( Or( x, y ) );
+  }
+  template <typename node>
+  node BddMan<node>::Xnor( node const & x, node const & y )
+  {
+    return Not( Xor( x, y ) );
   }
   template <typename node>
   node BddMan<node>::Ite( node const & c, node const & x, node const & y )

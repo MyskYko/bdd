@@ -63,6 +63,9 @@ namespace Bdd
     cacBDD::BDD And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
     cacBDD::BDD Or( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x + y; }
     cacBDD::BDD Xor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x ^ y; }
+    cacBDD::BDD Nand( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x | y; }
+    cacBDD::BDD Nor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x % y; }
+    cacBDD::BDD Xnor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x & y; }
     cacBDD::BDD Ite( cacBDD::BDD const & c, cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return man->Ite( c, x, y ); }
     cacBDD::BDD Exist( cacBDD::BDD const & x, cacBDD::BDD const & cube ) override { cacBDD::BDD x_ = x; return x_.Exist( cube ); }
     cacBDD::BDD Univ( cacBDD::BDD const & x, cacBDD::BDD const & cube ) override { cacBDD::BDD x_ = x; return x_.Universal( cube ); }
