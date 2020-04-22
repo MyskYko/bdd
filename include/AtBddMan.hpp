@@ -104,6 +104,10 @@ namespace Bdd
     {
       return val == other.val;
     }
+    bool operator!=( const AtBddNode & other ) const
+    {
+      return val != other.val;
+    }
   };
   
   class AtBddMan : public BddMan<AtBddNode>

@@ -92,6 +92,10 @@ namespace Bdd
     {
       return val == other.val;
     }
+    bool operator!=( const SimpleBddNode & other ) const
+    {
+      return val != other.val;
+    }
   };
   
   class SimpleBddMan : public BddMan<SimpleBddNode>

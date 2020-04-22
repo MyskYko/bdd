@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+#include <forward_list>
 
 namespace SimpleBdd
 {
@@ -83,7 +84,7 @@ private:
   
   std::vector<var>                vOrdering; // variable ordering : new 2 old
   std::vector<std::vector<bvar> > liveBvars; // array of live Bvars for each layer
-  std::vector<lit> *              pvNodes;   // vector of live nodes (only top of tree)
+  std::forward_list<lit> *        pvNodes;   // live nodes (only top of tree)
   
 public:
   int  get_nVars() { return nVars; }
@@ -106,22 +107,35 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  void Ref( lit x ) { if ( pvNodes ) pvNodes->push_back( LitRegular( x ) ); }
-  void Pop()        { if ( pvNodes ) pvNodes->pop_back(); }
+  void Ref( lit x ) { if ( pvNodes ) pvNodes->push_front( LitRegular( x ) ); }
+  void Pop()        { if ( pvNodes ) pvNodes->pop_front(); }
   void Deref( lit x )
   {
     if ( pvNodes )
       {
-	auto it = std::find( pvNodes->rbegin(), pvNodes->rend(), LitRegular( x ) );
-	if ( it == pvNodes->rend() )
+	auto it = pvNodes->begin();
+	if ( *it == LitRegular( x ) )
 	  {
-	    std::cout << "cannot find " << LitRegular( x ) << std::endl;
-	    for ( lit x : *pvNodes )
-	      std::cout << x << ",";
-	    std::cout << std::endl;
-	    throw "Deref non-referenced node";
+	    pvNodes->pop_front();
+	    return;
 	  }
-	pvNodes->erase( (++it).base() );
+	auto itnext = it;
+	itnext++;
+	while ( itnext != pvNodes->end() )
+	  {
+	    if ( *itnext == LitRegular( x ) )
+	      {
+		pvNodes->erase_after( it );
+		return;
+	      }
+	    it++;
+	    itnext++;
+	  }
+	std::cout << "cannot find " << LitRegular( x ) << std::endl;
+	for ( lit x : *pvNodes )
+	  std::cout << x << ",";
+	std::cout << std::endl;
+	throw "Deref non-referenced node";
       }
   }
 
@@ -713,7 +727,7 @@ public:
   void SupportRef()
   {
     if ( !pvNodes )
-      pvNodes = new std::vector<lit>;
+      pvNodes = new std::forward_list<lit>;
   }
   void UnsupportRef()
   {
