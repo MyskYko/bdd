@@ -2,15 +2,25 @@ project(bdd CXX)
 cmake_minimum_required(VERSION 3.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_compile_options(-g -O3)	
+add_compile_options(-g -O3)
+
+option(BDD_METHOD "enable bdd method" OFF)
+option(BDD_TEST "build bdd test" OFF)
+
+add_library(bdd INTERFACE)
+target_include_directories(bdd INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_subdirectory(lib)
 
-add_library(bdd INTERFACE)
-target_include_directories(bdd INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_SOURCE_DIR}/method")
+if(BDD_METHOD OR BDD_TEST)
 
-option(BUILD_TEST "build test" OFF)
-if(BUILD_TEST)
+add_library(bddmethod INTERFACE)
+target_include_directories(bddmethod INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/method)
+target_link_libraries(bddmethod bdd)
+  
+endif()
+
+if(BDD_TEST)
 
 add_executable(test_simplebdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
 target_link_libraries(test_simplebdd mockturtle bdd simplebdd)
