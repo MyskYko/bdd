@@ -19,6 +19,6 @@ cd ..
 rm -rf build
 mkdir build
 cd build
-cmake -DBUILD_TEST=ON ..
+cmake -DBDD_TEST=ON ..
 make
 cd ..
