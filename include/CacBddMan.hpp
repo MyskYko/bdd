@@ -53,13 +53,15 @@ namespace Bdd
     cacBDD::BDD Const0() override { return man->BddZero(); }
     cacBDD::BDD Const1() override { return man->BddOne(); }
     cacBDD::BDD IthVar( int i ) override { return man->BddVar( i + 1 ); }
-    cacBDD::BDD Regular( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp()? !x: x; }
-    bool IsCompl( cacBDD::BDD const & x ) override { cacBDD::BDD x_ = x; return x_.IsComp(); }
+
     int Var( cacBDD::BDD const & x ) override { cacBDD::BDD x_ = x; return x_.Variable() - 1; }
     cacBDD::BDD Then( cacBDD::BDD const & x ) override { return x.Then(); }
     cacBDD::BDD Else( cacBDD::BDD const & x ) override { return x.Else(); }
-    cacBDD::BDD Not( cacBDD::BDD const & x ) override { return !x; }
     
+    cacBDD::BDD Regular( cacBDD::BDD const & x ) override { cacBDD::BDD y = x; return y.IsComp()? !x: x; }
+    bool IsCompl( cacBDD::BDD const & x ) override { cacBDD::BDD x_ = x; return x_.IsComp(); }
+    
+    cacBDD::BDD Not( cacBDD::BDD const & x ) override { return !x; }
     cacBDD::BDD And( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x * y; }
     cacBDD::BDD Or( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x + y; }
     cacBDD::BDD Xor( cacBDD::BDD const & x, cacBDD::BDD const & y ) override { return x ^ y; }

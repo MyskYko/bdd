@@ -16,19 +16,18 @@ namespace Bdd
     virtual node Const0() = 0;
     virtual node Const1() = 0;
     virtual node IthVar( int i ) = 0;
-    virtual node Regular( node const & x ) = 0;
-    virtual bool IsCompl( node const & x ) = 0;
+    
     virtual int  Var( node const & x ) = 0;
     virtual node Then( node const & x ) = 0;
     virtual node Else( node const & x ) = 0;
-    virtual node Not( node const & x ) = 0;
     
-    virtual void SupportRef() {}
-    virtual void UnsupportRef() {}
-
-    virtual int Perm( int i ) { return i; }
-    virtual void Reorder() {};
+    virtual node Regular( node const & x ) { return x; }
+    virtual bool IsCompl( node const & x ) { (void)x; return 0; }
+    
+    virtual int Level( int i ) { return i; }
+    virtual void Reorder() {}
         
+    virtual node Not( node const & x ) = 0;
     virtual node And( node const & x, node const & y );
     virtual node Or( node const & x, node const & y );
     virtual node Xor( node const & x, node const & y );
@@ -44,6 +43,9 @@ namespace Bdd
     virtual node VecCompose( node const & x, std::vector<node> & cs );
 
     virtual void Support( node const & x, std::vector<int> & vVars );
+    
+    virtual void SupportRef() {}
+    virtual void UnsupportRef() {}
     
     virtual void PrintStats( std::vector<node> & vNodes ) { (void)vNodes; }
   };
@@ -96,7 +98,7 @@ namespace Bdd
 	return x;
       }
     node c = cube;
-    while ( Perm( Var( x ) ) > Perm( Var( c ) ) )
+    while ( Level( Var( x ) ) > Level( Var( c ) ) )
       { 
 	c = Then( c );
 	if ( c == Const1() )
@@ -135,7 +137,7 @@ namespace Bdd
   node BddMan<node>::Compose( node const & x, int i, node const & c )
   {
     // TODO : reo must be disabled
-    if ( Perm( Var( x ) ) > Perm( i ) )
+    if ( Level( Var( x ) ) > Level( i ) )
       {
 	return x;
       }
@@ -144,13 +146,13 @@ namespace Bdd
 	return Ite( c, Then( x ), Else( x ) );
       }
     node v, t, e;
-    if ( Perm( Var( x ) ) < Perm( Var( c ) ) )
+    if ( Level( Var( x ) ) < Level( Var( c ) ) )
       {
 	v = IthVar( Var( x ) );
 	t = Compose( Then( x ), i, c );
 	e = Compose( Else( x ), i, c );
       }
-    else if ( Perm( Var( x ) ) > Perm( Var( c ) ) )
+    else if ( Level( Var( x ) ) > Level( Var( c ) ) )
       {
 	v = IthVar( Var( c ) );
 	t = Compose( x, i, Then( c ) );
@@ -175,6 +177,7 @@ namespace Bdd
     node e = VecCompose( Else( x ), cs );
     return Ite( cs[Var( x )], t, e );
   }
+  
   template <typename node>
   void BddMan<node>::Support( node const & x, std::vector<int> & vVars )
   {

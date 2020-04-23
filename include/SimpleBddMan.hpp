@@ -119,19 +119,24 @@ namespace Bdd
     SimpleBddNode Const0() override { return SimpleBddNode( man, man->LitConst0() ); }
     SimpleBddNode Const1() override { return SimpleBddNode( man, man->LitConst1() ); }
     SimpleBddNode IthVar( int i ) override { return SimpleBddNode( man, man->LitIthVar( i ) ); }
-    SimpleBddNode Regular( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitRegular( x.val ) ); }
-    bool IsCompl( SimpleBddNode const & x ) override { return man->LitIsCompl( x.val ); }
+    
     int Var( SimpleBddNode const & x ) override { return man->get_order( man->Var( x.val ) ); }
     SimpleBddNode Then( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->Then( x.val ) ); }
     SimpleBddNode Else( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->Else( x.val ) ); }
-    SimpleBddNode Not( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitNot( x.val ) ); }
     
-    int Perm( int i ) override { return man->Var( man->LitIthVar( i ) ); }
+    SimpleBddNode Regular( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitRegular( x.val ) ); }
+    bool IsCompl( SimpleBddNode const & x ) override { return man->LitIsCompl( x.val ); }
+
+    int Level( int i ) override { return man->Var( man->LitIthVar( i ) ); }
     void Reorder() override { man->Reorder(); }
     
+    SimpleBddNode Not( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitNot( x.val ) ); }
     SimpleBddNode And( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->And( x.val, y.val ) ); }
     SimpleBddNode Or( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Or( x.val, y.val ) ); }
     SimpleBddNode Xor( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Xor( x.val, y.val ) ); }
+
+    void SupportRef() override { man->SupportRef(); }
+    void UnsupportRef() override { man->UnsupportRef(); }
     
     void PrintStats( std::vector<SimpleBddNode> & vNodes ) override
     {

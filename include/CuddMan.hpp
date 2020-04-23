@@ -79,8 +79,7 @@ namespace Bdd
     BDD Const0() override { return !Const1(); }
     BDD Const1() override { return man->bddOne(); }
     BDD IthVar( int i ) override { return man->ReadVars( i ); }
-    BDD Regular( BDD const & x ) override { return BDD( *man, Cudd_Regular( x.getNode() ) ); }
-    bool IsCompl( BDD const & x ) override { return Cudd_IsComplement( x.getNode() ); }
+
     int Var( BDD const & x ) override { return x.NodeReadIndex(); }
     BDD Then( BDD const & x ) override
     {
@@ -92,11 +91,14 @@ namespace Bdd
       auto y = BDD( *man, Cudd_E( x.getNode() ) );
       return IsCompl( x ) ? !y : y;
     }
-    BDD Not( BDD const & x ) override { return !x; }
+
+    BDD Regular( BDD const & x ) override { return BDD( *man, Cudd_Regular( x.getNode() ) ); }
+    bool IsCompl( BDD const & x ) override { return Cudd_IsComplement( x.getNode() ); }
     
-    int Perm( int i ) override { return man->ReadPerm( i ); }
+    int Level( int i ) override { return man->ReadPerm( i ); }
     void Reorder() override { man->ReduceHeap( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) ); }
     
+    BDD Not( BDD const & x ) override { return !x; }
     BDD And( BDD const & x, BDD const & y ) override { return x & y; }
     BDD Or( BDD const & x, BDD const & y ) override { return x | y ; }
     BDD Xor( BDD const & x, BDD const & y ) override { return x ^ y; }

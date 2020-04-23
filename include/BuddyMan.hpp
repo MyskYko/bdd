@@ -80,16 +80,15 @@ namespace Bdd
     Buddy::bdd Const0() override { return Buddy::bdd_false(); }
     Buddy::bdd Const1() override { return Buddy::bdd_true(); }
     Buddy::bdd IthVar( int i ) override { return Buddy::bdd_ithvar( i ); }
-    Buddy::bdd Regular( Buddy::bdd const & x ) override { return x; }
-    bool IsCompl( Buddy::bdd const & x ) override { (void)x; return 0; }
+
     int Var( Buddy::bdd const & x ) override { return Buddy::bdd_var( x ); }
     Buddy::bdd Then( Buddy::bdd const & x ) override { return Buddy::bdd_high( x ); }
     Buddy::bdd Else( Buddy::bdd const & x ) override { return Buddy::bdd_low( x ); }
-    Buddy::bdd Not( Buddy::bdd const & x ) override { return Buddy::bdd_not( x ); }
     
-    int Perm( int i ) override { return Buddy::bdd_var2level( i ); }
+    int Level( int i ) override { return Buddy::bdd_var2level( i ); }
     void Reorder() override { Buddy::bdd_reorder( param.nReoScheme + 1 ); }
 
+    Buddy::bdd Not( Buddy::bdd const & x ) override { return Buddy::bdd_not( x ); }
     Buddy::bdd And( Buddy::bdd const & x, Buddy::bdd const & y ) override { return Buddy::bdd_and( x, y ); }
     Buddy::bdd Or( Buddy::bdd const & x, Buddy::bdd const & y ) override { return Buddy::bdd_or( x, y ); }
     Buddy::bdd Xor( Buddy::bdd const & x, Buddy::bdd const & y ) override { return Buddy::bdd_xor( x, y ); }

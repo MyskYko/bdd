@@ -131,19 +131,24 @@ namespace Bdd
     AtBddNode Const0() override { return AtBddNode( man, man->LitConst0() ); }
     AtBddNode Const1() override { return AtBddNode( man, man->LitConst1() ); }
     AtBddNode IthVar( int i ) override { return AtBddNode( man, man->LitIthVar( i ) ); }
-    AtBddNode Regular( AtBddNode const & x ) override { return AtBddNode( man, man->LitRegular( x.val ) ); }
-    bool IsCompl( AtBddNode const & x ) override { return man->LitIsCompl( x.val ); }
+    
     int Var( AtBddNode const & x ) override { return man->get_order( man->Var( x.val ) ); }
     AtBddNode Then( AtBddNode const & x ) override { return AtBddNode( man, man->Then( x.val ) ); }
     AtBddNode Else( AtBddNode const & x ) override { return AtBddNode( man, man->Else( x.val ) ); }
-    AtBddNode Not( AtBddNode const & x ) override { return AtBddNode( man, man->LitNot( x.val ) ); }
     
-    int Perm( int i ) override { return man->Var( man->LitIthVar( i ) ); }
+    AtBddNode Regular( AtBddNode const & x ) override { return AtBddNode( man, man->LitRegular( x.val ) ); }
+    bool IsCompl( AtBddNode const & x ) override { return man->LitIsCompl( x.val ); }
+    
+    int Level( int i ) override { return man->Var( man->LitIthVar( i ) ); }
     void Reorder() override { man->Reorder(); }
     
+    AtBddNode Not( AtBddNode const & x ) override { return AtBddNode( man, man->LitNot( x.val ) ); }
     AtBddNode And( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->And( x.val, y.val ) ); }
     AtBddNode Or( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Or( x.val, y.val ) ); }
     AtBddNode Xor( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Xor( x.val, y.val ) ); }
+
+    void SupportRef() override { man->SupportRef(); }
+    void UnsupportRef() override { man->UnsupportRef(); }
 
     void PrintStats( std::vector<AtBddNode> & vNodes ) override
     {
