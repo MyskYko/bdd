@@ -11,9 +11,9 @@ namespace Bdd
   struct BuddyParam
   {
     // Param
-    int nNodes = 1000000; // Log 1000 1000000000
-    int nMaxInc = 1000000; // Log 1000 1000000000
-    int nCache = 10000; // Log 1000 1000000000
+    int nNodes = 1000000; // Log 100 1000000000
+    int nMaxInc = 1000000; // Log 100 1000000000
+    int nCache = 10000; // Log 100 1000000000
     bool fDynCache = 1; // Bool
     int nDynCache = 4; // Int 1 100
     int nMinFree = 20; // Int 1 100

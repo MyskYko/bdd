@@ -11,9 +11,9 @@ namespace Bdd
   struct CacBddParam
   {
     // Param
-    int slotSize = 1000000; // Log 1000 1000000000
-    int uSize = 1 << 18; // Pow 10 30
-    int cSize = 1 << 18; // Pow 10 30
+    int slotSize = 1000000; // Log 100 1000000000
+    int uSize = 1 << 18; // Pow 7 30
+    int cSize = 1 << 18; // Pow 7 30
     // end
 
     CacBddParam( std::string fname = "_CacBddMan.hpp_setting.txt" )

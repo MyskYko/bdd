@@ -12,10 +12,10 @@ namespace Bdd
   struct CuddParam
   {
     // Param
-    int nUnique = CUDD_UNIQUE_SLOTS; // Log 1000 1000000000
-    int nCache = CUDD_CACHE_SLOTS; // Log 1000 1000000000
-    int nMaxMem = 0; // Log 1000 1000000000
-    int nMinHit = 30; // Int 1 99
+    int nUnique = CUDD_UNIQUE_SLOTS; // Log 100 1000000000
+    int nCache = CUDD_CACHE_SLOTS; // Log 100 1000000000
+    int nMaxMem = 0; // Log 100 1000000000
+    int nMinHit = 30; // Int 1 100
     bool fGC = 1; // Bool
     bool fReo = 0; // None False
     int nReoScheme = 0; // None 12

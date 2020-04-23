@@ -10,16 +10,16 @@ namespace Bdd
   struct AtBddParam
   {
     // Param
-    uint32_t nNodes = 1 << 20; // Pow 10 30
-    uint32_t nUnique = 1 << 18; // Pow 10 30
-    uint32_t nCache = 1 << 18; // Pow 10 30
+    uint32_t nNodes = 1 << 20; // Pow 7 30
+    uint32_t nUnique = 1 << 18; // Pow 7 30
+    uint32_t nCache = 1 << 18; // Pow 7 30
     int nUniqueMinRate = 25; // Int 1 100
-    int nCallThold = 200000; // Log 1000 1000000000
+    int nCallThold = 200000; // Log 100 1000000000
     bool fRealloc = 1; // None True
     bool fGC = 1; // Bool
-    uint32_t nGC = 1 << 25; // Log 1000 1000000000
+    uint32_t nGC = 1 << 25; // Log 100 1000000000
     bool fReo = 0; // None False
-    uint32_t nReo = 4000; // None 1000 1000000000
+    uint32_t nReo = 4000; // None 100 1000000000
     int nMaxGrowth = 20; // None 1 100
     // end
     
