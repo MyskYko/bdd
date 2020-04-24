@@ -14,6 +14,7 @@ namespace Bdd
     int slotSize = 1000000; // Log 100 1000000000
     int uSize = 1 << 18; // Pow 7 30
     int cSize = 1 << 18; // Pow 7 30
+    int nCallThold = 2000000; // Log 100 1000000000
     // end
 
     CacBddParam( std::string fname = "_CacBddMan.hpp_setting.txt" )
@@ -30,6 +31,8 @@ namespace Bdd
       uSize = std::stoi( str );
       std::getline( f, str );
       cSize = std::stoi( str );
+      std::getline( f, str );
+      nCallThold = std::stoi( str );
     }
   };
     
@@ -42,7 +45,7 @@ namespace Bdd
   public:
     CacBddMan( int nVars, CacBddParam param ) : param( param )
     {
-      man = new cacBDD::XBDDManager( nVars, param.slotSize, param.uSize, param.cSize );
+      man = new cacBDD::XBDDManager( nVars, param.slotSize, param.uSize, param.cSize, param.nCallThold );
     };
     CacBddMan( int nVars ) : CacBddMan( nVars, CacBddParam() ) {}
     ~CacBddMan() { delete man; }
