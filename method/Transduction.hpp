@@ -27,7 +27,6 @@ private:
   std::vector<std::vector<int> > vvFIs;
   std::vector<std::vector<int> > vvFOs;
   
-  std::vector<int> vRanks;
   std::vector<char> vMarks;
 
   Bdd::BddMan<node> & bdd;
@@ -183,7 +182,6 @@ public:
     nObjsAlloc = ( nRegular << 1 ) + aig.num_pos();
     vvFIs.resize( nObjsAlloc );
     vvFOs.resize( nObjsAlloc );
-    vRanks.resize( nObjsAlloc );
     vMarks.resize( nObjsAlloc );
     vFs.resize( nObjsAlloc );
     vGs.resize( nObjsAlloc );
@@ -304,21 +302,18 @@ public:
       }
   }
   
-  void Rank()
+  int Rank( int id )
   {
-    for ( int id : vPIs )
+    if ( vvFIs[id].empty() )
       {
-	vRanks[id] = std::numeric_limits<int>::max();
+	return std::numeric_limits<int>::max();
       }
-    for ( int id : vObjs )
-      {
-	vRanks[id] = vvFOs[id].size();
-      }
+    return vvFOs[id].size();
   }
 
   void SortFIsNode( int id )
   {
-    std::sort( vvFIs[id].begin(), vvFIs[id].end(), [&]( int a, int b ) { return vRanks[a] < vRanks[b]; } );
+    std::sort( vvFIs[id].begin(), vvFIs[id].end(), [&]( int a, int b ) { return Rank( a ) < Rank( b ); } );
   }
   void SortFIs()
   {
@@ -642,12 +637,6 @@ public:
 	BuildNode( id_, vFs );
       }
   }
-  //void CspfEager()
-  //{
-  //Rank();
-  //SortFIs();
-  //Cspf();
-  //}
   void G1Eager( int fanin, int fanout )
   {
     int wire = CountWire();
@@ -784,15 +773,31 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 
   net.SetEXDC();
 
-  net.Rank();
   net.SortFIs();
   net.Cspf();
 
+  while ( fRepeat )
+    {
+      net.fWeak = 1;
+      if ( fVerbose )
+	{
+	  std::cout << "weak gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+	}
+      int wire = net.CountWire();
+      net.G1();
+      if ( wire == net.CountWire() )
+	{
+	  net.fWeak = 0;
+	  break;
+	}
+    }
+
+  
   while ( 1 )
     {
       if ( fVerbose )
 	{
-	  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+	  std::cout << "cspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
 	}
       int wire = net.CountWire();
       net.G1();
@@ -801,6 +806,23 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 	  break;
 	}
     }
+
+    while ( fRepeat )
+    {
+      net.Mspf();
+      net.fMspf = 1;
+      if ( fVerbose )
+	{
+	  std::cout << "mspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+	}
+      int wire = net.CountWire();
+      net.G1();
+      if ( wire == net.CountWire() )
+	{
+	  break;
+	}
+    }
+
 
   if ( fVerbose )
     {
