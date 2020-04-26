@@ -5,6 +5,7 @@
 #include <map>
 #include <limits>
 #include <optional>
+#include <chrono>
 #include <BddMan.hpp>
 #include <mockturtle/mockturtle.hpp>
 
@@ -15,7 +16,7 @@ public:
   bool fRemove = 0;
   bool fWeak = 0;
   bool fMspf = 0;
-  bool fReo = 0;
+  bool fReo = 1;
 
 private:
   int nObjsAlloc;
@@ -698,13 +699,12 @@ public:
 	      }
 	  }
 	// try connecting gate
-	for ( int j = targets.size() - 1; j >= 0; j-- )
+	for ( int id_ : targets )
 	  {
 	    if ( vvFOs[id].empty() )
 	      {
 		break;
 	      }
-	    int id_ = targets[j];
 	    if ( vvFOs[id_].empty() || vMarks[id_] )
 	      {
 		continue;
@@ -750,12 +750,15 @@ public:
 };
 
 template <typename node>
-void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool fRepeat = 0, bool fCheck = 0, bool fVerbose = 0 )
+void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, bool fVerbose = 0 )
 {
+  auto start = std::chrono::system_clock::now();
+  
   auto net = TransductionNetwork( aig, bdd );
   if ( fVerbose )
     {
-      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
     }
   
   if ( net.fReo )
@@ -773,60 +776,92 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 
   net.SetEXDC();
 
-  net.SortFIs();
-  net.Cspf();
-
-  while ( fRepeat )
+  if ( fRepeat )
     {
-      net.fWeak = 1;
-      if ( fVerbose )
+      while ( 1 )
 	{
-	  std::cout << "weak gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
-	}
-      int wire = net.CountWire();
-      net.G1();
-      if ( wire == net.CountWire() )
-	{
+	  int wire2 = net.CountWire();
+	  net.fWeak = 1;
+	  while ( 1 )
+	    {
+	      if ( fVerbose )
+		{
+		  double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+		  std::cout << "weak gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+		}
+	      int wire = 0;
+	      while ( wire != net.CountWire() )
+		{
+		  wire = net.CountWire();
+		  net.SortFIs();
+		  net.Cspf();
+		} 
+	      net.G1();
+	      if ( wire == net.CountWire() )
+		{
+		  break;
+		}
+	    }
 	  net.fWeak = 0;
-	  break;
+	  while ( 1 )
+	    {
+	      if ( fVerbose )
+		{
+		  double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+		  std::cout << "cspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+		}
+	      int wire = 0;
+	      while ( wire != net.CountWire() )
+		{
+		  wire = net.CountWire();
+		  net.SortFIs();
+		  net.Cspf();
+		}
+	      net.G1();
+	      if ( wire == net.CountWire() )
+		{
+		  break;
+		}
+	    }
+	  if ( wire2 == net.CountWire() )
+	    {
+	      break;
+	    }
 	}
     }
 
-  
-  while ( 1 )
+  if ( fMspf )
     {
-      if ( fVerbose )
-	{
-	  std::cout << "cspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
-	}
-      int wire = net.CountWire();
-      net.G1();
-      if ( !fRepeat || wire == net.CountWire() )
-	{
-	  break;
-	}
-    }
-
-    while ( fRepeat )
-    {
-      net.Mspf();
       net.fMspf = 1;
-      if ( fVerbose )
+      while ( 1 )
 	{
-	  std::cout << "mspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
-	}
-      int wire = net.CountWire();
-      net.G1();
-      if ( wire == net.CountWire() )
-	{
-	  break;
+	  if ( fVerbose )
+	    {
+	      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+	      std::cout << "mspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+	    }
+	  int wire = net.CountWire();
+	  net.SortFIs();
+	  net.Mspf();
+	  net.G1();
+	  if ( wire == net.CountWire() )
+	    {
+	      break;
+	    }
 	}
     }
 
+  if ( !fRepeat && !fMspf )
+    {
+      net.SortFIs();
+      net.Cspf();
+      net.G1();
+    }
 
   if ( fVerbose )
     {
-      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
     }
   
   mockturtle::aig_network aig_new;
