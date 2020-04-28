@@ -49,16 +49,16 @@ namespace Bdd
     }
   };
     
-  class CuddMan : public BddMan<BDD>
+  class CuddMan : public BddMan<CUDD::BDD>
   {
   private:
-    Cudd * man;
+    CUDD::Cudd * man;
     CuddParam param;
     
   public:
     CuddMan( int nVars, CuddParam param ) : param( param )
     {
-      man = new Cudd( nVars, 0, param.nUnique, param.nCache, param.nMaxMem );
+      man = new CUDD::Cudd( nVars, 0, param.nUnique, param.nCache, param.nMaxMem );
       man->SetMinHit( param.nMinHit );
       if ( !param.fGC )
 	{
@@ -74,45 +74,45 @@ namespace Bdd
     ~CuddMan() { delete man; }
 
     int GetNumVar() override { return man->ReadSize(); }
-    uint64_t Id( BDD const & x ) { return (uint64_t)x.getNode(); }
+    uint64_t Id( CUDD::BDD const & x ) { return (uint64_t)x.getNode(); }
 
-    BDD Const0() override { return !Const1(); }
-    BDD Const1() override { return man->bddOne(); }
-    BDD IthVar( int i ) override { return man->ReadVars( i ); }
+    CUDD::BDD Const0() override { return !Const1(); }
+    CUDD::BDD Const1() override { return man->bddOne(); }
+    CUDD::BDD IthVar( int i ) override { return man->ReadVars( i ); }
 
-    int Var( BDD const & x ) override { return x.NodeReadIndex(); }
-    BDD Then( BDD const & x ) override
+    int Var( CUDD::BDD const & x ) override { return x.NodeReadIndex(); }
+    CUDD::BDD Then( CUDD::BDD const & x ) override
     {
-      auto y = BDD( *man, Cudd_T( x.getNode() ) );
+      auto y = CUDD::BDD( *man, Cudd_T( x.getNode() ) );
       return IsCompl( x ) ? !y : y;
     }
-    BDD Else( BDD const & x ) override
+    CUDD::BDD Else( CUDD::BDD const & x ) override
     {
-      auto y = BDD( *man, Cudd_E( x.getNode() ) );
+      auto y = CUDD::BDD( *man, Cudd_E( x.getNode() ) );
       return IsCompl( x ) ? !y : y;
     }
 
-    BDD Regular( BDD const & x ) override { return BDD( *man, Cudd_Regular( x.getNode() ) ); }
-    bool IsCompl( BDD const & x ) override { return Cudd_IsComplement( x.getNode() ); }
+    CUDD::BDD Regular( CUDD::BDD const & x ) override { return CUDD::BDD( *man, Cudd_Regular( x.getNode() ) ); }
+    bool IsCompl( CUDD::BDD const & x ) override { return Cudd_IsComplement( x.getNode() ); }
     
     int Level( int i ) override { return man->ReadPerm( i ); }
     void Reorder() override { man->ReduceHeap( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) ); }
     
-    BDD Not( BDD const & x ) override { return !x; }
-    BDD And( BDD const & x, BDD const & y ) override { return x & y; }
-    BDD Or( BDD const & x, BDD const & y ) override { return x | y ; }
-    BDD Xor( BDD const & x, BDD const & y ) override { return x ^ y; }
-    BDD Ite( BDD const & c, BDD const & x, BDD const & y ) override { return c.Ite( x, y ); }
-    BDD Exist( BDD const & x, BDD const & cube ) override { return x.ExistAbstract( cube ); }
-    BDD Univ( BDD const & x, BDD const & cube ) override { return x.UnivAbstract( cube ); }
-    BDD AndExist( BDD const & x, BDD const & y, BDD const & cube ) override { return x.AndAbstract( y, cube ); }
-    BDD Restrict( BDD const & x, BDD const & c ) override { return x.Restrict( c ); }
-    BDD Compose( BDD const & x, int i, BDD const & c ) override { return x.Compose( c, i ); }
-    BDD VecCompose( BDD const & x, std::vector<BDD> & cs ) override { return x.VectorCompose( cs ); }
+    CUDD::BDD Not( CUDD::BDD const & x ) override { return !x; }
+    CUDD::BDD And( CUDD::BDD const & x, CUDD::BDD const & y ) override { return x & y; }
+    CUDD::BDD Or( CUDD::BDD const & x, CUDD::BDD const & y ) override { return x | y ; }
+    CUDD::BDD Xor( CUDD::BDD const & x, CUDD::BDD const & y ) override { return x ^ y; }
+    CUDD::BDD Ite( CUDD::BDD const & c, CUDD::BDD const & x, CUDD::BDD const & y ) override { return c.Ite( x, y ); }
+    CUDD::BDD Exist( CUDD::BDD const & x, CUDD::BDD const & cube ) override { return x.ExistAbstract( cube ); }
+    CUDD::BDD Univ( CUDD::BDD const & x, CUDD::BDD const & cube ) override { return x.UnivAbstract( cube ); }
+    CUDD::BDD AndExist( CUDD::BDD const & x, CUDD::BDD const & y, CUDD::BDD const & cube ) override { return x.AndAbstract( y, cube ); }
+    CUDD::BDD Restrict( CUDD::BDD const & x, CUDD::BDD const & c ) override { return x.Restrict( c ); }
+    CUDD::BDD Compose( CUDD::BDD const & x, int i, CUDD::BDD const & c ) override { return x.Compose( c, i ); }
+    CUDD::BDD VecCompose( CUDD::BDD const & x, std::vector<CUDD::BDD> & cs ) override { return x.VectorCompose( cs ); }
     
-    void Support( BDD const & x, std::vector<int> & vVars ) override
+    void Support( CUDD::BDD const & x, std::vector<int> & vVars ) override
     {
-      BDD y = x.Support();
+      CUDD::BDD y = x.Support();
       while ( y != Const1() )
 	{
 	  vVars.push_back( Var( y ) );
@@ -120,7 +120,7 @@ namespace Bdd
 	}
     }
     
-    void PrintStats( std::vector<BDD> & vNodes ) override
+    void PrintStats( std::vector<CUDD::BDD> & vNodes ) override
     {
       uint64_t count = 0;
       for ( uint32_t i = 0; i < vNodes.size(); i++ )
