@@ -5,6 +5,7 @@
 #include <map>
 #include <limits>
 #include <optional>
+#include <chrono>
 #include <BddMan.hpp>
 #include <mockturtle/mockturtle.hpp>
 
@@ -15,7 +16,7 @@ public:
   bool fRemove = 0;
   bool fWeak = 0;
   bool fMspf = 0;
-  bool fReo = 0;
+  bool fReo = 1;
 
 private:
   int nObjsAlloc;
@@ -27,7 +28,6 @@ private:
   std::vector<std::vector<int> > vvFIs;
   std::vector<std::vector<int> > vvFOs;
   
-  std::vector<int> vRanks;
   std::vector<char> vMarks;
 
   Bdd::BddMan<node> & bdd;
@@ -107,17 +107,11 @@ private:
       }
     if ( vFs[id] )
       {
-	bdd.Deref( *vFs[id] );
 	vFs[id] = std::nullopt;
       }
     if ( vGs[id] )
       {
-	bdd.Deref( *vGs[id] );
 	vGs[id] = std::nullopt;
-      }
-    for ( auto & x : vvCs[id] )
-      {
-	bdd.Deref( x );
       }
     vvCs[id].clear();
   }
@@ -186,10 +180,9 @@ public:
   {
     mockturtle::topo_view aig{aig_};
     int nRegular = aig.size();
-    nObjsAlloc = nRegular << 1 + aig.num_pos();
+    nObjsAlloc = ( nRegular << 1 ) + aig.num_pos();
     vvFIs.resize( nObjsAlloc );
     vvFOs.resize( nObjsAlloc );
-    vRanks.resize( nObjsAlloc );
     vMarks.resize( nObjsAlloc );
     vFs.resize( nObjsAlloc );
     vGs.resize( nObjsAlloc );
@@ -295,23 +288,12 @@ public:
 
   void BuildNode( int id, std::vector<std::optional<node> > & vFs_ )
   {
-    if ( vFs_[id] )
-      {
-	bdd.Deref( *vFs_[id] );
-      }
     vFs_[id] = bdd.Const1();
-    bdd.Ref( *vFs_[id] );
     for ( int id_ : vvFIs[id] )
       {
-	node x = bdd.And( *vFs_[id], *vFs_[id_] );
-	bdd.Ref( x );
-	bdd.Deref( *vFs_[id] );
-	vFs_[id] = x;
+	vFs_[id] = bdd.And( *vFs_[id], *vFs_[id_] );
       }
-    node x = bdd.Not( *vFs_[id] );
-    bdd.RefNot( x );
-    bdd.DerefNot( *vFs_[id] );
-    vFs_[id] = x;
+    vFs_[id] = bdd.Not( *vFs_[id] );
   }
   void Build()
   {
@@ -321,21 +303,18 @@ public:
       }
   }
   
-  void Rank()
+  int Rank( int id )
   {
-    for ( int id : vPIs )
+    if ( vvFIs[id].empty() )
       {
-	vRanks[id] = std::numeric_limits<int>::max();
+	return std::numeric_limits<int>::max();
       }
-    for ( int id : vObjs )
-      {
-	vRanks[id] = vvFOs[id].size();
-      }
+    return vvFOs[id].size();
   }
 
   void SortFIsNode( int id )
   {
-    std::sort( vvFIs[id].begin(), vvFIs[id].end(), [&]( int a, int b ) { return vRanks[a] < vRanks[b]; } );
+    std::sort( vvFIs[id].begin(), vvFIs[id].end(), [&]( int a, int b ) { return Rank( a ) < Rank( b ); } );
   }
   void SortFIs()
   {
@@ -359,20 +338,12 @@ public:
 
   void CalcG( int id )
   {
-    if ( vGs[id] )
-      {
-	bdd.Deref( *vGs[id] );
-      }
     vGs[id] = bdd.Const1();
-    bdd.Ref( *vGs[id] );
     for (int id_ : vvFOs[id] )
       {
 	auto it = std::find( vvFIs[id_].begin(), vvFIs[id_].end(), id );
 	int index = std::distance( vvFIs[id_].begin(), it );
-	node x = bdd.And( *vGs[id], vvCs[id_][index] );
-	bdd.Ref( x );
-	bdd.Deref( *vGs[id] );
-	vGs[id] = x;
+	vGs[id] = bdd.And( *vGs[id], vvCs[id_][index] );
       }
   }
   void CalcC( int id )
@@ -381,46 +352,24 @@ public:
       {
 	return;
       }
-    for ( node & x : vvCs[id] )
-      {
-	bdd.Deref( x );
-      }
     vvCs[id].clear();
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
 	// x = and ( FIs with smaller rank )
 	node x = bdd.Const1();
-	bdd.Ref( x );
 	for ( int j = i + 1; j < (int)vvFIs[id].size(); j++ )
 	  {
-	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
-	    bdd.Ref( y );
-	    bdd.Deref( x );
-	    x = y;
+	    x = bdd.And( x, *vFs[vvFIs[id][j]] );
 	  }
 	// c = (not x) or (f[id] and f[idi]) or g[id]
-	node y = bdd.Not( x );
-	bdd.RefNot( y );
-	bdd.DerefNot( x );
-	x = y;
-	y = bdd.And( *vFs[id], *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
-	node z = bdd.Or( x, y );
-	bdd.Ref( z );
-	bdd.Deref( x );
-	bdd.Deref( y );
-	x = z;
-	y = bdd.Or( x, *vGs[id] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
+	x = bdd.Not( x );
+	node y = bdd.And( *vFs[id], *vFs[vvFIs[id][i]] );
+	x = bdd.Or( x, y );
+	x = bdd.Or( x, *vGs[id] );
 	// c or f[idi] == const1 -> redundant
 	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
 	if ( y == bdd.Const1() )
 	  {
-	    bdd.Deref( x );
-	    bdd.Deref( y );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -437,7 +386,6 @@ public:
 	    i--;
 	    continue;
 	  }
-	bdd.Deref( y );
 	vvCs[id].push_back( x );
       }
   }
@@ -462,32 +410,19 @@ public:
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
 	node x = bdd.Const1();
-	bdd.Ref( x );
 	for ( int j = 0; j < (int)vvFIs[id].size(); j++ )
 	  {
 	    if ( i == j )
 	      {
 		continue;
 	      }
-	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
-	    bdd.Ref( y );
-	    bdd.Deref( x );
-	    x = y;
+	    x = bdd.And( x, *vFs[vvFIs[id][j]] );
 	  }
-	node y = bdd.Not( x );
-	bdd.RefNot( y );
-	bdd.DerefNot( x );
-	x = y;
-	y = bdd.Or( x, *vGs[id] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
-	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	if ( y == bdd.Const1() )
+	x = bdd.Not( x );
+	x = bdd.Or( x, *vGs[id] );
+	x = bdd.Or( x, *vFs[vvFIs[id][i]] );
+	if ( x == bdd.Const1() )
 	  {
-	    bdd.Deref( y );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -504,11 +439,10 @@ public:
 	    i--;
 	    continue;
 	  }
-	bdd.Deref( y );
       }
     return 0;
   }
-
+  
   bool IsFOConeShared_rec( int id, int stage )
   {
     if ( vvFOs[id].empty() )
@@ -566,23 +500,15 @@ public:
     // insert inverters just after id    
     std::vector<std::optional<node> > vInvFs = vFs;
     vInvFs[id] = bdd.Not( *vInvFs[id] );
-    bdd.RefNot( *vInvFs[id] );
     // build
     for ( int id_ : targets )
       {
-	vInvFs[id_] = std::nullopt;
 	BuildNode( id_, vInvFs );
       }
     for ( int id_ : vPOs )
       {
-	node x = *vInvFs[vvFIs[id_][0]];
-	bdd.Ref( x );
-	vInvFsPO.push_back( x );
+	vInvFsPO.push_back( *vInvFs[vvFIs[id_][0]] );
       }
-    for ( int id_ : targets )
-      {
-	bdd.Deref( *vInvFs[id_] );
-      }    
   }
   void CalcGMspf( int id )
   {
@@ -593,75 +519,43 @@ public:
       }
     std::vector<node> vInvFsPO;
     BuildPOsInverted( id, vInvFsPO );
-    if ( vGs[id] )
-      {
-	bdd.Deref( *vGs[id] );
-      }
     vGs[id] = bdd.Const1();
-    bdd.Ref( *vGs[id] );
     for ( int i = 0; i < (int)vPOs.size(); i++ )
       {
 	int id_ = vvFIs[vPOs[i]][0];
-	node x = bdd.Xor( *vFs[id_], vInvFsPO[i] );
-	bdd.Ref( x );
+	node x;
 	if ( id != id_ )
 	  {
-	    node y = bdd.Not( x );
-	    bdd.RefNot( y );
-	    bdd.DerefNot( x );
-	    x = y;
+	    x = bdd.Const0();
 	  }
-	node y = bdd.Or( x, *vGs[vPOs[i]] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
-	y = bdd.And( *vGs[id], x );
-	bdd.Ref( y );
-	bdd.Deref( *vGs[id] );
-	bdd.Deref( x );
-	vGs[id] = y;
-      }
-    for ( node & x : vInvFsPO )
-      {
-	bdd.Deref( x );
+	else
+	  {
+	    x = bdd.Xor( *vFs[id_], vInvFsPO[i] );
+	    x = bdd.Not( x );
+	  }
+	x = bdd.Or( x, *vGs[vPOs[i]] );
+	vGs[id] = bdd.And( *vGs[id], x );
       }
   }
   bool CalcCMspf( int id )
   {
-    for ( node & x : vvCs[id] )
-      {
-	bdd.Deref( x );
-      }
     vvCs[id].clear();
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
 	node x = bdd.Const1();
-	bdd.Ref( x );
 	for ( int j = 0; j < (int)vvFIs[id].size(); j++ )
 	  {
 	    if ( i == j )
 	      {
 		continue;
 	      }
-	    node y = bdd.And( x, *vFs[vvFIs[id][j]] );
-	    bdd.Ref( y );
-	    bdd.Deref( x );
-	    x = y;
+	    x = bdd.And( x, *vFs[vvFIs[id][j]] );
 	  }
-	node y = bdd.Not( x );
-	bdd.RefNot( y );
-	bdd.DerefNot( x );
-	x = y;
-	y = bdd.Or( x, *vGs[id] );
-	bdd.Ref( y );
-	bdd.Deref( x );
-	x = y;
-	y = bdd.Or( x, *vFs[vvFIs[id][i]] );
-	bdd.Ref( y );
+	x = bdd.Not( x );
+	x = bdd.Or( x, *vGs[id] );
+	node y = bdd.Or( x, *vFs[vvFIs[id][i]] );
 	if ( y == bdd.Const1() )
 	  {
-	    bdd.Deref( x );
-	    bdd.Deref( y );
 	    Disconnect( vvFIs[id][i], id );
 	    if ( vvFIs[id].empty() )
 	      {
@@ -676,7 +570,6 @@ public:
 	      }
 	    return 1;
 	  }
-	bdd.Deref( y );
 	vvCs[id].push_back( x );
       }
     return 0;
@@ -707,17 +600,12 @@ public:
 	return 0;
       }
     node x = bdd.Or( *vFs[fanout], *vGs[fanout] );
-    bdd.Ref( x );
-    node y = bdd.Or( x, *vFs[fanin] );
-    bdd.Ref( y );
-    bdd.Deref( x );
-    if ( y == bdd.Const1() )
+    x = bdd.Or( x, *vFs[fanin] );
+    if ( x == bdd.Const1() )
       {
-	bdd.Deref( y );
 	Connect( fanin, fanout, 1 );
 	return 1;
       }
-    bdd.Deref( y );
     return 0;
   }
   void CspfFICone( int id )
@@ -760,7 +648,6 @@ public:
 	CspfFICone( fanout );
 	return;
       }
-    Build();
     Cspf();
   }
   void G1Weak( int fanin, int fanout )
@@ -780,7 +667,7 @@ public:
     for ( int i = targets.size() - 1; i >= 0; i-- )
       {
 	int id = targets[i];
-	std::cout << "gate" << i << ", id" << id << std::endl;
+	//std::cout << "gate" << i << ", id" << id << std::endl;
 	if ( vvFOs[id].empty() )
 	  {
 	    continue;
@@ -812,13 +699,12 @@ public:
 	      }
 	  }
 	// try connecting gate
-	for ( int j = targets.size() - 1; j >= 0; j-- )
+	for ( int id_ : targets )
 	  {
 	    if ( vvFOs[id].empty() )
 	      {
 		break;
 	      }
-	    int id_ = targets[j];
 	    if ( vvFOs[id_].empty() || vMarks[id_] )
 	      {
 		continue;
@@ -843,7 +729,6 @@ public:
 	if ( fWeak )
 	  {
 	    CspfFICone( id );
-	    Build();
 	  }
       }
   }
@@ -865,10 +750,16 @@ public:
 };
 
 template <typename node>
-void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd )
+void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, bool fVerbose = 0 )
 {
+  auto start = std::chrono::system_clock::now();
+  
   auto net = TransductionNetwork( aig, bdd );
-  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+  if ( fVerbose )
+    {
+      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+    }
   
   if ( net.fReo )
     {
@@ -884,47 +775,115 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd )
     }
 
   net.SetEXDC();
-  net.Rank();
-  net.SortFIs();
 
-  if ( net.fMspf )
+  if ( fRepeat )
     {
-      net.Mspf();
-    }
-  else
-    {
-      net.Cspf();
-    }
-
-  while ( 1 )
-    {
-      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
-      int wire = net.CountWire();
-      net.G1();
-      if ( wire == net.CountWire() )
+      while ( 1 )
 	{
-	  break;
+	  int wire2 = net.CountWire();
+	  net.fWeak = 1;
+	  while ( 1 )
+	    {
+	      if ( fVerbose )
+		{
+		  double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+		  std::cout << "weak gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+		}
+	      int wire = 0;
+	      while ( wire != net.CountWire() )
+		{
+		  wire = net.CountWire();
+		  net.SortFIs();
+		  net.Cspf();
+		} 
+	      net.G1();
+	      if ( wire == net.CountWire() )
+		{
+		  break;
+		}
+	    }
+	  net.fWeak = 0;
+	  while ( 1 )
+	    {
+	      if ( fVerbose )
+		{
+		  double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+		  std::cout << "cspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+		}
+	      int wire = 0;
+	      while ( wire != net.CountWire() )
+		{
+		  wire = net.CountWire();
+		  net.SortFIs();
+		  net.Cspf();
+		}
+	      net.G1();
+	      if ( wire == net.CountWire() )
+		{
+		  break;
+		}
+	    }
+	  if ( wire2 == net.CountWire() )
+	    {
+	      break;
+	    }
 	}
     }
 
-  std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << std::endl;
+  if ( fMspf )
+    {
+      net.fMspf = 1;
+      while ( 1 )
+	{
+	  if ( fVerbose )
+	    {
+	      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+	      std::cout << "mspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+	    }
+	  int wire = net.CountWire();
+	  net.SortFIs();
+	  net.Mspf();
+	  net.G1();
+	  if ( wire == net.CountWire() )
+	    {
+	      break;
+	    }
+	}
+    }
+
+  if ( !fRepeat && !fMspf )
+    {
+      net.SortFIs();
+      net.Cspf();
+      net.G1();
+    }
+
+  if ( fVerbose )
+    {
+      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+    }
   
   mockturtle::aig_network aig_new;
   net.Aig( aig_new );
-  
-  auto miter = *mockturtle::miter<mockturtle::aig_network>( aig, aig_new );
-  auto result = mockturtle::equivalence_checking( miter );
-  if ( result && *result )
+
+  if ( fCheck )
     {
-      std::cout << "networks are equivalent\n";
-    }
-  else if ( result )
-    {
-      std::cout << "networks are NOT equivalent\n";
-    }
-  else
-    {
-      std::cout << "equivalence checking unfinished\n";
+      auto miter = *mockturtle::miter<mockturtle::aig_network>( aig, aig_new );
+      auto result = mockturtle::equivalence_checking( miter );
+      if ( result && *result )
+	{
+	  std::cout << "networks are equivalent\n";
+	}
+      else if ( result )
+	{
+	  std::cout << "##### networks are NOT equivalent #####\n";
+	  throw "networks are NOT equivalent";
+	}
+      else
+	{
+	  std::cout << "equivalence checking unfinished\n";
+	}
     }
   
   aig = aig_new;
