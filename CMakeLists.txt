@@ -25,25 +25,5 @@ target_link_libraries(bddmethod INTERFACE bdd mockturtle)
 endif()
 
 if(BDD_TEST)
-
-add_executable(test_simplebdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_simplebdd mockturtle bddmethod simplebdd)
-target_compile_definitions(test_simplebdd PUBLIC SIMPLEBDD)
-
-add_executable(test_cudd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_cudd mockturtle bddmethod cudd)
-target_compile_definitions(test_cudd PUBLIC CUDD)
-
-add_executable(test_buddy ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_buddy mockturtle bddmethod buddy)
-target_compile_definitions(test_buddy PUBLIC BUDDY)
-
-add_executable(test_cacbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_cacbdd mockturtle bddmethod cacbdd)
-target_compile_definitions(test_cacbdd PUBLIC CACBDD)
-
-add_executable(test_atbdd ${CMAKE_CURRENT_SOURCE_DIR}/test_all.cpp)
-target_link_libraries(test_atbdd mockturtle bddmethod atbdd)
-target_compile_definitions(test_atbdd PUBLIC ATBDD)
-
+add_subdirectory(example)
 endif()
