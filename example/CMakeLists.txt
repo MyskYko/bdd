@@ -1,2 +1,8 @@
-add_executable(aig2bdd ${CMAKE_CURRENT_SOURCE_DIR}/aig2bdd.cpp)
-target_link_libraries(aig2bdd mockturtle bddmethod simplebdd cudd buddy cacbdd atbdd)
+file(GLOB FILENAMES *.cpp)
+
+foreach(filename ${FILENAMES})
+  get_filename_component(basename ${filename} NAME_WE)
+  add_executable(${basename} ${filename})
+  target_link_libraries(${basename} bddmethod simplebdd cudd buddy cacbdd atbdd)
+endforeach()  
+

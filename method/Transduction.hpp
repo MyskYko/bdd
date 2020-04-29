@@ -16,8 +16,7 @@ public:
   bool fRemove = 0;
   bool fWeak = 0;
   bool fMspf = 0;
-  bool fReo = 1;
-
+  
 private:
   int nObjsAlloc;
   int Const0;
@@ -747,28 +746,33 @@ public:
       }
     return count;
   }
+  void PrintStats( std::string prefix, std::chrono::system_clock::time_point & start )
+  {
+    double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
+    std::cout << prefix << " gate " << CountGate() << ", wire " << CountWire() << ", node " << CountWire() - CountGate() << ", time " << time << std::endl;
+    
+  }
 };
 
 template <typename node>
-void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, bool fVerbose = 0 )
+void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool fReo = 0, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, bool fVerbose = 0 )
 {
   auto start = std::chrono::system_clock::now();
   
   auto net = TransductionNetwork( aig, bdd );
   if ( fVerbose )
     {
-      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
-      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+      net.PrintStats( "init", start );
     }
   
-  if ( net.fReo )
+  if ( fReo )
     {
       bdd.SupportRef();
     }
   
   net.Build();
 
-  if ( net.fReo )
+  if ( fReo )
     {
       bdd.Reorder();
       bdd.UnsupportRef();
@@ -784,11 +788,6 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 	  net.fWeak = 1;
 	  while ( 1 )
 	    {
-	      if ( fVerbose )
-		{
-		  double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
-		  std::cout << "weak gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
-		}
 	      int wire = 0;
 	      while ( wire != net.CountWire() )
 		{
@@ -797,6 +796,10 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 		  net.Cspf();
 		} 
 	      net.G1();
+	      if ( fVerbose )
+		{
+		  net.PrintStats( "weak", start );
+		}
 	      if ( wire == net.CountWire() )
 		{
 		  break;
@@ -805,11 +808,6 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 	  net.fWeak = 0;
 	  while ( 1 )
 	    {
-	      if ( fVerbose )
-		{
-		  double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
-		  std::cout << "cspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
-		}
 	      int wire = 0;
 	      while ( wire != net.CountWire() )
 		{
@@ -818,6 +816,10 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 		  net.Cspf();
 		}
 	      net.G1();
+	      if ( fVerbose )
+		{
+		  net.PrintStats( "cspf", start );
+		}
 	      if ( wire == net.CountWire() )
 		{
 		  break;
@@ -835,16 +837,15 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
       net.fMspf = 1;
       while ( 1 )
 	{
-	  if ( fVerbose )
-	    {
-	      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
-	      std::cout << "mspf gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
-	    }
 	  int wire = net.CountWire();
 	  net.SortFIs();
 	  net.Mspf();
 	  net.G1();
-	  if ( wire == net.CountWire() )
+	  if ( fVerbose )
+	    {
+	      net.PrintStats( "mspf", start );
+	    }
+	  if ( !fRepeat || wire == net.CountWire() )
 	    {
 	      break;
 	    }
@@ -860,8 +861,7 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 
   if ( fVerbose )
     {
-      double time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()-start).count() / 1000.0;
-      std::cout << "gate " << net.CountGate() << ", wire " << net.CountWire() << ", node " << net.CountWire() - net.CountGate() << ", time " << time << std::endl;
+      net.PrintStats( "end ", start );
     }
   
   mockturtle::aig_network aig_new;
@@ -877,8 +877,7 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 	}
       else if ( result )
 	{
-	  std::cout << "##### networks are NOT equivalent #####\n";
-	  throw "networks are NOT equivalent";
+	  std::cout << "networks are NOT equivalent\n";
 	}
       else
 	{
