@@ -4,7 +4,7 @@
 #include <CacBddMan.hpp>
 #include <AtBddMan.hpp>
 
-#include <NetBdd.hpp>
+#include <NtkBdd.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 #include <string>
@@ -114,45 +114,45 @@ int main( int argc, char ** argv )
   case 0:
     {
       Bdd::CuddMan bdd( aig.num_pis() );
-      auto vNodes = Net2Bdd( aig, bdd );
+      auto vNodes = Aig2Bdd( aig, bdd );
       if(!blifname.empty()) {
-	Bdd2Net( klut, bdd, vNodes );
+	Bdd2Ntk( klut, bdd, vNodes );
       }
     }
     break;
   case 1:
     {
       Bdd::BuddyMan bdd( aig.num_pis() );
-      auto vNodes = Net2Bdd( aig, bdd );
+      auto vNodes = Aig2Bdd( aig, bdd );
       if(!blifname.empty()) {
-	Bdd2Net( klut, bdd, vNodes );
+	Bdd2Ntk( klut, bdd, vNodes );
       }
     }
     break;
   case 2:
     {
       Bdd::CacBddMan bdd( aig.num_pis() );
-      auto vNodes = Net2Bdd( aig, bdd );
+      auto vNodes = Aig2Bdd( aig, bdd );
       if(!blifname.empty()) {
-	Bdd2Net( klut, bdd, vNodes );
+	Bdd2Ntk( klut, bdd, vNodes );
       }
     }
     break;
   case 3:
     {
       Bdd::SimpleBddMan bdd( aig.num_pis() );
-      auto vNodes = Net2Bdd( aig, bdd );
+      auto vNodes = Aig2Bdd( aig, bdd );
       if(!blifname.empty()) {
-	Bdd2Net( klut, bdd, vNodes );
+	Bdd2Ntk( klut, bdd, vNodes );
       }
     }
     break;
   case 4:
     {
       Bdd::AtBddMan bdd( aig.num_pis() );
-      auto vNodes = Net2Bdd( aig, bdd );
+      auto vNodes = Aig2Bdd( aig, bdd );
       if(!blifname.empty()) {
-	Bdd2Net( klut, bdd, vNodes );
+	Bdd2Ntk( klut, bdd, vNodes );
       }
     }
     break;
