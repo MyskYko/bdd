@@ -115,6 +115,7 @@ int main( int argc, char ** argv )
     {
       Bdd::CuddMan bdd( aig.num_pis() );
       auto vNodes = Aig2Bdd( aig, bdd );
+      bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
 	Bdd2Ntk( klut, bdd, vNodes );
       }
@@ -124,6 +125,7 @@ int main( int argc, char ** argv )
     {
       Bdd::BuddyMan bdd( aig.num_pis() );
       auto vNodes = Aig2Bdd( aig, bdd );
+      bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
 	Bdd2Ntk( klut, bdd, vNodes );
       }
@@ -133,6 +135,7 @@ int main( int argc, char ** argv )
     {
       Bdd::CacBddMan bdd( aig.num_pis() );
       auto vNodes = Aig2Bdd( aig, bdd );
+      bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
 	Bdd2Ntk( klut, bdd, vNodes );
       }
@@ -142,6 +145,7 @@ int main( int argc, char ** argv )
     {
       Bdd::SimpleBddMan bdd( aig.num_pis() );
       auto vNodes = Aig2Bdd( aig, bdd );
+      bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
 	Bdd2Ntk( klut, bdd, vNodes );
       }
@@ -151,6 +155,7 @@ int main( int argc, char ** argv )
     {
       Bdd::AtBddMan bdd( aig.num_pis() );
       auto vNodes = Aig2Bdd( aig, bdd );
+      bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
 	Bdd2Ntk( klut, bdd, vNodes );
       }
