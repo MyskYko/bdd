@@ -4,6 +4,7 @@
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 #include <string>
+#include <chrono>
 
 int main( int argc, char ** argv )
 {
@@ -22,13 +23,17 @@ int main( int argc, char ** argv )
   std::vector<std::string> po_names( aig.num_pos() );
   for ( int i = 0; i < aig.num_pis(); i++ )
     {
-      pi_names[i] = namemap.get_name( aig.make_signal( aig.pi_at( i ) ) )[0];
+      auto v = namemap[aig.make_signal( aig.pi_at( i ) )];
+      if(!v.empty())
+	pi_names[i] = v[0];
     }
   for ( int i = 0; i < aig.num_pos(); i++ )
     {
-      po_names[i] = namemap.get_name( aig.po_at( i ) )[0];
+      auto v = namemap[aig.po_at( i )];
+      if(!v.empty())
+	po_names[i] = v[0];
     }
-  
+  auto start = std::chrono::system_clock::now();
   try
     {
       Bdd::AtBddParam p;
@@ -62,7 +67,7 @@ int main( int argc, char ** argv )
       
       Bdd::AtBddMan bdd( aig.num_pis(), p );
       auto vNodes = Aig2Bdd( aig, bdd );
-      
+      auto end = std::chrono::system_clock::now();
       bdd.PrintStats( vNodes );
       
 #if defined(REORDER)
@@ -78,17 +83,19 @@ int main( int argc, char ** argv )
 	}
       std::cout << std::endl;
 #endif
-      
+      std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count() << " ms" << std::endl;
       mockturtle::klut_network lut;
       Bdd2Lut( lut, bdd, vNodes );
       mockturtle::names_view lut_{lut};
       for ( int i = 0; i < aig.num_pis(); i++ )
 	{
-	  lut_.set_name( lut_.make_signal( lut_.pi_at( i ) ), pi_names[i] );
+	  if(!pi_names[i].empty())
+	    lut_.set_name( lut_.make_signal( lut_.pi_at( i ) ), pi_names[i] );
 	}
       for ( int i = 0; i < aig.num_pos(); i++ )
 	{
-	  lut_.set_output_name( i, po_names[i] );
+	  if(!po_names[i].empty())	  
+	    lut_.set_output_name( i, po_names[i] );
 	}
       mockturtle::write_blif( lut_, filename2 );
     }
