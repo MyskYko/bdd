@@ -19,6 +19,9 @@ int main( int argc, char ** argv )
   mockturtle::aig_network aig;
   mockturtle::NameMap<mockturtle::aig_network> namemap;
   lorina::read_aiger( filename, mockturtle::aiger_reader( aig , &namemap ) );
+  if ( !aig.num_pis() )
+    lorina::read_ascii_aiger( filename, mockturtle::aiger_reader( aig , &namemap ) );
+  assert( aig.num_pis() );
   std::vector<std::string> pi_names( aig.num_pis() );
   std::vector<std::string> po_names( aig.num_pos() );
   for ( int i = 0; i < aig.num_pis(); i++ )
