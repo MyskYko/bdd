@@ -81,7 +81,7 @@ int main( int argc, char ** argv )
 	cout << "usage : iig <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
 	cout << "\t-i <str> : initial states as boolean vector [default = 0...0]" << endl;
-	cout << "\t-n <int> : number of states initially excluded [default = " << exclude << "]" << endl;
+	cout << "\t-n <int> : number of states initially excluded (minus defines number initially included) [default = " << exclude << "]" << endl;
 	cout << "\t-p <int> : package [default = " << package << "]" << endl;
 	cout << "\t           \t0 : cudd" << endl;
 	cout << "\t           \t1 : buddy" << endl;

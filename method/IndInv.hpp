@@ -81,17 +81,32 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   }
   
   std::cout << "initialize function at random" << std::endl;
-  node x = bdd.Const1();
   std::random_device rnd;
-  for(int i = 0; i < nzero; i++) {
-    node y = bdd.Const1();
-    for(int j = 0; j < nregs; j++) {
-      if((int)rnd() > 0)
-	y = bdd.And(y, bdd.IthVar(npis+j));
-      else
-	y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+  node x = bdd.Const1();
+  if(nzero > 0) {
+    for(int i = 0; i < nzero; i++) {
+      node y = bdd.Const1();
+      for(int j = 0; j < nregs; j++) {
+	if((int)rnd() > 0)
+	  y = bdd.And(y, bdd.IthVar(npis+j));
+	else
+	  y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+      }
+      x = bdd.And(x, bdd.Not(y));
     }
-    x = bdd.And(x, bdd.Not(y));
+  }
+  else {
+    x = bdd.Const0();
+    for(int i = 0; i < -nzero; i++) {
+      node y = bdd.Const1();
+      for(int j = 0; j < nregs; j++) {
+	if((int)rnd() > 0)
+	  y = bdd.And(y, bdd.IthVar(npis+j));
+	else
+	  y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+      }
+      x = bdd.Or(x, y);
+    }
   }
   x = bdd.Or(x, init);
 
@@ -118,6 +133,8 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   
   if(x == bdd.Const0())
     std::cout << "fail ... function excluded initial state" << std::endl;
+  else if(x == bdd.Const1())
+    std::cout << "fail ... function is const 1" << std::endl;
   else {
     std::cout << "success" << std::endl;
     show_bdd(bdd, x, npis, nregs);
@@ -145,17 +162,32 @@ void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string i
   }
   
   std::cout << "initialize function at random" << std::endl;
-  node x = bdd.Const1();
   std::random_device rnd;
-  for(int i = 0; i < nzero; i++) {
-    node y = bdd.Const1();
-    for(int j = 0; j < nregs; j++) {
-      if((int)rnd() > 0)
-	y = bdd.And(y, bdd.IthVar(npis+j));
-      else
-	y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+  node x = bdd.Const1();
+  if(nzero > 0) {
+    for(int i = 0; i < nzero; i++) {
+      node y = bdd.Const1();
+      for(int j = 0; j < nregs; j++) {
+	if((int)rnd() > 0)
+	  y = bdd.And(y, bdd.IthVar(npis+j));
+	else
+	  y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+      }
+      x = bdd.And(x, bdd.Not(y));
     }
-    x = bdd.And(x, bdd.Not(y));
+  }
+  else {
+    x = bdd.Const0();
+    for(int i = 0; i < -nzero; i++) {
+      node y = bdd.Const1();
+      for(int j = 0; j < nregs; j++) {
+	if((int)rnd() > 0)
+	  y = bdd.And(y, bdd.IthVar(npis+j));
+	else
+	  y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+      }
+      x = bdd.Or(x, y);
+    }
   }
   x = bdd.Or(x, init);
 
