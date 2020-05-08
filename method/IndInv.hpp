@@ -1,5 +1,5 @@
-#ifndef IIG_HPP_
-#define IIG_HPP_
+#ifndef IND_INV_HPP_
+#define IND_INV_HPP_
 
 #include "NtkBdd.hpp"
 
@@ -52,12 +52,12 @@ void show_bdd_rec(Bdd::BddMan<node> & bdd, node x, int npis, std::string & s) {
 }
 
 template <typename node> 
-void show_bdd(Bdd::BddMan<node> & bdd, node & x, int nregs) {
+void show_bdd(Bdd::BddMan<node> & bdd, node & x, int npis, int nregs) {
   std::string s;
   for(int i = 0; i < nregs; i++) {
     s += "-";
   }
-  show_bdd_rec(bdd, x, bdd.GetNumVar() - nregs, s);
+  show_bdd_rec(bdd, x, npis, s);
 }
 
 template <typename node> 
@@ -71,7 +71,16 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   for(int j = 0; j < npis; j++) {
     pis = bdd.And(pis, bdd.IthVar(j));
   }
+
+  node init = bdd.Const1();
+  for(int i = 0; i < nregs; i++) {
+    if(initstr[i] == '0')
+      init = bdd.And(init, bdd.Not(bdd.IthVar(npis+i)));
+    else
+      init = bdd.And(init, bdd.IthVar(npis+i));
+  }
   
+  std::cout << "initialize function at random" << std::endl;
   node x = bdd.Const1();
   std::random_device rnd;
   for(int i = 0; i < nzero; i++) {
@@ -83,14 +92,6 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
 	y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
     }
     x = bdd.And(x, bdd.Not(y));
-  }
-  
-  node init = bdd.Const1();
-  for(int i = 0; i < nregs; i++) {
-    if(initstr[i] == '0')
-      init = bdd.And(init, bdd.Not(bdd.IthVar(npis+i)));
-    else
-      init = bdd.And(init, bdd.IthVar(npis+i));
   }
   x = bdd.Or(x, init);
 
@@ -105,9 +106,9 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
     std::cout << "itr " << itr++ << std::endl;
     node y = bdd.VecCompose(x, vNodes);
     node z = bdd.Or(bdd.Not(x), y);
-    node k = bdd.Univ(z, pis);
-    if(k == bdd.Const1())
+    if(z == bdd.Const1())
       break;
+    node k = bdd.Univ(z, pis);
     x = bdd.And(x, k);
     if(bdd.And(x, init) == bdd.Const0()) {
       x = bdd.Const0();
@@ -116,12 +117,92 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   }
   
   if(x == bdd.Const0())
-    std::cout << "fail" << std::endl;
+    std::cout << "fail ... function excluded initial state" << std::endl;
   else {
     std::cout << "success" << std::endl;
-    show_bdd(bdd, x, nregs);
+    show_bdd(bdd, x, npis, nregs);
   }
 }
 
+template <typename node> 
+void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, int nzero) {
+  int npis = aig_.num_pis();
+  int nregs = aig_.num_registers();
+  mockturtle::aig_network aig;
+  CombNoPo(aig_, aig);
+  
+  node cis = bdd.Const1();
+  for(int j = 0; j < npis+nregs; j++) {
+    cis = bdd.And(cis, bdd.IthVar(j));
+  }
+  
+  node init = bdd.Const1();
+  for(int i = 0; i < nregs; i++) {
+    if(initstr[i] == '0')
+      init = bdd.And(init, bdd.Not(bdd.IthVar(npis+i)));
+    else
+      init = bdd.And(init, bdd.IthVar(npis+i));
+  }
+  
+  std::cout << "initialize function at random" << std::endl;
+  node x = bdd.Const1();
+  std::random_device rnd;
+  for(int i = 0; i < nzero; i++) {
+    node y = bdd.Const1();
+    for(int j = 0; j < nregs; j++) {
+      if((int)rnd() > 0)
+	y = bdd.And(y, bdd.IthVar(npis+j));
+      else
+	y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+    }
+    x = bdd.And(x, bdd.Not(y));
+  }
+  x = bdd.Or(x, init);
 
+  std::cout << "build latch" << std::endl;
+  std::vector<node> vNodes = Aig2Bdd( aig, bdd );
+  
+  node tra = bdd.Const0();
+  for(int i = 0; i < nregs; i++) {
+    tra = bdd.Or(tra, bdd.Ite(vNodes[i], bdd.IthVar(npis+nregs+i), bdd.Not(bdd.IthVar(npis+nregs+i))));
+  }
+  
+  for(int i = 0; i < npis; i++) {
+    vNodes.insert(vNodes.begin() + i, bdd.IthVar(i));
+  }
+  for(int i = 0; i < nregs; i++) {
+    vNodes.push_back(bdd.IthVar(npis+nregs+i));
+  }
+
+  std::vector<node> shift;
+  for(int i = 0; i < npis+nregs; i++) {
+    shift.push_back(bdd.IthVar(i));
+  }
+  for(int i = 0; i < nregs; i++) {
+    shift.push_back(bdd.IthVar(npis+i));
+  }
+
+  int itr = 0;
+  while(1) {
+    std::cout << "itr " << itr++ << std::endl;
+    node y = bdd.VecCompose(x, vNodes);
+    node z = bdd.Or(bdd.Not(x), y);
+    if(z == bdd.Const1())
+      break;
+    node ns = bdd.And(tra, bdd.Not(z));
+    ns = bdd.Exist(ns, cis);
+    ns = bdd.VecCompose(ns, shift);
+    x = bdd.Or(x, ns);
+    if(x == bdd.Const1()) {
+      break;
+    }
+  }
+  
+  if(x == bdd.Const1())
+    std::cout << "fail ... function became const 1" << std::endl;
+  else {
+    std::cout << "success" << std::endl;
+    show_bdd(bdd, x, npis, nregs);
+  }
+}
 #endif

@@ -4,7 +4,7 @@
 #include <CacBddMan.hpp>
 #include <AtBddMan.hpp>
 
-#include <iig.hpp>
+#include <IndInv.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 #include <string>
@@ -19,6 +19,7 @@ int main( int argc, char ** argv )
   int package = 0;
   std::string init;
   int exclude = 1;
+  bool reverse = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -73,6 +74,9 @@ int main( int argc, char ** argv )
 	  return 1;
 	}
 	break;
+      case 'r':
+	reverse ^= 1;
+	break;
       case 'h':
 	cout << "usage : iig <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
@@ -84,6 +88,7 @@ int main( int argc, char ** argv )
 	cout << "\t           \t2 : cacbdd" << endl;
 	cout << "\t           \t3 : simplebdd" << endl;
 	cout << "\t           \t4 : custombdd" << endl;
+	cout << "\t-r       : toggle reverse [default = " << reverse << "]" << endl;
 	return 0;
       default:
 	cout << "invalid option " << argv[i] << endl;
@@ -110,33 +115,53 @@ int main( int argc, char ** argv )
   
   switch(package) {
   case 0:
-    {
-      Bdd::CuddMan bdd( aig.num_pis() );
+    if(!reverse) {
+      Bdd::CuddMan bdd( aig.num_cis() );
       IIG(aig, bdd, init, exclude);
+    }
+    else {
+      Bdd::CuddMan bdd( aig.num_cis() + aig.num_registers() );
+      RIIG(aig, bdd, init, exclude);
     }
     break;
   case 1:
-    {
-      Bdd::BuddyMan bdd( aig.num_pis() );
+    if(!reverse) {
+      Bdd::BuddyMan bdd( aig.num_cis() );
       IIG(aig, bdd, init, exclude);  
+    }
+    else {
+      Bdd::BuddyMan bdd( aig.num_cis() + aig.num_registers() );
+      RIIG(aig, bdd, init, exclude);  
     }
     break;
   case 2:
-    {
-      Bdd::CacBddMan bdd( aig.num_pis() );
+    if(!reverse) {
+      Bdd::CacBddMan bdd( aig.num_cis() );
       IIG(aig, bdd, init, exclude);
+    }
+    else {
+      Bdd::CacBddMan bdd( aig.num_cis() + aig.num_registers() );
+      RIIG(aig, bdd, init, exclude);
     }
     break;
   case 3:
-    {
-      Bdd::SimpleBddMan bdd( aig.num_pis() );
+    if(!reverse) {
+      Bdd::SimpleBddMan bdd( aig.num_cis() );
       IIG(aig, bdd, init, exclude);
+    }
+    else {
+      Bdd::SimpleBddMan bdd( aig.num_cis() + aig.num_registers() );
+      RIIG(aig, bdd, init, exclude);
     }
     break;
   case 4:
-    {
-      Bdd::AtBddMan bdd( aig.num_pis() );
+    if(!reverse) {
+      Bdd::AtBddMan bdd( aig.num_cis() );
       IIG(aig, bdd, init, exclude);
+    }
+    else {
+      Bdd::AtBddMan bdd( aig.num_cis() + aig.num_registers() );
+      RIIG(aig, bdd, init, exclude);
     }
     break;
   default:
