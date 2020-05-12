@@ -270,7 +270,6 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   else
     x = initial_function(bdd, init, nzero, npis, nregs, seed);
   t1 = show_time(t1);
-  show_bdd(bdd, x, npis, nregs, NULL);
 
   std::cout << "build latch   ";
   std::vector<node> vNodes = Aig2Bdd( aig, bdd );
