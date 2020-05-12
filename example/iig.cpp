@@ -22,6 +22,7 @@ int main( int argc, char ** argv )
   std::string exclude = "1";
   bool reverse = 0;
   int seed = 0;
+  bool fastrnd = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -90,6 +91,9 @@ int main( int argc, char ** argv )
 	  return 1;
 	}
 	break;
+      case 'q':
+	fastrnd ^= 1;
+	break;
       case 'r':
 	reverse ^= 1;
 	break;
@@ -114,6 +118,7 @@ int main( int argc, char ** argv )
 	cout << "\t           \t2 : cacbdd" << endl;
 	cout << "\t           \t3 : simplebdd" << endl;
 	cout << "\t           \t4 : custombdd" << endl;
+	cout << "\t-q       : generate initial function faster [default = " << fastrnd << "]" << endl;
 	cout << "\t-r       : toggle reverse [default = " << reverse << "]" << endl;
 	cout << "\t-s <int> : random seed [default = " << seed << "]" << endl;
 	return 0;
@@ -144,51 +149,51 @@ int main( int argc, char ** argv )
   case 0:
     if(!reverse) {
       Bdd::CuddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed);
+      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::CuddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed);
+      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 1:
     if(!reverse) {
       Bdd::BuddyMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed);  
+      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
     }
     else {
       Bdd::BuddyMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed);  
+      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
     }
     break;
   case 2:
     if(!reverse) {
       Bdd::CacBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed);
+      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::CacBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed);
+      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 3:
     if(!reverse) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed);
+      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::SimpleBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed);
+      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 4:
     if(!reverse) {
       Bdd::AtBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed);
+      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::AtBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed);
+      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   default:

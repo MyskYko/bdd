@@ -122,21 +122,33 @@ std::string d2b(std::string decimal) {
 template <typename node> 
 node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, int npis, int nregs, int seed) {
   std::mt19937 rnd(seed);
+  bool rev = 0;
+  if(nzero[0] == '-') {
+    nzero = nzero.substr(1);
+    rev = 1;
+  }
+  assert(nzero != "0");
+  nzero = d2b(nzero);
   node x = bdd.Const1();
-  if(nzero[0] != '-') {
-    nzero = d2b(nzero);
-    std::string i;
-    for(int j = 0; j < nzero.size(); j++)
-      i += "0";
+  if(rev)
+    x = init;
+  std::string i;
+  for(int j = 0; j < nzero.size(); j++)
+    i += "0";
+  if(rev)
+    i[0] = '1';
+  while(1) {
+    if(i == nzero)
+      break;
     while(1) {
-      while(1) {
-	node y = bdd.Const1();
-	for(int j = 0; j < nregs; j++) {
-	  if((int)rnd() > 0)
-	    y = bdd.And(y, bdd.IthVar(npis+j));
-	  else
-	    y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
-	}
+      node y = bdd.Const1();
+      for(int j = 0; j < nregs; j++) {
+	if((int)rnd() > 0)
+	  y = bdd.And(y, bdd.IthVar(npis+j));
+	else
+	  y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
+      }
+      if(!rev) {
 	if(y == init)
 	  continue;
 	if(bdd.And(bdd.Not(x), y) != bdd.Const0())
@@ -144,49 +156,81 @@ node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, i
 	x = bdd.And(x, bdd.Not(y));
 	break;
       }
-      int idx = 0;
-      while(i[idx] != '0') {
-	i[idx] = '0';
-	idx++;
-      }
-      i[idx] = '1';
-      if(i == nzero)
-	break;
-    }
-  }
-  else {
-    x = init;
-    nzero = nzero.substr(1);
-    if(nzero == "1")
-      return x;
-    nzero = d2b(nzero);
-    std::string i;
-    for(int j = 0; j < nzero.size(); j++)
-      i += "0";
-    i[0] = '1';
-    while(1) {
-      while(1) {
-	node y = bdd.Const1();
-	for(int j = 0; j < nregs; j++) {
-	  if((int)rnd() > 0)
-	    y = bdd.And(y, bdd.IthVar(npis+j));
-	  else
-	    y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
-	}
+      else {
 	if(bdd.And(x, y) != bdd.Const0())
 	  continue;
 	x = bdd.Or(x, y);
 	break;
       }
-      int idx = 0;
-      while(i[idx] != '0') {
-	i[idx] = '0';
-	idx++;
-      }
-      i[idx] = '1';
-      if(i == nzero)
-	break;
     }
+    int idx = 0;
+    while(i[idx] != '0') {
+      i[idx] = '0';
+      idx++;
+    }
+    i[idx] = '1';
+  }
+  return x;
+}
+
+template <typename node> 
+node initial_function_fast(Bdd::BddMan<node> & bdd, node & init, std::string nzero, int npis, int nregs, int seed) {
+  std::mt19937 rnd(seed);
+  bool rev = 0;
+  if(nzero[0] == '-') {
+    nzero = nzero.substr(1);
+    rev = 1;
+  }
+  assert(nzero != "0");
+  nzero = d2b(nzero);
+  node x = bdd.Const1();
+  if(rev)
+    x = init;
+  if(rev) {
+    for(int i = 0; 1; i++) {
+      if(nzero[i] == '1') {
+	nzero[i] = '0';
+	break;
+      }
+      nzero[i] = '1';
+    }
+  }
+  while(1) {
+    while(!nzero.empty() && nzero[nzero.size() - 1] == '0')
+      nzero = nzero.substr(0, nzero.size() - 1);
+    if(nzero.empty()) {
+      break;
+    }
+    while(1) {
+      std::set<int> vars;
+      while(vars.size() <= nregs - nzero.size()) {
+	int j = rnd() % nregs;
+	assert(j >= 0 && j < nregs);
+	vars.insert(j);
+      }
+      node y = bdd.Const1();
+      for(int var : vars) {
+	if((int)rnd() > 0)
+	  y = bdd.And(y, bdd.IthVar(npis+var));
+	else
+	  y = bdd.And(y, bdd.Not(bdd.IthVar(npis+var)));
+      }
+      if(!rev) {
+	if(bdd.And(init, y) != bdd.Const0())
+	  continue;
+	if(bdd.And(bdd.Not(x), y) != bdd.Const0())
+	  continue;
+	x = bdd.And(x, bdd.Not(y));
+	break;
+      }
+      else {
+	if(bdd.And(x, y) != bdd.Const0())
+	  continue;
+	x = bdd.Or(x, y);
+	break;
+      }
+    }
+    nzero = nzero.substr(0, nzero.size() - 1);
   }
   return x;
 }
@@ -198,7 +242,7 @@ std::chrono::system_clock::time_point show_time(std::chrono::system_clock::time_
 }
 
 template <typename node> 
-void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed) {
+void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
   int npis = aig_.num_pis();
   int nregs = aig_.num_registers();
   std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -220,8 +264,13 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   auto t1 = std::chrono::system_clock::now();
   
   std::cout << "init rnd func ";
-  node x = initial_function(bdd, init, nzero, npis, nregs, seed);
+  node x;
+  if(fastrnd)
+    x = initial_function_fast(bdd, init, nzero, npis, nregs, seed);
+  else
+    x = initial_function(bdd, init, nzero, npis, nregs, seed);
   t1 = show_time(t1);
+  show_bdd(bdd, x, npis, nregs, NULL);
 
   std::cout << "build latch   ";
   std::vector<node> vNodes = Aig2Bdd( aig, bdd );
@@ -269,7 +318,7 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
 }
 
 template <typename node> 
-void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed) {
+void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
   int npis = aig_.num_pis();
   int nregs = aig_.num_registers();
   std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -297,7 +346,11 @@ void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string i
   auto t1 = std::chrono::system_clock::now();
   
   std::cout << "init rnd func ";
-  node x = initial_function(bdd, init, nzero, npis, nregs, seed);
+  node x;
+  if(fastrnd)
+    x = initial_function_fast(bdd, init, nzero, npis, nregs, seed);
+  else
+    x = initial_function(bdd, init, nzero, npis, nregs, seed);
   t1 = show_time(t1);
 
   std::cout << "build latch   ";
