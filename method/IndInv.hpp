@@ -120,8 +120,8 @@ std::string d2b(std::string decimal) {
 }
 
 template <typename node> 
-node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, int npis, int nregs) {
-  std::mt19937 rnd;
+node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, int npis, int nregs, int seed) {
+  std::mt19937 rnd(seed);
   node x = bdd.Const1();
   if(nzero[0] != '-') {
     nzero = d2b(nzero);
@@ -198,7 +198,7 @@ std::chrono::system_clock::time_point show_time(std::chrono::system_clock::time_
 }
 
 template <typename node> 
-void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename) {
+void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed) {
   int npis = aig_.num_pis();
   int nregs = aig_.num_registers();
   std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -220,7 +220,7 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   auto t1 = std::chrono::system_clock::now();
   
   std::cout << "init rnd func ";
-  node x = initial_function(bdd, init, nzero, npis, nregs);
+  node x = initial_function(bdd, init, nzero, npis, nregs, seed);
   t1 = show_time(t1);
 
   std::cout << "build latch   ";
@@ -269,7 +269,7 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
 }
 
 template <typename node> 
-void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename) {
+void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed) {
   int npis = aig_.num_pis();
   int nregs = aig_.num_registers();
   std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -297,7 +297,7 @@ void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string i
   auto t1 = std::chrono::system_clock::now();
   
   std::cout << "init rnd func ";
-  node x = initial_function(bdd, init, nzero, npis, nregs);
+  node x = initial_function(bdd, init, nzero, npis, nregs, seed);
   t1 = show_time(t1);
 
   std::cout << "build latch   ";
