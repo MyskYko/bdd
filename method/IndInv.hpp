@@ -6,35 +6,37 @@
 #include <chrono>
 #include "NtkBdd.hpp"
 
-void CopyAigRec(mockturtle::aig_network & aig, mockturtle::aig_network & aig2, std::map<mockturtle::aig_network::signal, mockturtle::aig_network::signal> & m, mockturtle::aig_network::node const & x) {
+void CopyAigRec(mockturtle::aig_network & aig, mockturtle::aig_network & aig2, std::map<mockturtle::aig_network::node, mockturtle::aig_network::signal> & m, mockturtle::aig_network::node const & x) {
   if(aig.is_ci(x))
     return;
   std::vector<mockturtle::aig_network::signal> fanin;
   aig.foreach_fanin(x, [&](auto fi) {
 			 CopyAigRec(aig, aig2, m, aig.get_node(fi));
+			 auto fi2 = m[aig.get_node(fi)];
 			 if(aig.is_complemented(fi))
-			   fanin.push_back(m[aig.create_not(fi)]);
+			   fanin.push_back(aig2.create_not(fi2));
 			 else 
-			   fanin.push_back(m[fi]);
+			   fanin.push_back(fi2);
 		       });
   assert(fanin.size() == 2);
-  m[aig.make_signal(x)] = aig2.create_and(fanin[0], fanin[1]);
+  m[x] = aig2.create_and(fanin[0], fanin[1]);
 }
 
 void CombNoPo(mockturtle::aig_network & aig, mockturtle::aig_network & aig2) {
-  std::map<mockturtle::aig_network::signal, mockturtle::aig_network::signal> m;
+  std::map<mockturtle::aig_network::node, mockturtle::aig_network::signal> m;
   aig.foreach_pi([&](auto pi) {
-		   m[aig.make_signal(pi)] = aig2.create_pi();
+		   m[pi] = aig2.create_pi();
 		 });
   aig.foreach_register([&](auto reg) {
-			 m[aig.make_signal(reg.second)] = aig2.create_pi();
+			 m[reg.second] = aig2.create_pi();
 		       });
   aig.foreach_register([&](auto reg) {
 			 CopyAigRec(aig, aig2, m, aig.get_node(reg.first));
+			 auto regsig = m[aig.get_node(reg.first)];
 			 if(aig.is_complemented(reg.first))
-			   aig2.create_po(m[aig.create_not(reg.first)]);
+			   aig2.create_po(aig2.create_not(regsig));
 			 else
-			   aig2.create_po(m[reg.first]);
+			   aig2.create_po(regsig);
 		       });
 }
 
@@ -42,15 +44,12 @@ template <typename node>
 void show_bdd_rec(Bdd::BddMan<node> & bdd, node x, int npis, std::string & s, std::ofstream * f, std::string & count) {
   if(x == bdd.Const1())
     {
-      if(f) {
+      if(f) 
 	*f << s << std::endl;
-      }
       int idx = 0;
-      for(int i = 0; i < s.size(); i++) {
-	if(s[i] == '-') {
+      for(int i = 0; i < s.size(); i++)
+	if(s[i] == '-')
 	  idx++;
-	}
-      }
       while(count[idx] != '0') {
 	count[idx] = '0';
 	idx++;
@@ -70,36 +69,29 @@ void show_bdd_rec(Bdd::BddMan<node> & bdd, node x, int npis, std::string & s, st
 template <typename node> 
 void show_bdd(Bdd::BddMan<node> & bdd, node & x, int npis, int nregs, std::ofstream * f) {
   std::string s;
-  for(int i = 0; i < nregs; i++) {
+  for(int i = 0; i < nregs; i++)
     s += "-";
-  }
-  std::string count;
-  for(int i = 0; i < nregs + 1; i++) {
+  std::string count = "";
+  for(int i = 0; i < nregs + 1; i++)
     count += "0";
-  }
   show_bdd_rec(bdd, x, npis, s, f, count);
   
   std::cout << "iig size : ";
   for(int i = 0; i < nregs / 32 + 1; i++) {
     uint count_int = 0;
-    for(int j = 0 ; j < 32 && j + i * 32 < count.size(); j++) {
-      if(count[j + i * 32] == '1') {
+    for(int j = 0 ; j < 32 && j + i * 32 < count.size(); j++)
+      if(count[j + i * 32] == '1')
 	count_int += 1 << j;
-      }
-    }
-    if(!i) {
+    if(!i)
       std::cout << count_int;
-    }
-    else {
+    else
       std::cout << " + " << count_int << " * 2^" << 32 * i;
-    }
   }
 
   std::cout << " / ";
   std::cout << ((uint)1 << (nregs % 32));
-  if(nregs / 32) {
+  if(nregs / 32)
     std::cout << " * 2^" << 32 * (nregs / 32);
-  }
   std::cout << std::endl;
 }
 
@@ -108,24 +100,20 @@ std::string d2b(std::string decimal) {
   while(decimal.size() > 32) {
     unsigned long s = std::stoul(decimal.substr(decimal.size() - 32));
     for(int i = 0; i < 32; i++) {
-      if(s % 2) {
+      if(s % 2)
 	binary += "1";
-      }
-      else {
+      else
 	binary += "0";
-      }
       s = s >> 1;
     }
     decimal = decimal.substr(0, decimal.size() - 32);
   }
   unsigned long s = std::stoul(decimal);
   for(int i = 0; i < 32; i++) {
-    if(s % 2) {
+    if(s % 2)
       binary += "1";
-    }
-    else {
+    else
       binary += "0";
-    }
     s = s >> 1;
   }
   return binary;
@@ -138,9 +126,8 @@ node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, i
   if(nzero[0] != '-') {
     nzero = d2b(nzero);
     std::string i;
-    for(int j = 0; j < nzero.size(); j++) {
+    for(int j = 0; j < nzero.size(); j++)
       i += "0";
-    }
     while(1) {
       while(1) {
 	node y = bdd.Const1();
@@ -150,12 +137,10 @@ node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, i
 	  else
 	    y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
 	}
-	if(y == init) {
+	if(y == init)
 	  continue;
-	}
-	if(bdd.And(bdd.Not(x), y) != bdd.Const0()) {
+	if(bdd.And(bdd.Not(x), y) != bdd.Const0())
 	  continue;
-	}
 	x = bdd.And(x, bdd.Not(y));
 	break;
       }
@@ -165,22 +150,19 @@ node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, i
 	idx++;
       }
       i[idx] = '1';
-      if(i == nzero) {
+      if(i == nzero)
 	break;
-      }
     }
   }
   else {
     x = init;
     nzero = nzero.substr(1);
-    if(nzero == "1") {
+    if(nzero == "1")
       return x;
-    }
     nzero = d2b(nzero);
     std::string i;
-    for(int j = 0; j < nzero.size(); j++) {
+    for(int j = 0; j < nzero.size(); j++)
       i += "0";
-    }
     i[0] = '1';
     while(1) {
       while(1) {
@@ -191,9 +173,8 @@ node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, i
 	  else
 	    y = bdd.And(y, bdd.Not(bdd.IthVar(npis+j)));
 	}
-	if(bdd.And(x, y) != bdd.Const0()) {
+	if(bdd.And(x, y) != bdd.Const0())
 	  continue;
-	}
 	x = bdd.Or(x, y);
 	break;
       }
@@ -203,12 +184,17 @@ node initial_function(Bdd::BddMan<node> & bdd, node & init, std::string nzero, i
 	idx++;
       }
       i[idx] = '1';
-      if(i == nzero) {
+      if(i == nzero)
 	break;
-      }
     }
   }
   return x;
+}
+
+std::chrono::system_clock::time_point show_time(std::chrono::system_clock::time_point & t1) {
+  auto t2 = std::chrono::system_clock::now();
+  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
+  return t2;
 }
 
 template <typename node> 
@@ -220,9 +206,8 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   CombNoPo(aig_, aig);
 
   node pis = bdd.Const1();
-  for(int j = 0; j < npis; j++) {
+  for(int j = 0; j < npis; j++)
     pis = bdd.And(pis, bdd.IthVar(j));
-  }
 
   node init = bdd.Const1();
   for(int i = 0; i < nregs; i++) {
@@ -233,22 +218,16 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   }
 
   auto t1 = std::chrono::system_clock::now();
-  auto t2 = t1;
   
   std::cout << "init rnd func ";
   node x = initial_function(bdd, init, nzero, npis, nregs);
-  t2 = std::chrono::system_clock::now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-  t1 = t2;
-  
+  t1 = show_time(t1);
+
   std::cout << "build latch   ";
   std::vector<node> vNodes = Aig2Bdd( aig, bdd );
-  for(int i = 0; i < npis; i++) {
-    vNodes.insert(vNodes.begin() + i, bdd.IthVar(i));
-  }
-  t2 = std::chrono::system_clock::now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-  t1 = t2;
+  for(int i = 0; i < npis; i++)
+    vNodes.insert(vNodes.begin(), bdd.Const0());
+  t1 = show_time(t1);
 
   std::cout << std::endl << "##### begin iig #####" << std::endl;
   auto start = t1;
@@ -265,15 +244,12 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
       x = bdd.Const0();
       break;
     }
-    t2 = std::chrono::system_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-    t1 = t2;
+    t1 = show_time(t1);
   }
-  t2 = std::chrono::system_clock::now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-  t1 = t2;
+  t1 = show_time(t1);
 
-  std::cout << "total " << std::chrono::duration_cast<std::chrono::milliseconds>(t1-start).count() / 1000.0 << " sec" << std::endl;
+  std::cout << "total ";
+  show_time(start);
   
   if(x == bdd.Const0())
     std::cout << "fail ... function excluded initial state" << std::endl;
@@ -282,12 +258,12 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   else {
     std::cout << "success" << std::endl;
     std::ofstream * f = NULL;
-    if(!filename.empty()) {
+    if(!filename.empty())
       f = new std::ofstream(filename);
-    }
     show_bdd(bdd, x, npis, nregs, f);
     if(f) {
       f->close();
+      delete f;
     }
   }
 }
@@ -301,9 +277,8 @@ void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string i
   CombNoPo(aig_, aig);
   
   node cis = bdd.Const1();
-  for(int j = 0; j < npis+nregs; j++) {
+  for(int j = 0; j < npis+nregs; j++)
     cis = bdd.And(cis, bdd.IthVar(j));
-  }
   
   node init = bdd.Const1();
   for(int i = 0; i < nregs; i++) {
@@ -313,41 +288,29 @@ void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string i
       init = bdd.And(init, bdd.IthVar(npis+i));
   }
   
+  std::vector<node> shift;
+  for(int i = 0; i < npis+nregs; i++)
+    shift.push_back(bdd.Const0());
+  for(int i = 0; i < nregs; i++)
+    shift.push_back(bdd.IthVar(npis+i));
+
   auto t1 = std::chrono::system_clock::now();
-  auto t2 = t1;
   
   std::cout << "init rnd func ";
   node x = initial_function(bdd, init, nzero, npis, nregs);
-  t2 = std::chrono::system_clock::now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-  t1 = t2;
+  t1 = show_time(t1);
 
   std::cout << "build latch   ";
   std::vector<node> vNodes = Aig2Bdd( aig, bdd );
+  node tra = bdd.Const1();
+  for(int i = 0; i < nregs; i++) 
+    tra = bdd.And(tra, bdd.Ite(vNodes[i], bdd.IthVar(npis+nregs+i), bdd.Not(bdd.IthVar(npis+nregs+i))));
+  for(int i = 0; i < npis; i++)
+    vNodes.insert(vNodes.begin() + i, bdd.Const0());
+  for(int i = 0; i < nregs; i++)
+    vNodes.push_back(bdd.Const0());
+  t1 = show_time(t1);
   
-  node tra = bdd.Const0();
-  for(int i = 0; i < nregs; i++) {
-    tra = bdd.Or(tra, bdd.Ite(vNodes[i], bdd.IthVar(npis+nregs+i), bdd.Not(bdd.IthVar(npis+nregs+i))));
-  }
-  t2 = std::chrono::system_clock::now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-  t1 = t2;
-  
-  for(int i = 0; i < npis; i++) {
-    vNodes.insert(vNodes.begin() + i, bdd.IthVar(i));
-  }
-  for(int i = 0; i < nregs; i++) {
-    vNodes.push_back(bdd.IthVar(npis+nregs+i));
-  }
-
-  std::vector<node> shift;
-  for(int i = 0; i < npis+nregs; i++) {
-    shift.push_back(bdd.IthVar(i));
-  }
-  for(int i = 0; i < nregs; i++) {
-    shift.push_back(bdd.IthVar(npis+i));
-  }
-
   std::cout << std::endl << "##### begin iig #####" << std::endl;
   auto start = t1;
   int itr = 0;
@@ -361,30 +324,26 @@ void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string i
     ns = bdd.Exist(ns, cis);
     ns = bdd.VecCompose(ns, shift);
     x = bdd.Or(x, ns);
-    if(x == bdd.Const1()) {
+    if(x == bdd.Const1())
       break;
-    }
-    t2 = std::chrono::system_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-    t1 = t2;
+    t1 = show_time(t1);
   }
-  t2 = std::chrono::system_clock::now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0 << " sec" << std::endl;
-  t1 = t2;
+  t1 = show_time(t1);
 
-  std::cout << "total " << std::chrono::duration_cast<std::chrono::milliseconds>(t1-start).count() / 1000.0 << " sec" << std::endl;  
+  std::cout << "total ";
+  show_time(start);
   
   if(x == bdd.Const1())
     std::cout << "fail ... function became const 1" << std::endl;
   else {
     std::cout << "success" << std::endl;
     std::ofstream * f = NULL;
-    if(!filename.empty()) {
+    if(!filename.empty())
       f = new std::ofstream(filename);
-    }
     show_bdd(bdd, x, npis, nregs, f);
     if(f) {
       f->close();
+      delete f;
     }
   }
 }
