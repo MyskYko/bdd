@@ -16,9 +16,10 @@ using std::endl;
 int main( int argc, char ** argv )
 {
   std::string aigname;
+  std::string dumpfilename;
   int package = 0;
   std::string init;
-  int exclude = 1;
+  std::string exclude = "1";
   bool reverse = 0;
   
   for(int i = 1; i < argc; i++) {
@@ -43,6 +44,13 @@ int main( int argc, char ** argv )
 	return 1;
       }
       switch(argv[i_][j]) {
+      case 'f':
+	if(i+1 >= argc) {
+	  cout << "-f must be followed by string" << endl;
+	  return 1;
+	}
+	dumpfilename = argv[++i];
+	break;
       case 'i':
 	if(i+1 >= argc) {
 	  cout << "-i must be followed by string" << endl;
@@ -57,12 +65,19 @@ int main( int argc, char ** argv )
 	}
 	break;
       case 'n':
-	try {
-	  exclude = std::stoi(argv[++i]);
-	}
-	catch(...) {
-	  cout << "-n must be followed by integer" << endl;
+	if(i+1 >= argc) {
+	  cout << "-n must be followed by number" << endl;
 	  return 1;
+	}
+	exclude = argv[++i];
+	for(int j = 0; j < exclude.size(); j++) {
+	  if(j == 0 && exclude[0] == '-') {
+	    continue;
+	  }
+	  if(exclude[j] < '0'|| exclude[j] > '9') {
+	    cout << "-n must be followed by number" << endl;
+	    return 1;
+	  }
 	}
 	break;
       case 'p':
@@ -80,7 +95,8 @@ int main( int argc, char ** argv )
       case 'h':
 	cout << "usage : iig <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
-	cout << "\t-i <str> : initial states as boolean vector [default = 0...0]" << endl;
+	cout << "\t-f <str> : filename to dump inductive invariant" << endl;
+	cout << "\t-i <str> : initial states as boolean vector [default = " << (init.empty() ? "0...0" : init) << "]" << endl;
 	cout << "\t-n <int> : number of states initially excluded (minus defines number initially included) [default = " << exclude << "]" << endl;
 	cout << "\t-p <int> : package [default = " << package << "]" << endl;
 	cout << "\t           \t0 : cudd" << endl;
@@ -117,51 +133,51 @@ int main( int argc, char ** argv )
   case 0:
     if(!reverse) {
       Bdd::CuddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude);
+      IIG(aig, bdd, init, exclude, dumpfilename);
     }
     else {
       Bdd::CuddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude);
+      RIIG(aig, bdd, init, exclude, dumpfilename);
     }
     break;
   case 1:
     if(!reverse) {
       Bdd::BuddyMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude);  
+      IIG(aig, bdd, init, exclude, dumpfilename);  
     }
     else {
       Bdd::BuddyMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude);  
+      RIIG(aig, bdd, init, exclude, dumpfilename);  
     }
     break;
   case 2:
     if(!reverse) {
       Bdd::CacBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude);
+      IIG(aig, bdd, init, exclude, dumpfilename);
     }
     else {
       Bdd::CacBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude);
+      RIIG(aig, bdd, init, exclude, dumpfilename);
     }
     break;
   case 3:
     if(!reverse) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude);
+      IIG(aig, bdd, init, exclude, dumpfilename);
     }
     else {
       Bdd::SimpleBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude);
+      RIIG(aig, bdd, init, exclude, dumpfilename);
     }
     break;
   case 4:
     if(!reverse) {
       Bdd::AtBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude);
+      IIG(aig, bdd, init, exclude, dumpfilename);
     }
     else {
       Bdd::AtBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude);
+      RIIG(aig, bdd, init, exclude, dumpfilename);
     }
     break;
   default:
