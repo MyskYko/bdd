@@ -34,7 +34,7 @@ int main( int argc, char ** argv )
     {
       auto v = namemap[aig.po_at( i )];
       if(!v.empty())
-	po_names[i] = v[0];
+	po_names[i] = v[v.size()-1];
     }
   auto start = std::chrono::system_clock::now();
   try
