@@ -9,6 +9,8 @@
 #include <BddMan.hpp>
 #include <mockturtle/mockturtle.hpp>
 
+#include "NtkBdd.hpp"
+
 template <typename node>
 class TransductionNetwork
 {
@@ -323,14 +325,21 @@ public:
       }
   }
 
-  void SetEXDC()
+  void SetEXDC( std::vector<node> & vNodes )
   {
-    for ( int id : vPOs )
+    for ( int i = 0; i < vPOs.size(); i++ )
       {
-	for ( int id_ : vvFIs[id] )
+	int id = vPOs[i];
+	for ( int j = 0; j < vvFIs[id].size(); j++ )
 	  {
-	    (void)id_;
-	    vvCs[id].push_back( bdd.Const0() );
+	    if ( vNodes.empty() )
+	      {
+		vvCs[id].push_back( bdd.Const0() );
+	      }
+	    else
+	      {
+		vvCs[id].push_back( vNodes[i] );
+	      }
 	  }
       }
   }
@@ -755,7 +764,7 @@ public:
 };
 
 template <typename node>
-void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool fReo = 0, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, bool fVerbose = 0 )
+void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool fReo = 0, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, bool fVerbose = 0, mockturtle::aig_network * dcaig = NULL )
 {
   auto start = std::chrono::system_clock::now();
   
@@ -778,7 +787,12 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
       bdd.UnsupportRef();
     }
 
-  net.SetEXDC();
+  std::vector<node> vDCs;
+  if ( dcaig )
+    {
+      vDCs = Aig2Bdd( *dcaig, bdd );
+    }
+  net.SetEXDC( vDCs );
 
   if ( fRepeat )
     {
@@ -869,7 +883,27 @@ void Transduction( mockturtle::aig_network &aig, Bdd::BddMan<node> & bdd, bool f
 
   if ( fCheck )
     {
-      auto miter = *mockturtle::miter<mockturtle::aig_network>( aig, aig_new );
+      mockturtle::aig_network miter;
+      if ( !dcaig )
+	{
+	  miter = *mockturtle::miter<mockturtle::aig_network>( aig, aig_new );
+	}
+      else
+	{
+	  std::vector<mockturtle::aig_network::signal> pis;
+	  for ( int i = 0; i < aig.num_pis(); i++ )
+	    {
+	      pis.push_back( miter.create_pi() );
+	    }
+	  auto pos1 = cleanup_dangling( aig, miter, pis.begin(), pis.end() );
+	  auto pos2 = cleanup_dangling( aig_new, miter, pis.begin(), pis.end() );
+	  auto posdc = cleanup_dangling( *dcaig, miter, pis.begin(), pis.end() );	  
+	  std::vector<mockturtle::aig_network::signal> xors;
+	  std::transform( pos1.begin(), pos1.end(), pos2.begin(), std::back_inserter( xors ), [&]( auto const & o1, auto const & o2 ) { return miter.create_xor( o1, o2 ); } );
+	  std::vector<mockturtle::aig_network::signal> pos;
+	  std::transform( xors.begin(), xors.end(), posdc.begin(), std::back_inserter( pos ), [&]( auto const & o1, auto const & o2 ) { return miter.create_and( o1, miter.create_not( o2 ) ); } );
+	  miter.create_po( miter.create_nary_or( pos ) );
+	}
       auto result = mockturtle::equivalence_checking( miter );
       if ( result && *result )
 	{

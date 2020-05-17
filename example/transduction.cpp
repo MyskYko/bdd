@@ -16,6 +16,7 @@ int main( int argc, char ** argv )
 {
   std::string aigname;
   std::string blifname;
+  std::string dcname;
   int package = 0;
   bool supportname = 1;
   bool reorder = 0;
@@ -80,11 +81,18 @@ int main( int argc, char ** argv )
       case 'v':
 	verbose ^= 1;
 	break;
+      case 'x':
+	if(i+1 >= argc) {
+	  cout << "-x must be followed by file name" << endl;
+	  return 1;
+	}
+	dcname = argv[++i];
+	break;
       case 'h':
 	cout << "usage : transduction <options> your.aig" << endl;
 	cout << "\t-c       : toggle checking equivalence [default = " << check << "]" << endl;
-	cout << "\t-m       : toggle applying mspf [default = " << mspf << "]" << endl;
 	cout << "\t-h       : show this usage" << endl;
+	cout << "\t-m       : toggle applying mspf [default = " << mspf << "]" << endl;
 	cout << "\t-o <str> : output the resulting circuit as a blif file " << endl;
 	cout << "\t-p <int> : package [default = " << package << "]" << endl;
 	cout << "\t           \t0 : cudd" << endl;
@@ -96,6 +104,7 @@ int main( int argc, char ** argv )
 	cout << "\t-r       : toggle applying reordering once [default = " << reorder << "]" << endl;
 	cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << endl;
 	cout << "\t-v       : toggle verbosing [default = " << verbose << "]" << endl;
+	cout << "\t-x <str> : aig file representing external don't cares [default = " << dcname << "]" << endl;
 	return 0;
       default:
 	cout << "invalid option " << argv[i] << endl;
@@ -133,36 +142,44 @@ int main( int argc, char ** argv )
   else {
     lorina::read_aiger(aigname, mockturtle::aiger_reader(aig));
   }
+
+  mockturtle::aig_network * dcaig = NULL;
+  if(!dcname.empty()) {
+    dcaig = new mockturtle::aig_network;
+    lorina::read_aiger(dcname, mockturtle::aiger_reader(*dcaig));
+    assert(aig.num_pis() == dcaig->num_pis());
+    assert(aig.num_pos() == dcaig->num_pos());
+  }
   
   switch(package) {
   case 0:
     {
       Bdd::CuddMan bdd( aig.num_pis() );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose );
+      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 1:
     {
       Bdd::BuddyMan bdd( aig.num_pis() );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose );
+      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 2:
     {
       Bdd::CacBddMan bdd( aig.num_pis() );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose );
+      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 3:
     {
       Bdd::SimpleBddMan bdd( aig.num_pis() );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose );
+      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 4:
     {
       Bdd::AtBddMan bdd( aig.num_pis() );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose );
+      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   default:
@@ -188,6 +205,10 @@ int main( int argc, char ** argv )
     else {
       mockturtle::write_blif( aig, blifname );
     }
+  }
+
+  if(dcaig) {
+    delete dcaig;
   }
 
   return 0;
