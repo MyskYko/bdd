@@ -12,9 +12,7 @@ set_target_properties(cudd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CUR
 
 add_subdirectory(buddy)
 
-add_library(cacbdd STATIC IMPORTED GLOBAL)
-set_target_properties(cacbdd PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/cacbdd/libcacBDD.a)
-set_target_properties(cacbdd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/cacbdd/includes)
+add_subdirectory(cacbdd)
 
 add_library(atbdd INTERFACE)
 set_target_properties(atbdd PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/atbdd)
