@@ -18,6 +18,7 @@ public:
   bool fRemove = 0;
   bool fWeak = 0;
   bool fMspf = 0;
+  int  nVerbose = 0;
   
 private:
   int nObjsAlloc;
@@ -90,6 +91,10 @@ private:
   }
   void Remove( int id )
   {
+    if ( nVerbose > 3 )
+      {
+	std::cout << "\t\t\tRemove gate" << id << std::endl;
+      }
     auto it = std::find( vObjs.begin(), vObjs.end(), id );
     if ( it == vObjs.end() )
       {
@@ -289,6 +294,10 @@ public:
 
   void BuildNode( int id, std::vector<std::optional<node> > & vFs_ )
   {
+    if ( nVerbose > 3 )
+      {
+	std::cout << "\t\t\tBuild gate" << id << std::endl;
+      }
     vFs_[id] = bdd.Const1();
     for ( int id_ : vvFIs[id] )
       {
@@ -298,6 +307,10 @@ public:
   }
   void Build()
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\t\tBuild" << std::endl;
+      }
     for ( int id : vObjs )
       {
 	BuildNode( id, vFs );
@@ -346,6 +359,10 @@ public:
 
   void CalcG( int id )
   {
+    if ( nVerbose > 3 )
+      {
+	std::cout << "\t\t\tCspf propagate from gate" << id << std::endl;
+      }
     vGs[id] = bdd.Const1();
     for (int id_ : vvFOs[id] )
       {
@@ -356,6 +373,10 @@ public:
   }
   void CalcC( int id )
   {
+    if ( nVerbose > 3 )
+      {
+	std::cout << "\t\t\tCspf at fanins of gate" << id << std::endl;
+      }
     if ( fRemove && RemoveRedundantFIs( id ) )
       {
 	return;
@@ -399,6 +420,10 @@ public:
   }
   void Cspf()
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\t\tCspf" << std::endl;
+      }
     for ( int i = vObjs.size() - 1; i >= 0; i-- )
       {
 	int id = vObjs[i];
@@ -415,6 +440,10 @@ public:
 
   bool RemoveRedundantFIs( int id )
   {
+    if ( nVerbose > 3 )
+      {
+	std::cout << "\t\t\tRemove redundant fanins of gate" << id << std::endl;
+      }
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
 	node x = bdd.Const1();
@@ -522,8 +551,16 @@ public:
   {
     if ( !IsFOConeShared( id ) )
       {
+	if ( nVerbose > 3 )
+	  {
+	    std::cout << "\t\t\tMspf propagate from gate" << id << std::endl;
+	  }
 	CalcG( id );
 	return;
+      }
+    if ( nVerbose > 3 )
+      {
+	std::cout << "\t\t\tMspf DC miter at gate" << id << std::endl;
       }
     std::vector<node> vInvFsPO;
     BuildPOsInverted( id, vInvFsPO );
@@ -547,6 +584,10 @@ public:
   }
   bool CalcCMspf( int id )
   {
+    if ( nVerbose > 3 )
+      {
+	std::cout << "\t\t\tMspf at fanins of gate" << id << std::endl;
+      }
     vvCs[id].clear();
     for ( int i = 0; i < (int)vvFIs[id].size(); i++ )
       {
@@ -584,6 +625,10 @@ public:
   }
   void Mspf()
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\t\tMspf" << std::endl;
+      }
     for ( int i = vObjs.size() - 1; i >= 0; i-- )
       {
 	int id = vObjs[i];
@@ -618,6 +663,10 @@ public:
   }
   void CspfFICone( int id )
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\t\tCspf fanin cone of gate" << id << std::endl;
+      }
     CalcC( id );
     std::vector<int> targets;
     DescendantList( vvFIs, targets, id );
@@ -637,6 +686,10 @@ public:
   }
   void BuildFOCone( int id )
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\t\tBuild fanout cone of gate" << id << std::endl;
+      }
     BuildNode( id, vFs );
     std::vector<int> targets;
     DescendantList( vvFOs, targets, id );
@@ -648,6 +701,10 @@ public:
   }
   void G1Eager( int fanin, int fanout )
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\tEager reduce with a connection from gate" << fanin << " to gate" << fanout << std::endl;
+      }
     int wire = CountWire();
     CspfFICone( fanout );
     if ( wire == CountWire() )
@@ -660,22 +717,37 @@ public:
   }
   void G1Weak( int fanin, int fanout )
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\tWeak reduce with a connection from gate" << fanin << " to gate" << fanout << std::endl;
+      }
     (void)fanin;
     RemoveRedundantFIs( fanout );
   }
   void G1Mspf( int fanin, int fanout )
   {
+    if ( nVerbose > 2 )
+      {
+	std::cout << "\tMspf reduce with a connection from gate" << fanin << " to gate" << fanout << std::endl;
+      }
     (void)fanin;
     BuildFOCone( fanout );
     Mspf();
   }
   void G1()
   {
+    if ( nVerbose )
+      {
+	std::cout << "Transduction method adding new wires" << std::endl;
+      }
     std::vector<int> targets = vObjs;
     for ( int i = targets.size() - 1; i >= 0; i-- )
       {
 	int id = targets[i];
-	//std::cout << "gate" << i << ", id" << id << std::endl;
+	if ( nVerbose )
+	  {
+	    std::cout << "gate" << id << " " << targets.size() - i << " / " << targets.size() << std::endl;
+	  }
 	if ( vvFOs[id].empty() )
 	  {
 	    continue;
@@ -686,6 +758,10 @@ public:
 	// try connecting PI
 	for ( int id_ : vPIs )
 	  {
+	    if ( nVerbose > 1 )
+	      {
+		std::cout << "\tconnect pi" << id_ << std::endl;
+	      }
 	    if ( vvFOs[id].empty() )
 	      {
 		break;
@@ -709,6 +785,10 @@ public:
 	// try connecting gate
 	for ( int id_ : targets )
 	  {
+	    if ( nVerbose > 1 )
+	      {
+		std::cout << "\tconnect gate" << id_ << std::endl;
+	      }
 	    if ( vvFOs[id].empty() )
 	      {
 		break;
@@ -764,12 +844,13 @@ public:
 };
 
 template <typename node>
-void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool fReo = 0, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, bool fVerbose = 0, mockturtle::aig_network * dcaig = NULL )
+void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool fReo = 0, bool fRepeat = 0, bool fMspf = 0, bool fCheck = 0, int nVerbose = 0, mockturtle::aig_network * dcaig = NULL )
 {
   auto start = std::chrono::system_clock::now();
   
   auto net = TransductionNetwork( aig, bdd );
-  if ( fVerbose )
+  net.nVerbose = nVerbose ? nVerbose - 1 : 0;
+  if ( nVerbose )
     {
       net.PrintStats( "init", start );
     }
@@ -784,7 +865,11 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
   std::vector<node> vDCs;
   if ( dcaig )
     {
-      vDCs = Aig2Bdd( *dcaig, bdd );
+    if ( nVerbose > 1 )
+      {
+	std::cout << "Build External DC" << std::endl;
+      }
+      vDCs = Aig2Bdd( *dcaig, bdd, nVerbose > 2 );
     }
   net.SetEXDC( vDCs );
 
@@ -794,7 +879,7 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
       bdd.DvrOff();
     }
 
-  if ( fVerbose )
+  if ( nVerbose )
     {
       net.PrintStats( "prep", start );
     }
@@ -815,7 +900,7 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
 		  net.Cspf();
 		} 
 	      net.G1();
-	      if ( fVerbose )
+	      if ( nVerbose )
 		{
 		  net.PrintStats( "weak", start );
 		}
@@ -835,7 +920,7 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
 		  net.Cspf();
 		}
 	      net.G1();
-	      if ( fVerbose )
+	      if ( nVerbose )
 		{
 		  net.PrintStats( "cspf", start );
 		}
@@ -860,7 +945,7 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
 	  net.SortFIs();
 	  net.Mspf();
 	  net.G1();
-	  if ( fVerbose )
+	  if ( nVerbose )
 	    {
 	      net.PrintStats( "mspf", start );
 	    }
@@ -873,12 +958,16 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
 
   if ( !fRepeat && !fMspf )
     {
+      if ( nVerbose > 1 )
+	{
+	  std::cout << "Apply Cspf and Transduction once" << std::endl;
+	}
       net.SortFIs();
       net.Cspf();
       net.G1();
     }
 
-  if ( fVerbose )
+  if ( nVerbose )
     {
       net.PrintStats( "end ", start );
     }

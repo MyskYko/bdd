@@ -50,10 +50,9 @@ namespace Bdd
     BuddyParam param;
     
   public:
-    BuddyMan( int nVars, BuddyParam param ) : param( param )
+    BuddyMan( int nVars, BuddyParam param, int nVerbose ) : param( param )
     {
       Buddy::bdd_init( param.nNodes, param.nCache );
-      Buddy::bdd_gbc_hook( NULL );
       Buddy::bdd_setmaxincrease( param.nMaxInc );
       if ( param.fDynCache )
 	{
@@ -62,8 +61,13 @@ namespace Bdd
       Buddy::bdd_setminfreenodes( param.nMinFree );
       Buddy::bdd_setvarnum( nVars );
       Buddy::bdd_varblockall();
+      if ( !nVerbose )
+	{
+	  Buddy::bdd_gbc_hook( NULL );
+	}
+      Buddy::bdd_reorder_verbose( nVerbose );
     };
-    BuddyMan( int nVars ) : BuddyMan( nVars, BuddyParam() ) {}
+    BuddyMan( int nVars, int nVerbose = 0 ) : BuddyMan( nVars, BuddyParam(), nVerbose ) {}
     ~BuddyMan() { Buddy::bdd_done(); }
     
     int  GetNumVar() override { return Buddy::bdd_varnum(); }

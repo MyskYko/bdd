@@ -566,7 +566,7 @@ public:
     SetElseOfBvar( *q, x0 );
     SetNextOfBvar( *q, head );
     if ( nVerbose >= 3 )
-      std::cout << "Add " << (size)*q << " : Var = " << (size)v << " Then = " << (size)x1 << " Else = " << (size)x0 << " MinRemoved = " << (size)nMinRemoved << std::endl;
+      std::cout << "Node " << (size)*q << " : Var = " << (size)v << " Then = " << (size)x1 << " Else = " << (size)x0 << " MinRemoved = " << (size)nMinRemoved << std::endl;
     return Bvar2Lit( *q, 0 );
   }
   lit UniqueCreate( var v, lit x1, lit x0 )
@@ -1285,7 +1285,7 @@ public:
 	var bestPos = pos;
 	bvar nBestNodes = nNodes;
 	if ( nVerbose >= 2 )
-	  std::cout << "\tBegin shift " << (size)vOrdering[descendingOrder[i]] << " (" << (size)i + 1 << "/" << (size)nVars << std::endl;
+	  std::cout << "\tBegin shift " << (size)vOrdering[descendingOrder[i]] << " ( " << (size)i + 1 << " / " << (size)nVars << " )" << std::endl;
 	if( pos < nVars >> 1 )
 	  {
 	    fUp ^= 1;

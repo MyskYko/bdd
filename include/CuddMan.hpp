@@ -52,7 +52,7 @@ namespace Bdd
     CuddParam param;
     
   public:
-    CuddMan( int nVars, CuddParam param ) : param( param )
+    CuddMan( int nVars, CuddParam param, bool fVerbose ) : param( param )
     {
       man = new CUDD::Cudd( nVars, 0, param.nUnique, param.nCache, param.nMaxMem );
       man->SetMinHit( param.nMinHit );
@@ -61,8 +61,12 @@ namespace Bdd
 	  man->DisableGarbageCollection();
 	}
       man->SetMaxGrowth( 1.0 + param.nMaxGrowth * 0.01 );
+      if ( fVerbose )
+	{
+	  man->makeVerbose();
+	}
     }
-    CuddMan( int nVars ) : CuddMan( nVars, CuddParam() ) {}
+    CuddMan( int nVars, bool fVerbose = 0 ) : CuddMan( nVars, CuddParam(), fVerbose ) {}
     ~CuddMan() { delete man; }
 
     int GetNumVar() override { return man->ReadSize(); }
