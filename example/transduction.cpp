@@ -9,9 +9,6 @@
 #include <lorina/lorina.hpp>
 #include <string>
 
-using std::cout;
-using std::endl;
-
 int main( int argc, char ** argv )
 {
   std::string aigname;
@@ -23,7 +20,8 @@ int main( int argc, char ** argv )
   bool repeat = 0;
   bool mspf = 0;
   bool check = 0;
-  bool verbose = 0;
+  int verbose = 0;
+  int pverbose = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -32,18 +30,18 @@ int main( int argc, char ** argv )
 	continue;
       }
       else {
-	cout << "invalid option " << argv[i] << endl;
+	std::cerr << "invalid option " << argv[i] << std::endl;
 	return 1;
       }
     }
     else if(argv[i][1] == '\0') {
-      cout << "invalid option " << argv[i] << endl;
+      std::cerr << "invalid option " << argv[i] << std::endl;
       return 1;
     }
     int i_ = i;
     for(int j = 1; argv[i_][j] != '\0'; j++) {
       if(i != i_) {
-	cout << "invalid option " << argv[i_] << endl;
+	std::cerr << "invalid option " << argv[i_] << std::endl;
 	return 1;
       }
       switch(argv[i_][j]) {
@@ -55,7 +53,7 @@ int main( int argc, char ** argv )
 	break;
       case 'o':
 	if(i+1 >= argc) {
-	  cout << "-o must be followed by file name" << endl;
+	  std::cerr << "-o must be followed by file name" << std::endl;
 	  return 1;
 	}
 	blifname = argv[++i];
@@ -65,7 +63,7 @@ int main( int argc, char ** argv )
 	  package = std::stoi(argv[++i]);
 	}
 	catch(...) {
-	  cout << "-p must be followed by integer" << endl;
+	  std::cerr << "-p must be followed by integer" << std::endl;
 	  return 1;
 	}
 	break;
@@ -79,40 +77,57 @@ int main( int argc, char ** argv )
 	supportname ^= 1;
 	break;
       case 'v':
-	verbose ^= 1;
+	try {
+	  verbose = std::stoi(argv[++i]);
+	}
+	catch(...) {
+	  std::cerr << "-v must be followed by integer" << std::endl;
+	  return 1;
+	}
+	break;
+      case 'V':
+	try {
+	  pverbose = std::stoi(argv[++i]);
+	}
+	catch(...) {
+	  std::cerr << "-V must be followed by integer" << std::endl;
+	  return 1;
+	}
 	break;
       case 'x':
 	if(i+1 >= argc) {
-	  cout << "-x must be followed by file name" << endl;
+	  std::cerr << "-x must be followed by file name" << std::endl;
 	  return 1;
 	}
 	dcname = argv[++i];
 	break;
       case 'h':
-	cout << "usage : transduction <options> your.aig" << endl;
-	cout << "\t-c       : toggle checking equivalence [default = " << check << "]" << endl;
-	cout << "\t-h       : show this usage" << endl;
-	cout << "\t-m       : toggle applying mspf [default = " << mspf << "]" << endl;
-	cout << "\t-o <str> : output the resulting circuit as a blif file " << endl;
-	cout << "\t-p <int> : package [default = " << package << "]" << endl;
-	cout << "\t           \t0 : cudd" << endl;
-	cout << "\t           \t1 : buddy" << endl;
-	cout << "\t           \t2 : cacbdd" << endl;
-	cout << "\t           \t3 : simplebdd" << endl;
-	cout << "\t           \t4 : custombdd" << endl;
-	cout << "\t-q       : toggle repeating optimization [default = " << repeat << "]" << endl;
-	cout << "\t-r       : toggle dynamic variable reordering in prep step [default = " << reorder << "]" << endl;
-	cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << endl;
-	cout << "\t-v       : toggle verbosing [default = " << verbose << "]" << endl;
-	cout << "\t-x <str> : aig file representing external don't cares [default = " << dcname << "]" << endl;
+	std::cout << "usage : transduction <options> your.aig" << std::endl;
+	std::cout << "\t-c       : toggle checking equivalence [default = " << check << "]" << std::endl;
+	std::cout << "\t-h       : show this usage" << std::endl;
+	std::cout << "\t-m       : toggle applying mspf [default = " << mspf << "]" << std::endl;
+	std::cout << "\t-o <str> : output the resulting circuit as a blif file " << std::endl;
+	std::cout << "\t-p <int> : package [default = " << package << "]" << std::endl;
+	std::cout << "\t           \t0 : cudd" << std::endl;
+	std::cout << "\t           \t1 : buddy" << std::endl;
+	std::cout << "\t           \t2 : cacbdd" << std::endl;
+	std::cout << "\t           \t3 : simplebdd" << std::endl;
+	std::cout << "\t           \t4 : custombdd" << std::endl;
+	std::cout << "\t-q       : toggle repeating optimization [default = " << repeat << "]" << std::endl;
+	std::cout << "\t-r       : toggle dynamic variable reordering in prep step [default = " << reorder << "]" << std::endl;
+	std::cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << std::endl;
+	std::cout << "\t-v       : toggle verbose information [default = " << verbose << "]" << std::endl;
+	std::cout << "\t-x <str> : aig file representing external don't cares [default = " << dcname << "]" << std::endl;
+	std::cout << "\t-V       : toggle verbose information inside BDD package [default = " << pverbose << "]" << std::endl;
 	return 0;
       default:
-	cout << "invalid option " << argv[i] << endl;
+	std::cerr << "invalid option " << argv[i] << std::endl;
+	return 1;
       }
     }
   }
   if(aigname.empty()) {
-    cout << "specify aigname" << endl;
+    std::cerr << "specify aigname" << std::endl;
     return 1;
   }
   
@@ -150,42 +165,56 @@ int main( int argc, char ** argv )
     assert(aig.num_pis() == dcaig->num_pis());
     assert(aig.num_pos() == dcaig->num_pos());
   }
-  
+
+  try {
   switch(package) {
   case 0:
     {
-      Bdd::CuddMan bdd( aig.num_pis() );
+      Bdd::CuddMan bdd( aig.num_pis(), pverbose );
       Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 1:
     {
-      Bdd::BuddyMan bdd( aig.num_pis() );
+      Bdd::BuddyMan bdd( aig.num_pis(), pverbose );
       Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 2:
     {
+      if(pverbose) {
+	std::cerr << "the package doesn't have verbose system" << std::endl;
+      }
       Bdd::CacBddMan bdd( aig.num_pis() );
       Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 3:
     {
-      Bdd::SimpleBddMan bdd( aig.num_pis() );
+      Bdd::SimpleBddMan bdd( aig.num_pis(), pverbose );
       Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 4:
     {
-      Bdd::AtBddMan bdd( aig.num_pis() );
+      Bdd::AtBddMan bdd( aig.num_pis(), pverbose );
       Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   default:
-    cout << "unknown package number " << package << endl;
-    break;
+    std::cerr << "unknown package number " << package << std::endl;
+    return 1;
   }
+  }
+  catch ( const char * e ) {
+    std::cerr << e << std::endl;
+    return 1;
+  }
+  catch ( ... ) {
+    std::cerr << "error" << std::endl;
+    return 1;
+  }
+
 
   if(!blifname.empty()) {
     if(supportname) {
