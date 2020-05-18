@@ -140,15 +140,21 @@ namespace Bdd
     bool IsCompl( AtBddNode const & x ) override { return man->LitIsCompl( x.val ); }
     
     int Level( int i ) override { return man->Var( man->LitIthVar( i ) ); }
-    void Reorder() override { man->Reorder(); }
+    void Reorder() override { if ( man->get_pvNodesExists() ) man->Reorder(); }
+    void Dvr() override
+    {
+      if ( man->get_nObjs() != 1 + man->get_nVars() )
+	{
+	  std::cerr << "dvr is not turned on because there are nodes already built" << std::endl;
+	  return;
+	}
+      man->Dvr();
+      man->SupportRef();
+    }
+    void DvrOff() override { man->DvrOff(); man->UnsupportRef(); }
     
     AtBddNode Not( AtBddNode const & x ) override { return AtBddNode( man, man->LitNot( x.val ) ); }
     AtBddNode And( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->And( x.val, y.val ) ); }
-    AtBddNode Or( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Or( x.val, y.val ) ); }
-    AtBddNode Xor( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Xor( x.val, y.val ) ); }
-
-    void SupportRef() override { man->SupportRef(); }
-    void UnsupportRef() override { man->UnsupportRef(); }
 
     void PrintStats( std::vector<AtBddNode> & vNodes ) override
     {

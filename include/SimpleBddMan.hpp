@@ -128,16 +128,22 @@ namespace Bdd
     bool IsCompl( SimpleBddNode const & x ) override { return man->LitIsCompl( x.val ); }
 
     int Level( int i ) override { return man->Var( man->LitIthVar( i ) ); }
-    void Reorder() override { man->Reorder(); }
+    void Reorder() override { if ( man->get_pvNodesExists() ) man->Reorder(); }
+    void Dvr() override
+    {
+      if ( man->get_nObjs() != 1 + man->get_nVars() )
+	{
+	  std::cerr << "dvr is not turned on because there are nodes already built" << std::endl;
+	  return;
+	}
+      man->Dvr();
+      man->SupportRef();
+    }
+    void DvrOff() override { man->DvrOff(); man->UnsupportRef(); }
     
     SimpleBddNode Not( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitNot( x.val ) ); }
     SimpleBddNode And( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->And( x.val, y.val ) ); }
-    SimpleBddNode Or( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Or( x.val, y.val ) ); }
-    SimpleBddNode Xor( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Xor( x.val, y.val ) ); }
 
-    void SupportRef() override { man->SupportRef(); }
-    void UnsupportRef() override { man->UnsupportRef(); }
-    
     void PrintStats( std::vector<SimpleBddNode> & vNodes ) override
     {
       uint64_t count = 0;

@@ -1,7 +1,6 @@
 #ifndef BUDDY_MAN_HPP_
 #define BUDDY_MAN_HPP_
 
-#include <iostream>
 #include <fstream>
 #include "BddMan.hpp"
 #include <bdd.h>
@@ -87,6 +86,8 @@ namespace Bdd
     
     int Level( int i ) override { return Buddy::bdd_var2level( i ); }
     void Reorder() override { Buddy::bdd_reorder( param.nReoScheme + 1 ); }
+    void Dvr() override { Buddy::bdd_autoreorder( param.nReoScheme + 1 ); }
+    void DvrOff() override { Buddy::bdd_autoreorder( 0 ); }
 
     Buddy::bdd Not( Buddy::bdd const & x ) override { return Buddy::bdd_not( x ); }
     Buddy::bdd And( Buddy::bdd const & x, Buddy::bdd const & y ) override { return Buddy::bdd_and( x, y ); }

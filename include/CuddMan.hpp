@@ -1,7 +1,6 @@
 #ifndef CUDD_MAN_HPP_
 #define CUDD_MAN_HPP_
 
-#include <iostream>
 #include <fstream>
 #include <string>
 #include "BddMan.hpp"
@@ -97,6 +96,8 @@ namespace Bdd
     
     int Level( int i ) override { return man->ReadPerm( i ); }
     void Reorder() override { man->ReduceHeap( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) ); }
+    void Dvr() override { man->AutodynEnable( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) ); }
+    void DvrOff() override { man->AutodynDisable(); }
     
     CUDD::BDD Not( CUDD::BDD const & x ) override { return !x; }
     CUDD::BDD And( CUDD::BDD const & x, CUDD::BDD const & y ) override { return x & y; }

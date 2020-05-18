@@ -1,6 +1,7 @@
 #ifndef BDD_MAN_HPP_
 #define BDD_MAN_HPP_
 
+#include <iostream>
 #include <vector>
 #include <map>
 
@@ -25,7 +26,9 @@ namespace Bdd
     virtual bool IsCompl( node const & x ) { (void)x; return 0; }
     
     virtual int Level( int i ) { return i; }
-    virtual void Reorder() {}
+    virtual void Reorder() { std::cerr << "Reorder is not implemented" << std::endl; }
+    virtual void Dvr() { std::cerr << "Dvr is not implemented" << std::endl; }
+    virtual void DvrOff() {}
         
     virtual node Not( node const & x ) = 0;
     virtual node And( node const & x, node const & y );
@@ -43,9 +46,6 @@ namespace Bdd
     virtual node VecCompose( node const & x, std::vector<node> & cs );
 
     virtual void Support( node const & x, std::vector<int> & vVars );
-    
-    virtual void SupportRef() {}
-    virtual void UnsupportRef() {}
     
     virtual void PrintStats( std::vector<node> & vNodes ) { (void)vNodes; }
   };

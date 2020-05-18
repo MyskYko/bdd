@@ -774,17 +774,11 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
       net.PrintStats( "init", start );
     }
   
-  if ( fReo )
-    {
-      bdd.SupportRef();
-    }
-  
   net.Build();
 
   if ( fReo )
     {
       bdd.Reorder();
-      bdd.UnsupportRef();
     }
 
   std::vector<node> vDCs;
