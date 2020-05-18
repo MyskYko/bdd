@@ -116,9 +116,9 @@ int main( int argc, char ** argv )
 	std::cout << "\t-q       : toggle repeating optimization [default = " << repeat << "]" << std::endl;
 	std::cout << "\t-r       : toggle dynamic variable reordering in prep step [default = " << reorder << "]" << std::endl;
 	std::cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << std::endl;
-	std::cout << "\t-v       : toggle verbose information [default = " << verbose << "]" << std::endl;
+	std::cout << "\t-v <int> : toggle verbose information [default = " << verbose << "]" << std::endl;
 	std::cout << "\t-x <str> : aig file representing external don't cares [default = " << dcname << "]" << std::endl;
-	std::cout << "\t-V       : toggle verbose information inside BDD package [default = " << pverbose << "]" << std::endl;
+	std::cout << "\t-V <int> : toggle verbose information inside BDD package [default = " << pverbose << "]" << std::endl;
 	return 0;
       default:
 	std::cerr << "invalid option " << argv[i] << std::endl;
