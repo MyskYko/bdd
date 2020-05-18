@@ -860,6 +860,10 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
       bdd.Dvr();
     }
 
+  if ( nVerbose > 1 )
+    {
+      std::cout << "Build entire circuit" << std::endl;
+    }
   net.Build();
 
   std::vector<node> vDCs;
@@ -869,7 +873,7 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
       {
 	std::cout << "Build External DC" << std::endl;
       }
-      vDCs = Aig2Bdd( *dcaig, bdd, nVerbose > 2 );
+      vDCs = Aig2Bdd( *dcaig, bdd, nVerbose > 3 );
     }
   net.SetEXDC( vDCs );
 
@@ -886,8 +890,16 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
   
   if ( fRepeat )
     {
+      if ( nVerbose > 1 )
+	{
+	  std::cout << "Apply Transduction repeatedly" << std::endl;
+	}
       while ( 1 )
 	{
+	  if ( nVerbose > 1 )
+	    {
+	      std::cout << "Apply Transduction with Weak reduce repeatedly" << std::endl;
+	    }
 	  int wire2 = net.CountWire();
 	  net.fWeak = 1;
 	  while ( 1 )
@@ -910,6 +922,10 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
 		}
 	    }
 	  net.fWeak = 0;
+	  if ( nVerbose > 1 )
+	    {
+	      std::cout << "Apply Transduction with Eager reduce repeatedly" << std::endl;
+	    }
 	  while ( 1 )
 	    {
 	      int wire = 0;
@@ -938,6 +954,18 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
 
   if ( fMspf )
     {
+      if ( nVerbose > 1 )
+	{
+	  std::cout << "Apply Transduction with Mspf reduce";
+	  if ( fRepeat )
+	    {
+	      std::cout << " repeatedly" << std::endl;
+	    }
+	  else
+	    {
+	      std::cout << " once" << std::endl;
+	    }
+	}
       net.fMspf = 1;
       while ( 1 )
 	{
@@ -977,6 +1005,10 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
 
   if ( fCheck )
     {
+      if ( nVerbose > 1 )
+	{
+	  std::cout << "Check equivalence" << std::endl;
+	}
       mockturtle::aig_network miter;
       if ( !dcaig )
 	{
