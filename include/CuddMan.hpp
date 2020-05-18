@@ -15,7 +15,7 @@ namespace Bdd
     int nCache = CUDD_CACHE_SLOTS; // Log 100 1000000000
     int nMaxMem = 0; // Log 100 1000000000
     int nMinHit = 30; // Int 1 100
-    bool fGC = 1; // Bool
+    bool fGC = 0; // Bool
     int nReoScheme = 0; // Switch 12
     int nMaxGrowth = 20; // Int 1 100
     // end

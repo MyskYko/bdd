@@ -16,7 +16,7 @@ namespace Bdd
     int nUniqueMinRate = 25; // Int 1 100
     int nCallThold = 200000; // Log 100 1000000000
     bool fRealloc = 1; // None True
-    bool fGC = 1; // Bool
+    bool fGC = 0; // Bool
     uint32_t nGC = 1 << 25; // Log 100 1000000000
     uint32_t nReo = 4000; // Log 100 1000000000
     int nMaxGrowth = 20; // Int 1 100

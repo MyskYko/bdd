@@ -12,7 +12,7 @@ namespace Bdd
     // Param
     uint32_t nNodes = 1 << 20; // Pow 7 30
     bool fRealloc = 1; // None True
-    bool fGC = 1; // Bool
+    bool fGC = 0; // Bool
     uint32_t nGC = 1 << 25; // Log 100 1000000000
     uint32_t nReo = 4000; // Log 100 1000000000
     int nMaxGrowth = 20; // Int 1 100
