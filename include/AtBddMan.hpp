@@ -114,12 +114,12 @@ namespace Bdd
     AtBddParam param;
     
   public:
-    AtBddMan( int nVars, AtBddParam param ) : param( param )
+    AtBddMan( int nVars, AtBddParam param, int nVerbose ) : param( param )
     {
-      man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, param.nUniqueMinRate, param.nCallThold, NULL, 0 );
+      man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, param.nUniqueMinRate, param.nCallThold, NULL, nVerbose );
       man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, 0, param.nReo, param.nMaxGrowth );
     };
-    AtBddMan( int nVars ) : AtBddMan( nVars, AtBddParam() ) {}
+    AtBddMan( int nVars, int nVerbose = 0 ) : AtBddMan( nVars, AtBddParam(), nVerbose ) {}
     ~AtBddMan() { delete man; }
     
     int GetNumVar() override { return man->get_nVars(); }

@@ -102,12 +102,12 @@ namespace Bdd
     SimpleBddParam param;
     
   public:
-    SimpleBddMan( int nVars, SimpleBddParam param ) : param( param )
+    SimpleBddMan( int nVars, SimpleBddParam param, int nVerbose ) : param( param )
     {
-      man = new SimpleBdd::BddMan( nVars, param.nNodes, NULL, 0 );
+      man = new SimpleBdd::BddMan( nVars, param.nNodes, NULL, nVerbose );
       man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, 0, param.nReo, param.nMaxGrowth );
     };
-    SimpleBddMan( int nVars ) : SimpleBddMan( nVars, SimpleBddParam() ) {}
+    SimpleBddMan( int nVars, int nVerbose = 0 ) : SimpleBddMan( nVars, SimpleBddParam(), nVerbose ) {}
     ~SimpleBddMan() { delete man; }
     
     int GetNumVar() override { return man->get_nVars(); }
