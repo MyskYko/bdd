@@ -7,13 +7,44 @@
 #include <NtkBdd.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
+
 #include <string>
+#include <chrono>
 
-using std::cout;
-using std::endl;
+template <typename node>
+void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::klut_network * klut, bool dvr, std::vector<std::string> & pi_names ) {
+  if(dvr) {
+    bdd.Dvr();
+  }
+  auto start = std::chrono::system_clock::now();
+  auto vNodes = Aig2Bdd( aig, bdd );
+  auto end = std::chrono::system_clock::now();
+  std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count() << " ms" << std::endl;
+  bdd.PrintStats( vNodes );
+  if(dvr) {
+    std::cout << "Ordering :" << std::endl;
+    std::vector<int> v( aig.num_pis() );
+    for ( int i = 0; i < aig.num_pis(); i++ )
+      {
+	v[bdd.Level( i )] = i;
+      }
+    for ( int i : v )
+      {
+	if ( pi_names.empty() || pi_names[i].empty() ) {
+	  std::cout << "pi" << i << " ";
+	}
+	else {
+	  std::cout << pi_names[i] << " ";
+	}
+      }
+    std::cout << std::endl;
+  }
+  if(klut) {
+    Bdd2Ntk( *klut, bdd, vNodes );
+  }
+}
 
-int main( int argc, char ** argv )
-{
+int main( int argc, char ** argv ) {
   std::string aigname;
   std::string blifname;
   int package = 0;
@@ -27,24 +58,24 @@ int main( int argc, char ** argv )
 	continue;
       }
       else {
-	cout << "invalid option " << argv[i] << endl;
+	std::cout << "invalid option " << argv[i] << std::endl;
 	return 1;
       }
     }
     else if(argv[i][1] == '\0') {
-      cout << "invalid option " << argv[i] << endl;
+      std::cout << "invalid option " << argv[i] << std::endl;
       return 1;
     }
     int i_ = i;
     for(int j = 1; argv[i_][j] != '\0'; j++) {
       if(i != i_) {
-	cout << "invalid option " << argv[i_] << endl;
+	std::cout << "invalid option " << argv[i_] << std::endl;
 	return 1;
       }
       switch(argv[i_][j]) {
       case 'o':
 	if(i+1 >= argc) {
-	  cout << "-o must be followed by file name" << endl;
+	  std::cout << "-o must be followed by file name" << std::endl;
 	  return 1;
 	}
 	blifname = argv[++i];
@@ -54,7 +85,7 @@ int main( int argc, char ** argv )
 	  package = std::stoi(argv[++i]);
 	}
 	catch(...) {
-	  cout << "-n must be followed by integer" << endl;
+	  std::cout << "-n must be followed by integer" << std::endl;
 	  return 1;
 	}
 	break;
@@ -65,25 +96,25 @@ int main( int argc, char ** argv )
 	dvr ^= 1;
 	break;
       case 'h':
-	cout << "usage : aig2bdd <options> your.aig" << endl;
-	cout << "\t-h       : show this usage" << endl;
-	cout << "\t-o <str> : dump BDD as a blif file " << endl;
-	cout << "\t-p <int> : package [default = " << package << "]" << endl;
-	cout << "\t           \t0 : cudd" << endl;
-	cout << "\t           \t1 : buddy" << endl;
-	cout << "\t           \t2 : cacbdd" << endl;
-	cout << "\t           \t3 : simplebdd" << endl;
-	cout << "\t           \t4 : custombdd" << endl;
-	cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << endl;
-	cout << "\t-r       : toggle dynamic variable reordering [default = " << dvr << "]" << endl;
+	std::cout << "usage : aig2bdd <options> your.aig" << std::endl;
+	std::cout << "\t-h       : show this usage" << std::endl;
+	std::cout << "\t-o <str> : dump BDD as a blif file " << std::endl;
+	std::cout << "\t-p <int> : package [default = " << package << "]" << std::endl;
+	std::cout << "\t           \t0 : cudd" << std::endl;
+	std::cout << "\t           \t1 : buddy" << std::endl;
+	std::cout << "\t           \t2 : cacbdd" << std::endl;
+	std::cout << "\t           \t3 : simplebdd" << std::endl;
+	std::cout << "\t           \t4 : custombdd" << std::endl;
+	std::cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << std::endl;
+	std::cout << "\t-r       : toggle dynamic variable reordering [default = " << dvr << "]" << std::endl;
 	return 0;
       default:
-	cout << "invalid option " << argv[i] << endl;
+	std::cout << "invalid option " << argv[i] << std::endl;
       }
     }
   }
   if(aigname.empty()) {
-    cout << "specify aigname" << endl;
+    std::cout << "specify aigname" << std::endl;
     return 1;
   }
   
@@ -107,88 +138,56 @@ int main( int argc, char ** argv )
 		       po_names.push_back("");
 		       return;
 		     }
-		     po_names.push_back(namevec[0]);
+		     po_names.push_back(namevec[namevec.size() - 1]);
 		   });
   }
   else {
     lorina::read_aiger(aigname, mockturtle::aiger_reader(aig));
   }
   
-  mockturtle::klut_network klut;
+  mockturtle::klut_network * klut = NULL;
+  if(!blifname.empty()) {
+    klut = new mockturtle::klut_network;
+  }
   switch(package) {
   case 0:
     {
       Bdd::CuddMan bdd( aig.num_pis() );
-      if(dvr) {
-	bdd.Dvr();
-      }
-      auto vNodes = Aig2Bdd( aig, bdd );
-      bdd.PrintStats( vNodes );
-      if(!blifname.empty()) {
-	Bdd2Ntk( klut, bdd, vNodes );
-      }
+      run( bdd, aig, klut, dvr, pi_names );
     }
     break;
   case 1:
     {
       Bdd::BuddyMan bdd( aig.num_pis() );
-      if(dvr) {
-	bdd.Dvr();
-      }
-      auto vNodes = Aig2Bdd( aig, bdd );
-      bdd.PrintStats( vNodes );
-      if(!blifname.empty()) {
-	Bdd2Ntk( klut, bdd, vNodes );
-      }
+      run( bdd, aig, klut, dvr, pi_names );
     }
     break;
   case 2:
     {
       Bdd::CacBddMan bdd( aig.num_pis() );
-      if(dvr) {
-	bdd.Dvr();
-      }
-      auto vNodes = Aig2Bdd( aig, bdd );
-      bdd.PrintStats( vNodes );
-      if(!blifname.empty()) {
-	Bdd2Ntk( klut, bdd, vNodes );
-      }
+      run( bdd, aig, klut, dvr, pi_names );
     }
     break;
   case 3:
     {
       Bdd::SimpleBddMan bdd( aig.num_pis() );
-      if(dvr) {
-	bdd.Dvr();
-      }
-      auto vNodes = Aig2Bdd( aig, bdd );
-      bdd.PrintStats( vNodes );
-      if(!blifname.empty()) {
-	Bdd2Ntk( klut, bdd, vNodes );
-      }
+      run( bdd, aig, klut, dvr, pi_names );
     }
     break;
   case 4:
     {
       Bdd::AtBddMan bdd( aig.num_pis() );
-      if(dvr) {
-	bdd.Dvr();
-      }
-      auto vNodes = Aig2Bdd( aig, bdd );
-      bdd.PrintStats( vNodes );
-      if(!blifname.empty()) {
-	Bdd2Ntk( klut, bdd, vNodes );
-      }
+      run( bdd, aig, klut, dvr, pi_names );
     }
     break;
   default:
-    cout << "unknown package number " << package << endl;
+    std::cout << "unknown package number " << package << std::endl;
     break;
   }
 
-  if(!blifname.empty()) {
+  if(klut) {
     if(supportname) {
-      mockturtle::names_view klut_{klut};
+      mockturtle::names_view klut_{*klut};
       klut_.foreach_pi([&](auto pi, int i) {
 			 if(!pi_names[i].empty()) {
 			   klut_.set_name(klut_.make_signal(pi), pi_names[i]);
@@ -202,8 +201,9 @@ int main( int argc, char ** argv )
       mockturtle::write_blif( klut_, blifname );
     }
     else {
-      mockturtle::write_blif( klut, blifname );
+      mockturtle::write_blif( *klut, blifname );
     }
+    delete klut;
   }
 
   return 0;
