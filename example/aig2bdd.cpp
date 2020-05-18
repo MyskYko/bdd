@@ -12,32 +12,34 @@
 #include <chrono>
 
 template <typename node>
-void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::klut_network * klut, bool dvr, std::vector<std::string> & pi_names ) {
+void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::klut_network * klut, bool dvr, std::vector<std::string> & pi_names, int verbose ) {
   if(dvr) {
     bdd.Dvr();
   }
   auto start = std::chrono::system_clock::now();
-  auto vNodes = Aig2Bdd( aig, bdd );
+  auto vNodes = Aig2Bdd( aig, bdd, verbose > 1 );
   auto end = std::chrono::system_clock::now();
-  std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count() << " ms" << std::endl;
-  bdd.PrintStats( vNodes );
-  if(dvr) {
-    std::cout << "Ordering :" << std::endl;
-    std::vector<int> v( aig.num_pis() );
-    for ( int i = 0; i < aig.num_pis(); i++ )
-      {
-	v[bdd.Level( i )] = i;
-      }
-    for ( int i : v )
-      {
-	if ( pi_names.empty() || pi_names[i].empty() ) {
-	  std::cout << "pi" << i << " ";
+  if(verbose) {
+    std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count() << " ms" << std::endl;
+    bdd.PrintStats( vNodes );
+    if(dvr) {
+      std::cout << "Ordering :" << std::endl;
+      std::vector<int> v( aig.num_pis() );
+      for ( int i = 0; i < aig.num_pis(); i++ )
+	{
+	  v[bdd.Level( i )] = i;
 	}
-	else {
-	  std::cout << pi_names[i] << " ";
+      for ( int i : v )
+	{
+	  if ( pi_names.empty() || pi_names[i].empty() ) {
+	    std::cout << "pi" << i << " ";
+	  }
+	  else {
+	    std::cout << pi_names[i] << " ";
+	  }
 	}
-      }
-    std::cout << std::endl;
+      std::cout << std::endl;
+    }
   }
   if(klut) {
     Bdd2Ntk( *klut, bdd, vNodes );
@@ -50,6 +52,8 @@ int main( int argc, char ** argv ) {
   int package = 0;
   bool supportname = 1;
   bool dvr = 0;
+  int verbose = 0;
+  int pverbose = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -58,24 +62,24 @@ int main( int argc, char ** argv ) {
 	continue;
       }
       else {
-	std::cout << "invalid option " << argv[i] << std::endl;
+	std::cerr << "invalid option " << argv[i] << std::endl;
 	return 1;
       }
     }
     else if(argv[i][1] == '\0') {
-      std::cout << "invalid option " << argv[i] << std::endl;
+      std::cerr << "invalid option " << argv[i] << std::endl;
       return 1;
     }
     int i_ = i;
     for(int j = 1; argv[i_][j] != '\0'; j++) {
       if(i != i_) {
-	std::cout << "invalid option " << argv[i_] << std::endl;
+	std::cerr << "invalid option " << argv[i_] << std::endl;
 	return 1;
       }
       switch(argv[i_][j]) {
       case 'o':
 	if(i+1 >= argc) {
-	  std::cout << "-o must be followed by file name" << std::endl;
+	  std::cerr << "-o must be followed by file name" << std::endl;
 	  return 1;
 	}
 	blifname = argv[++i];
@@ -85,7 +89,7 @@ int main( int argc, char ** argv ) {
 	  package = std::stoi(argv[++i]);
 	}
 	catch(...) {
-	  std::cout << "-n must be followed by integer" << std::endl;
+	  std::cerr << "-n must be followed by integer" << std::endl;
 	  return 1;
 	}
 	break;
@@ -94,6 +98,24 @@ int main( int argc, char ** argv ) {
 	break;
       case 'r':
 	dvr ^= 1;
+	break;
+      case 'v':
+	try {
+	  verbose = std::stoi(argv[++i]);
+	}
+	catch(...) {
+	  std::cerr << "-v must be followed by integer" << std::endl;
+	  return 1;
+	}
+	break;
+      case 'V':
+	try {
+	  pverbose = std::stoi(argv[++i]);
+	}
+	catch(...) {
+	  std::cerr << "-V must be followed by integer" << std::endl;
+	  return 1;
+	}
 	break;
       case 'h':
 	std::cout << "usage : aig2bdd <options> your.aig" << std::endl;
@@ -107,14 +129,17 @@ int main( int argc, char ** argv ) {
 	std::cout << "\t           \t4 : custombdd" << std::endl;
 	std::cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << std::endl;
 	std::cout << "\t-r       : toggle dynamic variable reordering [default = " << dvr << "]" << std::endl;
+	std::cout << "\t-v <int>  : toggle verbose information [default = " << verbose << "]" << std::endl;
+	std::cout << "\t-V <int> : toggle verbose information inside BDD package [default = " << pverbose << "]" << std::endl;
 	return 0;
       default:
-	std::cout << "invalid option " << argv[i] << std::endl;
+	std::cerr << "invalid option " << argv[i] << std::endl;
+	return 1;
       }
     }
   }
   if(aigname.empty()) {
-    std::cout << "specify aigname" << std::endl;
+    std::cerr << "specify aigname" << std::endl;
     return 1;
   }
   
@@ -149,40 +174,53 @@ int main( int argc, char ** argv ) {
   if(!blifname.empty()) {
     klut = new mockturtle::klut_network;
   }
+  try {
   switch(package) {
   case 0:
     {
-      Bdd::CuddMan bdd( aig.num_pis() );
-      run( bdd, aig, klut, dvr, pi_names );
+      Bdd::CuddMan bdd( aig.num_pis(), pverbose );
+      run( bdd, aig, klut, dvr, pi_names, verbose );
     }
     break;
   case 1:
     {
-      Bdd::BuddyMan bdd( aig.num_pis() );
-      run( bdd, aig, klut, dvr, pi_names );
+      Bdd::BuddyMan bdd( aig.num_pis(), pverbose );
+      run( bdd, aig, klut, dvr, pi_names, verbose );
     }
     break;
   case 2:
     {
+      if(pverbose) {
+	std::cerr << "the package doesn't have verbose system" << std::endl;
+      }
       Bdd::CacBddMan bdd( aig.num_pis() );
-      run( bdd, aig, klut, dvr, pi_names );
+      run( bdd, aig, klut, dvr, pi_names, verbose );
     }
     break;
   case 3:
     {
-      Bdd::SimpleBddMan bdd( aig.num_pis() );
-      run( bdd, aig, klut, dvr, pi_names );
+      Bdd::SimpleBddMan bdd( aig.num_pis(), pverbose );
+      run( bdd, aig, klut, dvr, pi_names, verbose );
     }
     break;
   case 4:
     {
-      Bdd::AtBddMan bdd( aig.num_pis() );
-      run( bdd, aig, klut, dvr, pi_names );
+      Bdd::AtBddMan bdd( aig.num_pis(), pverbose );
+      run( bdd, aig, klut, dvr, pi_names, verbose );
     }
     break;
   default:
-    std::cout << "unknown package number " << package << std::endl;
-    break;
+    std::cerr << "unknown package number " << package << std::endl;
+    return 1;
+  }
+  }
+  catch ( const char * e ) {
+    std::cerr << e << std::endl;
+    return 1;
+  }
+  catch ( ... ) {
+    std::cerr << "error" << std::endl;
+    return 1;
   }
 
   if(klut) {
