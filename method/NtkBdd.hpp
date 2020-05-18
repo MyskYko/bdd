@@ -6,7 +6,7 @@
 #include "mockturtle/mockturtle.hpp"
 
 template <typename node>
-std::vector<node> Aig2Bdd( mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd )
+std::vector<node> Aig2Bdd( mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, bool fVerbose = 0 )
 {
   mockturtle::topo_view aig{aig_};
   int * pFanouts = (int *)calloc( aig.size(), sizeof(int) );
@@ -24,8 +24,12 @@ std::vector<node> Aig2Bdd( mockturtle::aig_network & aig_, Bdd::BddMan<node> & b
     {
       m[aig.node_to_index( pi )] = bdd.IthVar( i );
     });
-  aig.foreach_gate( [&]( auto gate )
+  aig.foreach_gate( [&]( auto gate, int i )
     {
+      if ( fVerbose )
+	{
+	  std::cout << "gate " << i + 1 << " / " << aig.num_gates() << std::endl;
+	}
       node x = bdd.Const1();
       aig.foreach_fanin( gate, [&]( auto fanin )
         {
