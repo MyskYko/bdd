@@ -16,9 +16,8 @@ namespace Bdd
     int nMaxMem = 0; // Log 100 1000000000
     int nMinHit = 30; // Int 1 100
     bool fGC = 1; // Bool
-    bool fReo = 0; // None False
-    int nReoScheme = 0; // None 12
-    int nMaxGrowth = 20; // None 1 100
+    int nReoScheme = 0; // Switch 12
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     CuddParam( std::string fname = "_CuddMan.hpp_setting.txt" )
@@ -40,8 +39,6 @@ namespace Bdd
       std::getline( f, str );
       fGC = ( str == "True" );
       std::getline( f, str );
-      fReo = ( str == "True" );
-      std::getline( f, str );
       nReoScheme = std::stoi( str );
       std::getline( f, str );
       nMaxGrowth = std::stoi( str );
@@ -62,10 +59,6 @@ namespace Bdd
       if ( !param.fGC )
 	{
 	  man->DisableGarbageCollection();
-	}
-      if ( param.fReo )
-	{
-	  man->AutodynEnable( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) );
 	}
       man->SetMaxGrowth( 1.0 + param.nMaxGrowth * 0.01 );
     }

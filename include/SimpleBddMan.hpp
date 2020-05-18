@@ -14,9 +14,8 @@ namespace Bdd
     bool fRealloc = 1; // None True
     bool fGC = 1; // Bool
     uint32_t nGC = 1 << 25; // Log 100 1000000000
-    bool fReo = 0; // None False
-    uint32_t nReo = 4000; // None 100 1000000000
-    int nMaxGrowth = 20; // None 1 100
+    uint32_t nReo = 4000; // Log 100 1000000000
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
@@ -35,8 +34,6 @@ namespace Bdd
       fGC = ( str == "True" );
       std::getline( f, str );
       nGC = std::stoul( str );
-      std::getline( f, str );
-      fReo = ( str == "True" );
       std::getline( f, str );
       nReo = std::stoul( str );
       std::getline( f, str );
@@ -108,7 +105,7 @@ namespace Bdd
     SimpleBddMan( int nVars, SimpleBddParam param ) : param( param )
     {
       man = new SimpleBdd::BddMan( nVars, param.nNodes, NULL, 0 );
-      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, param.fReo, param.nReo, param.nMaxGrowth );
+      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, 0, param.nReo, param.nMaxGrowth );
     };
     SimpleBddMan( int nVars ) : SimpleBddMan( nVars, SimpleBddParam() ) {}
     ~SimpleBddMan() { delete man; }
