@@ -90,6 +90,7 @@ public:
   int  get_nVars() { return nVars; }
   int  get_order( int v ) { return vOrdering[v]; }
   bool get_pvNodesExists() { return pvNodes != NULL; }
+  int  get_nObjs() { return nObjs; }
   void show_refstat()
   {
     for ( lit x : *pvNodes )
@@ -235,7 +236,7 @@ public:
   lit  Then( lit x ) { return LitNotCond( pObjs[LitRegular( x )], LitIsCompl( x ) ); }
   lit  Else( lit x ) { return LitNotCond( pObjs[LitNot( LitRegular( x ) )], LitIsCompl( x ) ); }
   bvar Next( lit x ) { return NextOfBvar( Lit2Bvar( x ) ); }
-  bvar Mark( lit x ) { return MarkOfBvar( Lit2Bvar( x ) ); }
+  mark Mark( lit x ) { return MarkOfBvar( Lit2Bvar( x ) ); }
   edge Edge( lit x ) { return EdgeOfBvar( Lit2Bvar( x ) ); }
 
   void SetMark( lit x, mark m ) { SetMarkOfBvar( Lit2Bvar( x ), m ); }
@@ -701,17 +702,6 @@ public:
   {
     return LitNot( And( LitNot( x ), LitNot( y ) ) );
   }
-  lit Xor( lit x, lit y )
-  {
-    lit z1 = And( LitNot( x ), y );
-    Ref( z1 );
-    lit z0 = And( x, LitNot( y ) );
-    Ref( z0 );
-    lit z = Or( z0, z1 );
-    Pop();
-    Pop();
-    return z;
-  }
   
 /**Function*************************************************************
 
@@ -749,6 +739,8 @@ public:
     if ( fGC || fReo )
       SupportRef();
   }
+  void Dvr() { fReo = 1; }
+  void DvrOff() { fReo = 0; }
   bool Refresh()
   {
     if ( nVerbose )

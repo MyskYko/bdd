@@ -1,7 +1,6 @@
 #ifndef CUDD_MAN_HPP_
 #define CUDD_MAN_HPP_
 
-#include <iostream>
 #include <fstream>
 #include <string>
 #include "BddMan.hpp"
@@ -17,9 +16,8 @@ namespace Bdd
     int nMaxMem = 0; // Log 100 1000000000
     int nMinHit = 30; // Int 1 100
     bool fGC = 1; // Bool
-    bool fReo = 0; // None False
-    int nReoScheme = 0; // None 12
-    int nMaxGrowth = 20; // None 1 100
+    int nReoScheme = 0; // Switch 12
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     CuddParam( std::string fname = "_CuddMan.hpp_setting.txt" )
@@ -41,8 +39,6 @@ namespace Bdd
       std::getline( f, str );
       fGC = ( str == "True" );
       std::getline( f, str );
-      fReo = ( str == "True" );
-      std::getline( f, str );
       nReoScheme = std::stoi( str );
       std::getline( f, str );
       nMaxGrowth = std::stoi( str );
@@ -63,10 +59,6 @@ namespace Bdd
       if ( !param.fGC )
 	{
 	  man->DisableGarbageCollection();
-	}
-      if ( param.fReo )
-	{
-	  man->AutodynEnable( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) );
 	}
       man->SetMaxGrowth( 1.0 + param.nMaxGrowth * 0.01 );
     }
@@ -97,6 +89,8 @@ namespace Bdd
     
     int Level( int i ) override { return man->ReadPerm( i ); }
     void Reorder() override { man->ReduceHeap( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) ); }
+    void Dvr() override { man->AutodynEnable( (Cudd_ReorderingType)( CUDD_REORDER_SIFT + param.nReoScheme ) ); }
+    void DvrOff() override { man->AutodynDisable(); }
     
     CUDD::BDD Not( CUDD::BDD const & x ) override { return !x; }
     CUDD::BDD And( CUDD::BDD const & x, CUDD::BDD const & y ) override { return x & y; }

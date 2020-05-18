@@ -1,7 +1,6 @@
 #ifndef BUDDY_MAN_HPP_
 #define BUDDY_MAN_HPP_
 
-#include <iostream>
 #include <fstream>
 #include "BddMan.hpp"
 #include <bdd.h>
@@ -17,8 +16,7 @@ namespace Bdd
     bool fDynCache = 1; // Bool
     int nDynCache = 4; // Int 1 100
     int nMinFree = 20; // Int 1 100
-    bool fReo = 0; // None False
-    int nReoScheme = 3; // None 6
+    int nReoScheme = 3; // Switch 6
     // end
 
     BuddyParam( std::string fname = "_BuddyMan.hpp_setting.txt" )
@@ -42,8 +40,6 @@ namespace Bdd
       std::getline( f, str );
       nMinFree = std::stoi( str );
       std::getline( f, str );
-      fReo = ( str == "True" );
-      std::getline( f, str );
       nReoScheme = std::stoi( str );
     }
   };
@@ -66,10 +62,6 @@ namespace Bdd
       Buddy::bdd_setminfreenodes( param.nMinFree );
       Buddy::bdd_setvarnum( nVars );
       Buddy::bdd_varblockall();
-      if ( param.fReo )
-	{
-	  Buddy::bdd_autoreorder( param.nReoScheme + 1 );
-	}
     };
     BuddyMan( int nVars ) : BuddyMan( nVars, BuddyParam() ) {}
     ~BuddyMan() { Buddy::bdd_done(); }
@@ -87,6 +79,8 @@ namespace Bdd
     
     int Level( int i ) override { return Buddy::bdd_var2level( i ); }
     void Reorder() override { Buddy::bdd_reorder( param.nReoScheme + 1 ); }
+    void Dvr() override { Buddy::bdd_autoreorder( param.nReoScheme + 1 ); }
+    void DvrOff() override { Buddy::bdd_autoreorder( 0 ); }
 
     Buddy::bdd Not( Buddy::bdd const & x ) override { return Buddy::bdd_not( x ); }
     Buddy::bdd And( Buddy::bdd const & x, Buddy::bdd const & y ) override { return Buddy::bdd_and( x, y ); }

@@ -1,7 +1,6 @@
 #ifndef CACBDD_MAN_HPP_
 #define CACBDD_MAN_HPP_
 
-#include <iostream>
 #include <fstream>
 #include "BddMan.hpp"
 #include <BDDNode.h>

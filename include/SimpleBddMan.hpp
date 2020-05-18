@@ -14,9 +14,8 @@ namespace Bdd
     bool fRealloc = 1; // None True
     bool fGC = 1; // Bool
     uint32_t nGC = 1 << 25; // Log 100 1000000000
-    bool fReo = 0; // None False
-    uint32_t nReo = 4000; // None 100 1000000000
-    int nMaxGrowth = 20; // None 1 100
+    uint32_t nReo = 4000; // Log 100 1000000000
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     SimpleBddParam( std::string fname = "_SimpleBddMan.hpp_setting.txt" )
@@ -35,8 +34,6 @@ namespace Bdd
       fGC = ( str == "True" );
       std::getline( f, str );
       nGC = std::stoul( str );
-      std::getline( f, str );
-      fReo = ( str == "True" );
       std::getline( f, str );
       nReo = std::stoul( str );
       std::getline( f, str );
@@ -108,7 +105,7 @@ namespace Bdd
     SimpleBddMan( int nVars, SimpleBddParam param ) : param( param )
     {
       man = new SimpleBdd::BddMan( nVars, param.nNodes, NULL, 0 );
-      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, param.fReo, param.nReo, param.nMaxGrowth );
+      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, 0, param.nReo, param.nMaxGrowth );
     };
     SimpleBddMan( int nVars ) : SimpleBddMan( nVars, SimpleBddParam() ) {}
     ~SimpleBddMan() { delete man; }
@@ -128,16 +125,22 @@ namespace Bdd
     bool IsCompl( SimpleBddNode const & x ) override { return man->LitIsCompl( x.val ); }
 
     int Level( int i ) override { return man->Var( man->LitIthVar( i ) ); }
-    void Reorder() override { man->Reorder(); }
+    void Reorder() override { if ( man->get_pvNodesExists() ) man->Reorder(); }
+    void Dvr() override
+    {
+      if ( man->get_nObjs() != 1 + man->get_nVars() )
+	{
+	  std::cerr << "dvr is not turned on because there are nodes already built" << std::endl;
+	  return;
+	}
+      man->Dvr();
+      man->SupportRef();
+    }
+    void DvrOff() override { man->DvrOff(); man->UnsupportRef(); }
     
     SimpleBddNode Not( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitNot( x.val ) ); }
     SimpleBddNode And( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->And( x.val, y.val ) ); }
-    SimpleBddNode Or( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Or( x.val, y.val ) ); }
-    SimpleBddNode Xor( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->Xor( x.val, y.val ) ); }
 
-    void SupportRef() override { man->SupportRef(); }
-    void UnsupportRef() override { man->UnsupportRef(); }
-    
     void PrintStats( std::vector<SimpleBddNode> & vNodes ) override
     {
       uint64_t count = 0;

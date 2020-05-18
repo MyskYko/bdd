@@ -776,16 +776,10 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
   
   if ( fReo )
     {
-      bdd.SupportRef();
+      bdd.Dvr();
     }
-  
-  net.Build();
 
-  if ( fReo )
-    {
-      bdd.Reorder();
-      bdd.UnsupportRef();
-    }
+  net.Build();
 
   std::vector<node> vDCs;
   if ( dcaig )
@@ -794,6 +788,17 @@ void Transduction( mockturtle::aig_network & aig, Bdd::BddMan<node> & bdd, bool 
     }
   net.SetEXDC( vDCs );
 
+  if ( fReo )
+    {
+      bdd.Reorder();
+      bdd.DvrOff();
+    }
+
+  if ( fVerbose )
+    {
+      net.PrintStats( "prep", start );
+    }
+  
   if ( fRepeat )
     {
       while ( 1 )

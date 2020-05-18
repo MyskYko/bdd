@@ -65,7 +65,7 @@ int main( int argc, char ** argv )
 	  package = std::stoi(argv[++i]);
 	}
 	catch(...) {
-	  cout << "-n must be followed by integer" << endl;
+	  cout << "-p must be followed by integer" << endl;
 	  return 1;
 	}
 	break;
@@ -101,7 +101,7 @@ int main( int argc, char ** argv )
 	cout << "\t           \t3 : simplebdd" << endl;
 	cout << "\t           \t4 : custombdd" << endl;
 	cout << "\t-q       : toggle repeating optimization [default = " << repeat << "]" << endl;
-	cout << "\t-r       : toggle applying reordering once [default = " << reorder << "]" << endl;
+	cout << "\t-r       : toggle dynamic variable reordering in prep step [default = " << reorder << "]" << endl;
 	cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << endl;
 	cout << "\t-v       : toggle verbosing [default = " << verbose << "]" << endl;
 	cout << "\t-x <str> : aig file representing external don't cares [default = " << dcname << "]" << endl;
@@ -136,7 +136,7 @@ int main( int argc, char ** argv )
 		       po_names.push_back("");
 		       return;
 		     }
-		     po_names.push_back(namevec[0]);
+		     po_names.push_back(namevec[namevec.size() - 1]);
 		   });
   }
   else {

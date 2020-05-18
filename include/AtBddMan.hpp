@@ -18,9 +18,8 @@ namespace Bdd
     bool fRealloc = 1; // None True
     bool fGC = 1; // Bool
     uint32_t nGC = 1 << 25; // Log 100 1000000000
-    bool fReo = 0; // None False
-    uint32_t nReo = 4000; // None 100 1000000000
-    int nMaxGrowth = 20; // None 1 100
+    uint32_t nReo = 4000; // Log 100 1000000000
+    int nMaxGrowth = 20; // Int 1 100
     // end
     
     AtBddParam( std::string fname = "_AtBddMan.hpp_setting.txt" )
@@ -47,8 +46,6 @@ namespace Bdd
       fGC = ( str == "True" );
       std::getline( f, str );
       nGC = std::stoul( str );
-      std::getline( f, str );
-      fReo = ( str == "True" );
       std::getline( f, str );
       nReo = std::stoul( str );
       std::getline( f, str );
@@ -120,7 +117,7 @@ namespace Bdd
     AtBddMan( int nVars, AtBddParam param ) : param( param )
     {
       man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, param.nUniqueMinRate, param.nCallThold, NULL, 0 );
-      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, param.fReo, param.nReo, param.nMaxGrowth );
+      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, 0, param.nReo, param.nMaxGrowth );
     };
     AtBddMan( int nVars ) : AtBddMan( nVars, AtBddParam() ) {}
     ~AtBddMan() { delete man; }
@@ -140,15 +137,21 @@ namespace Bdd
     bool IsCompl( AtBddNode const & x ) override { return man->LitIsCompl( x.val ); }
     
     int Level( int i ) override { return man->Var( man->LitIthVar( i ) ); }
-    void Reorder() override { man->Reorder(); }
+    void Reorder() override { if ( man->get_pvNodesExists() ) man->Reorder(); }
+    void Dvr() override
+    {
+      if ( man->get_nObjs() != 1 + man->get_nVars() )
+	{
+	  std::cerr << "dvr is not turned on because there are nodes already built" << std::endl;
+	  return;
+	}
+      man->Dvr();
+      man->SupportRef();
+    }
+    void DvrOff() override { man->DvrOff(); man->UnsupportRef(); }
     
     AtBddNode Not( AtBddNode const & x ) override { return AtBddNode( man, man->LitNot( x.val ) ); }
     AtBddNode And( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->And( x.val, y.val ) ); }
-    AtBddNode Or( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Or( x.val, y.val ) ); }
-    AtBddNode Xor( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->Xor( x.val, y.val ) ); }
-
-    void SupportRef() override { man->SupportRef(); }
-    void UnsupportRef() override { man->UnsupportRef(); }
 
     void PrintStats( std::vector<AtBddNode> & vNodes ) override
     {
