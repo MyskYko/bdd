@@ -18,6 +18,7 @@ int main( int argc, char ** argv )
   std::string blifname;
   int package = 0;
   bool supportname = 1;
+  bool dvr = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -60,6 +61,9 @@ int main( int argc, char ** argv )
       case 's':
 	supportname ^= 1;
 	break;
+      case 'r':
+	dvr ^= 1;
+	break;
       case 'h':
 	cout << "usage : aig2bdd <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
@@ -71,6 +75,7 @@ int main( int argc, char ** argv )
 	cout << "\t           \t3 : simplebdd" << endl;
 	cout << "\t           \t4 : custombdd" << endl;
 	cout << "\t-s       : toggle keeping name of PI/PO [default = " << supportname << "]" << endl;
+	cout << "\t-r       : toggle dynamic variable reordering [default = " << dvr << "]" << endl;
 	return 0;
       default:
 	cout << "invalid option " << argv[i] << endl;
@@ -114,6 +119,9 @@ int main( int argc, char ** argv )
   case 0:
     {
       Bdd::CuddMan bdd( aig.num_pis() );
+      if(dvr) {
+	bdd.Dvr();
+      }
       auto vNodes = Aig2Bdd( aig, bdd );
       bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
@@ -124,6 +132,9 @@ int main( int argc, char ** argv )
   case 1:
     {
       Bdd::BuddyMan bdd( aig.num_pis() );
+      if(dvr) {
+	bdd.Dvr();
+      }
       auto vNodes = Aig2Bdd( aig, bdd );
       bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
@@ -134,6 +145,9 @@ int main( int argc, char ** argv )
   case 2:
     {
       Bdd::CacBddMan bdd( aig.num_pis() );
+      if(dvr) {
+	bdd.Dvr();
+      }
       auto vNodes = Aig2Bdd( aig, bdd );
       bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
@@ -144,6 +158,9 @@ int main( int argc, char ** argv )
   case 3:
     {
       Bdd::SimpleBddMan bdd( aig.num_pis() );
+      if(dvr) {
+	bdd.Dvr();
+      }
       auto vNodes = Aig2Bdd( aig, bdd );
       bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
@@ -154,6 +171,9 @@ int main( int argc, char ** argv )
   case 4:
     {
       Bdd::AtBddMan bdd( aig.num_pis() );
+      if(dvr) {
+	bdd.Dvr();
+      }
       auto vNodes = Aig2Bdd( aig, bdd );
       bdd.PrintStats( vNodes );
       if(!blifname.empty()) {
