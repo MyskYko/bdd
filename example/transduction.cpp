@@ -206,7 +206,7 @@ int main( int argc, char ** argv )
     return 1;
   }
   }
-  catch ( const char * e ) {
+  catch ( char const * e ) {
     std::cerr << e << std::endl;
     return 1;
   }
