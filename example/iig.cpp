@@ -23,6 +23,7 @@ int main( int argc, char ** argv )
   bool reverse = 0;
   int seed = 0;
   bool fastrnd = 0;
+  bool repeat = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -106,6 +107,9 @@ int main( int argc, char ** argv )
 	  return 1;
 	}
 	break;
+      case 't':
+	repeat ^= 1;
+	break;
       case 'h':
 	cout << "usage : iig <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
@@ -121,9 +125,11 @@ int main( int argc, char ** argv )
 	cout << "\t-q       : generate initial function faster [default = " << fastrnd << "]" << endl;
 	cout << "\t-r       : toggle reverse [default = " << reverse << "]" << endl;
 	cout << "\t-s <int> : random seed [default = " << seed << "]" << endl;
-	return 0;
+	cout << "\t-t       : repeat generation with incrementing seed until success (may cause infinite loop) [default = " << repeat << "]" << endl;
+	return 1;
       default:
 	cout << "invalid option " << argv[i] << endl;
+	return 1;
       }
     }
   }
@@ -144,61 +150,70 @@ int main( int argc, char ** argv )
     cout << "the size of boolean bector is not equal to the number of registers" << endl;
     return 1;
   }
-  
+
+  int res = 0;
+  while(1) {
   switch(package) {
   case 0:
     if(!reverse) {
       Bdd::CuddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::CuddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 1:
     if(!reverse) {
       Bdd::BuddyMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
+      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
     }
     else {
       Bdd::BuddyMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
+      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
     }
     break;
   case 2:
     if(!reverse) {
       Bdd::CacBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::CacBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 3:
     if(!reverse) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::SimpleBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 4:
     if(!reverse) {
       Bdd::AtBddMan bdd( aig.num_cis() );
-      IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::AtBddMan bdd( aig.num_cis() + aig.num_registers() );
-      RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   default:
     cout << "unknown package number " << package << endl;
+    return 1;
+  }
+  if(repeat && !res) {
+    cout << "seed increment to be " << ++seed << endl;
+  }
+  else {
     break;
+  }
   }
   
   return 0;

@@ -242,7 +242,7 @@ std::chrono::system_clock::time_point show_time(std::chrono::system_clock::time_
 }
 
 template <typename node> 
-void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
+int IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
   int npis = aig_.num_pis();
   int nregs = aig_.num_registers();
   std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -299,25 +299,29 @@ void IIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string in
   std::cout << "total ";
   show_time(start);
   
-  if(x == bdd.Const0())
+  if(x == bdd.Const0()) {
     std::cout << "fail ... function excluded initial state" << std::endl;
-  else if(x == bdd.Const1())
-    std::cout << "fail ... function is const 1" << std::endl;
-  else {
-    std::cout << "success" << std::endl;
-    std::ofstream * f = NULL;
-    if(!filename.empty())
-      f = new std::ofstream(filename);
-    show_bdd(bdd, x, npis, nregs, f);
-    if(f) {
-      f->close();
-      delete f;
-    }
+    return 0;
   }
+  if(x == bdd.Const1()) {
+    std::cout << "fail ... function is const 1" << std::endl;
+    return 0;
+  }
+
+  std::cout << "success" << std::endl;
+  std::ofstream * f = NULL;
+  if(!filename.empty())
+    f = new std::ofstream(filename);
+  show_bdd(bdd, x, npis, nregs, f);
+  if(f) {
+    f->close();
+    delete f;
+  }
+  return 1;
 }
 
 template <typename node> 
-void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
+int RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
   int npis = aig_.num_pis();
   int nregs = aig_.num_registers();
   std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -385,18 +389,20 @@ void RIIG(mockturtle::aig_network & aig_, Bdd::BddMan<node> & bdd, std::string i
   std::cout << "total ";
   show_time(start);
   
-  if(x == bdd.Const1())
+  if(x == bdd.Const1()) {
     std::cout << "fail ... function became const 1" << std::endl;
-  else {
-    std::cout << "success" << std::endl;
-    std::ofstream * f = NULL;
-    if(!filename.empty())
-      f = new std::ofstream(filename);
-    show_bdd(bdd, x, npis, nregs, f);
-    if(f) {
-      f->close();
-      delete f;
-    }
+    return 0;
   }
+  
+  std::cout << "success" << std::endl;
+  std::ofstream * f = NULL;
+  if(!filename.empty())
+    f = new std::ofstream(filename);
+  show_bdd(bdd, x, npis, nregs, f);
+  if(f) {
+    f->close();
+    delete f;
+  }
+  return 1;
 }
 #endif
