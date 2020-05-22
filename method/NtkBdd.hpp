@@ -72,7 +72,7 @@ std::vector<node> Aig2Bdd( mockturtle::aig_network & aig_, Bdd::BddMan<node> & b
 }
 
 template <typename node, typename Ntk>
-auto Bdd2Ntk_rec( Ntk & ntk, Bdd::BddMan<node> & bdd, node & x, std::map<uint64_t, typename Ntk::signal> & m )
+auto Bdd2Ntk_rec( Ntk & ntk, Bdd::BddMan<node> & bdd, node x, std::map<uint64_t, typename Ntk::signal> & m )
 {
   if ( x == bdd.Const0() )
     {
@@ -82,34 +82,21 @@ auto Bdd2Ntk_rec( Ntk & ntk, Bdd::BddMan<node> & bdd, node & x, std::map<uint64_
     {
       return ntk.get_constant( 1 );
     }
-  if ( m.count( bdd.Id( bdd.Regular( x ) ) ) )
+  if ( m.count( bdd.Id( x ) ) )
     {
-      if ( bdd.IsCompl( x ) )
-	{
-	  if ( m.count( bdd.Id( x ) ) )
-	    {
-	      return m[bdd.Id( x )];
-	    }
-	  auto f = m[bdd.Id( bdd.Regular( x ) )];
-	  f = ntk.create_not( f );
-	  m[bdd.Id( x )] = f;
-	  return f;
-	}
-      return m[bdd.Id( bdd.Regular( x ) )];
+      return m[bdd.Id( x )];
     }
-  int v = bdd.Var( x );
-  node x1 = bdd.Then( x );
-  node x0 = bdd.Else( x );
-  auto c = ntk.make_signal( ntk.pi_at( v ) );
-  auto f1 = Bdd2Ntk_rec( ntk, bdd, x1, m );
-  auto f0 = Bdd2Ntk_rec( ntk, bdd, x0, m );
-  auto f = ntk.create_ite( c, f1, f0 );
   if ( bdd.IsCompl( x ) )
     {
+      auto f = Bdd2Ntk_rec( ntk, bdd, bdd.Regular( x ), m );
+      f = ntk.create_not( f );
       m[bdd.Id( x )] = f;
-      m[bdd.Id( bdd.Regular( x ) )] = ntk.create_not( f );
       return f;
     }
+  auto c = ntk.make_signal( ntk.pi_at( bdd.Var( x ) ) );
+  auto f1 = Bdd2Ntk_rec( ntk, bdd, bdd.Then( x ), m );
+  auto f0 = Bdd2Ntk_rec( ntk, bdd, bdd.Else( x ), m );
+  auto f = ntk.create_ite( c, f1, f0 );
   m[bdd.Id( x )] = f;
   return f;
 }
