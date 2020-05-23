@@ -128,15 +128,14 @@ namespace Bdd
     void Reorder() override { if ( man->get_pvNodesExists() ) man->Reorder(); }
     void Dvr() override
     {
-      if ( man->get_nObjs() != 1 + man->get_nVars() )
+      if ( !man->get_pvNodesExists() && man->get_nObjs() != 1 + man->get_nVars() )
 	{
 	  std::cerr << "dvr is not turned on because there are nodes already built" << std::endl;
 	  return;
 	}
       man->Dvr();
-      man->SupportRef();
     }
-    void DvrOff() override { man->DvrOff(); man->UnsupportRef(); }
+    void DvrOff() override { man->DvrOff(); }
     
     SimpleBddNode Not( SimpleBddNode const & x ) override { return SimpleBddNode( man, man->LitNot( x.val ) ); }
     SimpleBddNode And( SimpleBddNode const & x, SimpleBddNode const & y ) override { return SimpleBddNode( man, man->And( x.val, y.val ) ); }

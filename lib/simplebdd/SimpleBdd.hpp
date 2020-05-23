@@ -302,7 +302,7 @@ public:
 ***********************************************************************/
   size Count_rec( lit x )
   {
-    if ( /*LitIsConst( x ) ||*/ Mark( x ) )
+    if ( LitIsConst( x ) || Mark( x ) )
       return 0;
     SetMark( x, 1 );
     return 1 + Count_rec( Else( x ) ) + Count_rec( Then( x ) );
@@ -311,22 +311,16 @@ public:
   {
     size count = Count_rec( x );
     Unmark_rec( x );
-    SetMark( 0, 0 );
-    return count;
+    return count + 1;
   }
   size CountNodesArrayShared( std::vector<lit> & vNodes )
   {
     size count = 0;
     for ( lit x : vNodes )
       count += Count_rec( x );
-    //for ( var v = 0; v < nVars; v++ )
-    //      count += Count_rec( LitIthVar( v ) );
     for ( lit x : vNodes )  
       Unmark_rec( x );
-    //    for ( var v = 0; v < nVars; v++ )
-    //      Unmark_rec( LitIthVar( v ) );
-    SetMark( 0, 0 );
-    return count; // +4
+    return count + 1;
   }
   size CountNodesArrayIndependent( std::vector<lit> & vNodes )
   {
@@ -335,11 +329,10 @@ public:
       {
 	if ( LitIsConst( x ) || LitIsVar( x ) )
 	  continue; 
-	count += Count_rec( x );
+	count += Count_rec( x ) + 1;
 	Unmark_rec( x );
-	SetMark( 0, 0 );
     }
-  return count;
+    return count;
   }
 
 /**Function*************************************************************
@@ -717,7 +710,10 @@ public:
   void SupportRef()
   {
     if ( !pvNodes )
-      pvNodes = new std::forward_list<lit>;
+      {
+	assert( nObjs == 1 + nVars );
+	pvNodes = new std::forward_list<lit>;
+      }
   }
   void UnsupportRef()
   {
@@ -739,8 +735,8 @@ public:
     if ( fGC || fReo )
       SupportRef();
   }
-  void Dvr() { fReo = 1; }
-  void DvrOff() { fReo = 0; }
+  void Dvr() { fReo = 1; SupportRef(); }
+  void DvrOff() { fReo = 0; UnsupportRef(); }
   bool Refresh()
   {
     if ( nVerbose )
