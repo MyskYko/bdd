@@ -61,7 +61,7 @@ class Tuner(MeasurementInterface):
       f.write(str(cfg[i]) + "\n")
     f.close()
     print(cfg)
-    run_result = self.call_program(self.run_cmd, limit=30)
+    run_result = self.call_program(self.run_cmd, limit=self.args.test_timeout)
     print(run_result)
     if run_result['returncode'] != 0:
       return Result(time=float('inf'))
@@ -91,6 +91,7 @@ if __name__ == '__main__':
   argparser = opentuner.default_argparser()
   argparser.add_argument('command', help='command to run the program')
   argparser.add_argument('header', help='file including struct of parameters')
+  argparser.add_argument('--test-timeout', type=int, default=60, help='terminate test after given seconds')
   args = argparser.parse_args()
   Tuner.run_cmd = args.command
   Tuner.filename = "_" + os.path.basename(args.header) + "_setting.txt"
