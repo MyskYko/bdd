@@ -27,6 +27,7 @@ namespace AtBdd
   typedef uint32_t lit;
   typedef int bvar; // signed lit
   typedef uint8_t mark;
+  typedef uint16_t ref;
   typedef uint32_t edge;
   typedef uint64_t size;
   typedef int64_t ssize;
@@ -82,7 +83,9 @@ private:
   size   nCall;
   size   nCallThold;
   double HitRateOld;
-  
+
+  bool   fRef;
+  ref *  pRefs;
   int    nRefresh;      // the number of refresh tried
   bool   fRealloc;      // flag of reallocation
   bool   fGC;           // flag of garbage collection
@@ -94,7 +97,6 @@ private:
   
   std::vector<var>                vOrdering; // variable ordering : new 2 old
   std::vector<std::vector<bvar> > liveBvars; // array of live Bvars for each layer
-  std::forward_list<lit> *        pvNodes;   // live nodes (only top of tree)
   
   int    nVerbose;      // the level of verbosing information
   
@@ -102,7 +104,7 @@ public:
   int  get_nVars() { return nVars; }
   int  get_order( int v ) { return vOrdering[v]; }
   int  get_nObjs() { return nObjs; }
-  int  get_pvNodesExists() { return pvNodes != NULL; }
+  bool get_pRefsExists() { return pRefs; }
   
 /**Function*************************************************************
    
@@ -115,37 +117,8 @@ public:
    SeeAlso     []
 
 ***********************************************************************/
-  void Ref( lit x ) { if ( pvNodes ) pvNodes->push_front( LitRegular( x ) ); }
-  void Pop()        { if ( pvNodes ) pvNodes->pop_front(); }
-  void Deref( lit x )
-  {
-    if ( pvNodes )
-      {
-	auto it = pvNodes->begin();
-	if ( *it == LitRegular( x ) )
-	  {
-	    pvNodes->pop_front();
-	    return;
-	  }
-	auto itnext = it;
-	itnext++;
-	while ( itnext != pvNodes->end() )
-	  {
-	    if ( *itnext == LitRegular( x ) )
-	      {
-		pvNodes->erase_after( it );
-		return;
-	      }
-	    it++;
-	    itnext++;
-	  }
-	std::cout << "cannot find " << LitRegular( x ) << std::endl;
-	for ( lit x : *pvNodes )
-	  std::cout << x << ",";
-	std::cout << std::endl;
-	throw "Deref non-referenced node";
-      }
-  }
+  void IncRef( lit x )   { if ( pRefs && Ref( x ) != RefInvalid() ) ++pRefs[Lit2Bvar( x )]; }
+  void DecRef( lit x ) { if ( pRefs && Ref( x ) != RefInvalid() ) assert( --pRefs[Lit2Bvar( x )] != RefInvalid() ); }
 
 /**Function*************************************************************
    
@@ -163,6 +136,7 @@ public:
   bvar BvarInvalid() { return std::numeric_limits<bvar>::max(); }
   edge EdgeInvalid() { return std::numeric_limits<edge>::max(); }
   mark MarkInvalid() { return std::numeric_limits<mark>::max(); }
+  ref  RefInvalid()  { return std::numeric_limits<ref>::max();  }
   
 /**Function*************************************************************
    
@@ -199,6 +173,7 @@ public:
   lit  ElseOfBvar( bvar a )       { return pObjs[Bvar2Lit( a, 1 )];      }
   bvar NextOfBvar( bvar a )       { return pNexts[a];                    }
   mark MarkOfBvar( bvar a )       { return pMarks[a];                    }
+  ref  RefOfBvar( bvar a )        { return pRefs ? pRefs[a] : 0;         }
   edge EdgeOfBvar( bvar a )       { return pEdges[a];                    }
 
   void SetVarOfBvar( bvar a, var v )   { pVars[a] = v;                 }
@@ -206,6 +181,7 @@ public:
   void SetElseOfBvar( bvar a, lit x0 ) { pObjs[Bvar2Lit( a, 1 )] = x0; }
   void SetNextOfBvar( bvar a, bvar b ) { pNexts[a] = b;                }
   void SetMarkOfBvar( bvar a, mark m ) { pMarks[a] = m;                }
+  void SetRefOfBvar( bvar a, ref r )   { pRefs ? pRefs[a] = r : 0;     }
   void SetEdgeOfBvar( bvar a, edge e ) { pEdges[a] = e;                }
 
   bool BvarIsRemoved( bvar a )       { return VarOfBvar( a ) == VarInvalid();        }
@@ -244,6 +220,7 @@ public:
   lit  Else( lit x ) { return LitNotCond( pObjs[LitNot( LitRegular( x ) )], LitIsCompl( x ) ); }
   bvar Next( lit x ) { return NextOfBvar( Lit2Bvar( x ) ); }
   mark Mark( lit x ) { return MarkOfBvar( Lit2Bvar( x ) ); }
+  ref  Ref( lit x )  { return RefOfBvar( Lit2Bvar( x ) );  }
   edge Edge( lit x ) { return EdgeOfBvar( Lit2Bvar( x ) ); }
 
   void SetMark( lit x, mark m ) { SetMarkOfBvar( Lit2Bvar( x ), m ); }
@@ -309,7 +286,7 @@ public:
 ***********************************************************************/
   size Count_rec( lit x )
   {
-    if ( /*LitIsConst( x ) ||*/ Mark( x ) )
+    if ( LitIsConst( x ) || Mark( x ) )
       return 0;
     SetMark( x, 1 );
     return 1 + Count_rec( Else( x ) ) + Count_rec( Then( x ) );
@@ -318,22 +295,16 @@ public:
   {
     size count = Count_rec( x );
     Unmark_rec( x );
-    SetMark( 0, 0 );
-    return count;
+    return count + 1;
   }
   size CountNodesArrayShared( std::vector<lit> & vNodes )
   {
     size count = 0;
     for ( lit x : vNodes )
       count += Count_rec( x );
-    //for ( var v = 0; v < nVars; v++ )
-    //      count += Count_rec( LitIthVar( v ) );
     for ( lit x : vNodes )  
       Unmark_rec( x );
-    //    for ( var v = 0; v < nVars; v++ )
-    //      Unmark_rec( LitIthVar( v ) );
-    SetMark( 0, 0 );
-    return count; // +4
+    return count + 1;
   }
   size CountNodesArrayIndependent( std::vector<lit> & vNodes )
   {
@@ -342,11 +313,10 @@ public:
       {
 	if ( LitIsConst( x ) || LitIsVar( x ) )
 	  continue; 
-	count += Count_rec( x );
+	count += Count_rec( x ) + 1;
 	Unmark_rec( x );
-	SetMark( 0, 0 );
     }
-  return count;
+    return count;
   }
 
 /**Function*************************************************************
@@ -373,12 +343,14 @@ public:
   }
   void CountEdge()
   {
-    for ( lit x : *pvNodes )
-      CountEdge_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	CountEdge_rec( Bvar2Lit( a, 0 ) );
     for ( var v = 0; v < nVars; v++ )
       CountEdge_rec( LitIthVar( v ) );
-    for ( lit x : *pvNodes )
-      Unmark_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	Unmark_rec( Bvar2Lit( a, 0 ) );
     for ( var v = 0; v < nVars; v++ )
       Unmark_rec( LitIthVar( v ) );
   }
@@ -395,12 +367,14 @@ public:
   }
   void UncountEdge()
   {
-    for ( lit x : *pvNodes )
-    UncountEdge_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	UncountEdge_rec( Bvar2Lit( a, 0 ) );
     for ( var v = 0; v < nVars; v++ )
       UncountEdge_rec( LitIthVar( v ) );
-    for ( lit x : *pvNodes )
-      Unmark_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	Unmark_rec( Bvar2Lit( a, 0 ) );
     for ( var v = 0; v < nVars; v++ )
       Unmark_rec( LitIthVar( v ) );
   }
@@ -418,12 +392,14 @@ public:
   }
   void CountEdgeAndBvar()
   {
-    for ( lit x : *pvNodes )
-      CountEdgeAndBvar_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	CountEdgeAndBvar_rec( Bvar2Lit( a, 0 ) );
     for ( var v = 0; v < nVars; v++ )
       CountEdgeAndBvar_rec( LitIthVar( v ) );
-    for ( lit x : *pvNodes )
-      Unmark_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	Unmark_rec( Bvar2Lit( a, 0 ) );
     for ( var v = 0; v < nVars; v++ )
       Unmark_rec( LitIthVar( v ) );
   }
@@ -465,6 +441,7 @@ public:
       }
     if ( nVerbose )
       std::cout << "Allocate " << nObjsAlloc << " nodes, " << nUnique << " unique, and " << nCache<< " cache" << std::endl;
+    fRef        = 0;
     nRefresh    = 0;
     fRealloc    = 0;
     fGC         = 0;
@@ -487,7 +464,7 @@ public:
     pCache      = (lit *)calloc( 3 * (size)nCache, sizeof(lit) );
     if ( !pVars || !pObjs || !pMarks || !pNexts || !pUnique || !pCache )
       throw "Allocation failed";
-    pvNodes     = NULL;
+    pRefs       = NULL;
     pEdges      = NULL;
     SetVarOfBvar( BvarConst(), VarInvalid() );
     nObjs = 1;
@@ -525,8 +502,8 @@ public:
     free( pObjs );
     free( pMarks );
     free( pNexts );
-    if ( pvNodes )
-      delete pvNodes;
+    if ( pRefs )
+      free( pRefs );
   }
 
 /**Function*************************************************************
@@ -723,17 +700,17 @@ public:
     lit z1 = And_rec( x1, y1 );
     if ( LitIsInvalid( z1 ) )
       return z1;
-    Ref( z1 );
+    IncRef( z1 );
     lit z0 = And_rec( x0, y0 );
     if( LitIsInvalid( z0 ) )
       {
-	Pop();
+	DecRef( z1 );
 	return z0;
       }
-    Ref( z0 );
+    IncRef( z0 );
     z = UniqueCreate( std::min( Var( x ), Var( y ) ), z1, z0 );
-    Pop();
-    Pop();
+    DecRef( z1 );
+    DecRef( z0 );
     if ( LitIsInvalid( z ) )
       return z;
     return CacheInsert( x, y, z );
@@ -760,31 +737,36 @@ public:
 ***********************************************************************/
   void SupportRef()
   {
-    if ( !pvNodes )
-      pvNodes = new std::forward_list<lit>;
+    if ( !pRefs )
+      {
+	assert( nObjs == 1 + nVars );
+	pRefs = (ref *)calloc( nObjsAlloc, sizeof(ref) );
+      }
   }
   void UnsupportRef()
   {
-    if ( !fGC && !fReo && pvNodes )
+    if ( !fRef && !fReo && pRefs )
       {
-	delete pvNodes;
-	pvNodes = NULL;
+	free( pRefs );
+	pRefs = NULL;
       }
   }
-  void RefreshConfig( bool fRealloc_, bool fGC_, lit nGC_, bool fReo_, lit nReo_, int nMaxGrowth )
+  void RefreshConfig( bool fRealloc_, bool fGC_, lit nGC_, bool fReo_, lit nReo_, int nMaxGrowth, bool fRef_ )
   {
+    fRef = fRef_;
     fRealloc = fRealloc_;
     fGC = fGC_;
     nGC = nGC_;
     fReo = fReo_;
     nReo = nReo_;
     MaxGrowth = 0.01 * nMaxGrowth;
+    assert( !fGC || fRef );
     UnsupportRef();
-    if ( fGC || fReo )
+    if ( fRef || fReo )
       SupportRef();
   }
-  void Dvr() { fReo = 1; }
-  void DvrOff() { fReo = 0; }
+  void Dvr() { fReo = 1; SupportRef(); }
+  void DvrOff() { fReo = 0; UnsupportRef(); }
   bool Refresh()
   {
     if ( nVerbose )
@@ -881,6 +863,13 @@ public:
     memset( pObjs + 2 * (size)nObjsAllocOld, 0, sizeof(lit) * 2 * (size)nObjsAllocOld );
     memset( pMarks + nObjsAllocOld, 0, sizeof(mark) * nObjsAllocOld );
     memset( pNexts + nObjsAllocOld, 0, sizeof(bvar) * nObjsAllocOld );
+    if ( pRefs )
+      {
+	pRefs       = (ref *)realloc( pRefs, sizeof(ref) * nObjsAlloc );
+	if ( !pRefs )
+	  throw "Reallocation failed";
+	memset( pRefs + nObjsAllocOld, 0, sizeof(ref) * nObjsAllocOld );
+      }
     if ( pEdges )
       {
 	pEdges = (edge *)realloc( pEdges, sizeof(edge) * nObjsAlloc );
@@ -919,15 +908,18 @@ public:
   }
   void GarbageCollect()
   {
+    assert( pRefs );
     if ( nVerbose )
       std::cout <<  "\tGarbage collect" << std::endl;
-    for ( lit x : *pvNodes )
-      Mark_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	Mark_rec( Bvar2Lit( a, 0 ) );
     for ( bvar a = nVars + 1; a < nObjs; a++ )
       if ( !MarkOfBvar( a ) && !BvarIsRemoved( a ) )
 	RemoveBvar( a );
-    for ( lit x : *pvNodes )
-      Unmark_rec( x );
+    for ( bvar a = nVars + 1; a < nObjs; a++ )
+      if ( RefOfBvar( a ) )
+	Unmark_rec( Bvar2Lit( a, 0 ) );
     CacheClear();
   }
 
@@ -1013,7 +1005,7 @@ public:
 	f00 = x0;
       }
     lit y1 = UniqueCreate( v + 1, f11, f01 );
-    Ref( y1 );
+    IncRef( y1 );
     if ( !Edge( y1 ) && Var( y1 ) == v + 1 )
       {
 	if ( !fRestore )
@@ -1025,7 +1017,7 @@ public:
       }
     IncEdgeNonConst( y1 );
     lit y0 = UniqueCreate( v + 1, f10, f00 );
-    Pop();
+    DecRef( y1 );
     if ( !Edge( y0 ) && Var( y0 ) == v + 1 )
       {
 	if ( !fRestore )
@@ -1240,6 +1232,7 @@ public:
 ***********************************************************************/
   void Reorder()
   {
+    assert( pRefs );
     if ( nVerbose )
       std::cout << "\tReordering" << std::endl;
     // initialize

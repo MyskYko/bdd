@@ -63,7 +63,7 @@ namespace Bdd
   public:
     AtBddNode( AtBdd::BddMan * man, AtBdd::lit val ) : man( man ), val( val )
     {
-      man->Ref( val );
+      man->IncRef( val );
     }
     AtBddNode()
     {
@@ -73,13 +73,13 @@ namespace Bdd
     {
       man = right.man;
       val = right.val;
-      man->Ref( val );
+      man->IncRef( val );
     }
     ~AtBddNode()
     {
       if ( man )
 	{
-	  man->Deref( val );
+	  man->DecRef( val );
 	}
     }
     AtBddNode & operator=( const AtBddNode & right )
@@ -90,11 +90,11 @@ namespace Bdd
 	}
       if ( man )
 	{
-	  man->Deref( val );
+	  man->DecRef( val );
 	}
       val = right.val;
       man = right.man;
-      man->Ref( val );
+      man->IncRef( val );
       return *this;
     }
     bool operator==( const AtBddNode & other ) const
@@ -114,12 +114,16 @@ namespace Bdd
     AtBddParam param;
     
   public:
-    AtBddMan( int nVars, AtBddParam param, int nVerbose ) : param( param )
+    AtBddMan( int nVars, AtBddParam param, int nVerbose, bool fRef ) : param( param )
     {
       man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, param.nUniqueMinRate, param.nCallThold, NULL, nVerbose );
-      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, 0, param.nReo, param.nMaxGrowth );
+      if ( param.fGC )
+	{
+	  fRef = 1;
+	}
+      man->RefreshConfig( param.fRealloc, param.fGC, param.nGC, 0, param.nReo, param.nMaxGrowth, fRef );
     };
-    AtBddMan( int nVars, int nVerbose = 0 ) : AtBddMan( nVars, AtBddParam(), nVerbose ) {}
+    AtBddMan( int nVars, int nVerbose = 0, bool fRef = 0 ) : AtBddMan( nVars, AtBddParam(), nVerbose, fRef) {}
     ~AtBddMan() { delete man; }
     
     int GetNumVar() override { return man->get_nVars(); }
@@ -137,18 +141,17 @@ namespace Bdd
     bool IsCompl( AtBddNode const & x ) override { return man->LitIsCompl( x.val ); }
     
     int Level( int i ) override { return man->Var( man->LitIthVar( i ) ); }
-    void Reorder() override { if ( man->get_pvNodesExists() ) man->Reorder(); }
+    void Reorder() override { if ( man->get_pRefsExists() ) man->Reorder(); }
     void Dvr() override
     {
-      if ( man->get_nObjs() != 1 + man->get_nVars() )
+      if ( !man->get_pRefsExists() && man->get_nObjs() != 1 + man->get_nVars() )
 	{
 	  std::cerr << "dvr is not turned on because there are nodes already built" << std::endl;
 	  return;
 	}
       man->Dvr();
-      man->SupportRef();
     }
-    void DvrOff() override { man->DvrOff(); man->UnsupportRef(); }
+    void DvrOff() override { man->DvrOff(); }
     
     AtBddNode Not( AtBddNode const & x ) override { return AtBddNode( man, man->LitNot( x.val ) ); }
     AtBddNode And( AtBddNode const & x, AtBddNode const & y ) override { return AtBddNode( man, man->And( x.val, y.val ) ); }
