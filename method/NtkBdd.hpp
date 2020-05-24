@@ -86,12 +86,35 @@ auto Bdd2Ntk_rec( Ntk & ntk, Bdd::BddMan<node> & bdd, node x, std::map<uint64_t,
     {
       return m[bdd.Id( x )];
     }
+  auto c = ntk.make_signal( ntk.pi_at( bdd.Var( x ) ) );
+  auto f1 = Bdd2Ntk_rec( ntk, bdd, bdd.Then( x ), m );
+  auto f0 = Bdd2Ntk_rec( ntk, bdd, bdd.Else( x ), m );
+  auto f = ntk.create_ite( c, f1, f0 );
+  m[bdd.Id( x )] = f;
+  return f;
+}
+
+template <typename node, typename Ntk>
+auto Bdd2NtkCedge_rec( Ntk & ntk, Bdd::BddMan<node> & bdd, node x, std::map<uint64_t, typename Ntk::signal> & m )
+{
+  if ( m.count( bdd.Id( x ) ) )
+    {
+      return m[bdd.Id( x )];
+    }
   if ( bdd.IsCompl( x ) )
     {
       auto f = Bdd2Ntk_rec( ntk, bdd, bdd.Regular( x ), m );
       f = ntk.create_not( f );
       m[bdd.Id( x )] = f;
       return f;
+    }
+  if ( x == bdd.Const0() )
+    {
+      return ntk.get_constant( 0 );
+    }
+  if ( x == bdd.Const1() )
+    {
+      return ntk.get_constant( 1 );
     }
   auto c = ntk.make_signal( ntk.pi_at( bdd.Var( x ) ) );
   auto f1 = Bdd2Ntk_rec( ntk, bdd, bdd.Then( x ), m );
@@ -102,7 +125,7 @@ auto Bdd2Ntk_rec( Ntk & ntk, Bdd::BddMan<node> & bdd, node x, std::map<uint64_t,
 }
 
 template <typename node, typename Ntk>
-void Bdd2Ntk( Ntk & ntk, Bdd::BddMan<node> & bdd, std::vector<node> & vNodes )
+void Bdd2Ntk( Ntk & ntk, Bdd::BddMan<node> & bdd, std::vector<node> & vNodes, bool cedge )
 {
   for ( int i = 0; i < bdd.GetNumVar(); i++ )
     {
@@ -111,8 +134,16 @@ void Bdd2Ntk( Ntk & ntk, Bdd::BddMan<node> & bdd, std::vector<node> & vNodes )
   std::map<uint64_t, typename Ntk::signal> m;
   for ( node & x : vNodes )
     {
-      auto f = Bdd2Ntk_rec( ntk, bdd, x, m );
-      ntk.create_po( f );
+      if ( cedge )
+	{
+	  auto f = Bdd2NtkCedge_rec( ntk, bdd, x, m );
+	  ntk.create_po( f );
+	}
+      else
+	{
+	  auto f = Bdd2Ntk_rec( ntk, bdd, x, m );
+	  ntk.create_po( f );
+	}
     }
 }
 

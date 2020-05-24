@@ -5,6 +5,7 @@
 #include <AtBddMan.hpp>
 
 #include <NtkBdd.hpp>
+#include <BddGraph.hpp>
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/lorina.hpp>
 
@@ -12,7 +13,7 @@
 #include <chrono>
 
 template <typename node>
-void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::klut_network * klut, bool dvr, std::vector<std::string> & pi_names, int verbose ) {
+void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::klut_network * klut, bool dvr, std::vector<std::string> & pi_names, std::vector<std::string> & po_names, std::string dotname, bool cedge, int verbose ) {
   if(dvr) {
     bdd.Dvr();
   }
@@ -32,7 +33,7 @@ void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::kl
       for ( int i : v )
 	{
 	  if ( pi_names.empty() || pi_names[i].empty() ) {
-	    std::cout << "pi" << i << " ";
+	    std::cout << "pi" << i + 2 << " "; // + 2 matches mocuturtle write_blif
 	  }
 	  else {
 	    std::cout << pi_names[i] << " ";
@@ -42,18 +43,23 @@ void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::kl
     }
   }
   if(klut) {
-    Bdd2Ntk( *klut, bdd, vNodes );
+    Bdd2Ntk( *klut, bdd, vNodes, cedge );
+  }
+  if(!dotname.empty()) {
+    Bdd2Dot( dotname, bdd, vNodes, pi_names, po_names, cedge );
   }
 }
 
 int main( int argc, char ** argv ) {
   std::string aigname;
   std::string blifname;
+  std::string dotname;
   int package = 0;
   bool supportname = 1;
   bool dvr = 0;
   int verbose = 0;
   int pverbose = 0;
+  bool cedge = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -77,6 +83,16 @@ int main( int argc, char ** argv ) {
 	return 1;
       }
       switch(argv[i_][j]) {
+      case 'c':
+	cedge ^= 1;
+	break;
+      case 'd':
+	if(i+1 >= argc) {
+	  std::cerr << "-d must be followed by file name" << std::endl;
+	  return 1;
+	}
+	dotname = argv[++i];
+	break;
       case 'o':
 	if(i+1 >= argc) {
 	  std::cerr << "-o must be followed by file name" << std::endl;
@@ -120,7 +136,9 @@ int main( int argc, char ** argv ) {
       case 'h':
 	std::cout << "usage : aig2bdd <options> your.aig" << std::endl;
 	std::cout << "\t-h       : show this usage" << std::endl;
-	std::cout << "\t-o <str> : dump BDD as a blif file " << std::endl;
+	std::cout << "\t-c       : toggle using complemented edges in output DOT/BLIF [default = " << cedge << "]" << std::endl;
+	std::cout << "\t-d <str> : dump BDD as a DOT file" << std::endl;
+	std::cout << "\t-o <str> : dump BDD as a BLIF file" << std::endl;
 	std::cout << "\t-p <int> : package [default = " << package << "]" << std::endl;
 	std::cout << "\t           \t0 : cudd" << std::endl;
 	std::cout << "\t           \t1 : buddy" << std::endl;
@@ -179,13 +197,16 @@ int main( int argc, char ** argv ) {
   case 0:
     {
       Bdd::CuddMan bdd( aig.num_pis(), pverbose );
-      run( bdd, aig, klut, dvr, pi_names, verbose );
+      run( bdd, aig, klut, dvr, pi_names, po_names, dotname, cedge, verbose );
     }
     break;
   case 1:
     {
+      if(cedge) {
+	std::cerr << "the package doesn't use complemented edges" << std::endl;
+      }
       Bdd::BuddyMan bdd( aig.num_pis(), pverbose );
-      run( bdd, aig, klut, dvr, pi_names, verbose );
+      run( bdd, aig, klut, dvr, pi_names, po_names, dotname, 0, verbose );
     }
     break;
   case 2:
@@ -194,19 +215,19 @@ int main( int argc, char ** argv ) {
 	std::cerr << "the package doesn't have verbose system" << std::endl;
       }
       Bdd::CacBddMan bdd( aig.num_pis() );
-      run( bdd, aig, klut, dvr, pi_names, verbose );
+      run( bdd, aig, klut, dvr, pi_names, po_names, dotname, cedge, verbose );
     }
     break;
   case 3:
     {
       Bdd::SimpleBddMan bdd( aig.num_pis(), pverbose );
-      run( bdd, aig, klut, dvr, pi_names, verbose );
+      run( bdd, aig, klut, dvr, pi_names, po_names, dotname, cedge, verbose );
     }
     break;
   case 4:
     {
       Bdd::AtBddMan bdd( aig.num_pis(), pverbose );
-      run( bdd, aig, klut, dvr, pi_names, verbose );
+      run( bdd, aig, klut, dvr, pi_names, po_names, dotname, cedge, verbose );
     }
     break;
   default:
