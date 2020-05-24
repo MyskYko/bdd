@@ -157,51 +157,51 @@ int main( int argc, char ** argv )
   case 0:
     if(!reverse) {
       Bdd::CuddMan bdd( aig.num_cis() );
-      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::CuddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 1:
     if(!reverse) {
       Bdd::BuddyMan bdd( aig.num_cis() );
-      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
     }
     else {
       Bdd::BuddyMan bdd( aig.num_cis() + aig.num_registers() );
-      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
     }
     break;
   case 2:
     if(!reverse) {
       Bdd::CacBddMan bdd( aig.num_cis() );
-      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::CacBddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 3:
     if(!reverse) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
-      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::SimpleBddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   case 4:
     if(!reverse) {
       Bdd::AtBddMan bdd( aig.num_cis() );
-      res = IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     else {
       Bdd::AtBddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
     break;
   default:

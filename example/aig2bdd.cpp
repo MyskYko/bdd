@@ -18,7 +18,7 @@ void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::kl
     bdd.Dvr();
   }
   auto start = std::chrono::system_clock::now();
-  auto vNodes = Aig2Bdd( aig, bdd, verbose > 1 );
+  auto vNodes = Bdd::Aig2Bdd( aig, bdd, verbose > 1 );
   auto end = std::chrono::system_clock::now();
   if(verbose) {
     std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count() << " ms" << std::endl;
@@ -43,10 +43,10 @@ void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::kl
     }
   }
   if(klut) {
-    Bdd2Ntk( *klut, bdd, vNodes, cedge );
+    Bdd::Bdd2Ntk( *klut, bdd, vNodes, cedge );
   }
   if(!dotname.empty()) {
-    Bdd2Dot( dotname, bdd, vNodes, pi_names, po_names, cedge );
+    Bdd::Bdd2Dot( dotname, bdd, vNodes, pi_names, po_names, cedge );
   }
 }
 

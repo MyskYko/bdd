@@ -171,13 +171,13 @@ int main( int argc, char ** argv )
   case 0:
     {
       Bdd::CuddMan bdd( aig.num_pis(), pverbose );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
+      Bdd::Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 1:
     {
       Bdd::BuddyMan bdd( aig.num_pis(), pverbose );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
+      Bdd::Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 2:
@@ -186,19 +186,19 @@ int main( int argc, char ** argv )
 	std::cerr << "the package doesn't have verbose system" << std::endl;
       }
       Bdd::CacBddMan bdd( aig.num_pis() );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
+      Bdd::Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 3:
     {
       Bdd::SimpleBddMan bdd( aig.num_pis(), pverbose );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
+      Bdd::Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   case 4:
     {
       Bdd::AtBddMan bdd( aig.num_pis(), pverbose );
-      Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
+      Bdd::Transduction( aig, bdd, reorder, repeat, mspf, check, verbose, dcaig );
     }
     break;
   default:

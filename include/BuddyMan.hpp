@@ -1,5 +1,4 @@
-#ifndef BUDDY_MAN_HPP_
-#define BUDDY_MAN_HPP_
+#pragma once
 
 #include <fstream>
 #include "BddMan.hpp"
@@ -133,5 +132,3 @@ namespace Bdd
     }
   };
 }
-
-#endif

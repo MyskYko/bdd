@@ -1,5 +1,4 @@
-#ifndef CACBDD_MAN_HPP_
-#define CACBDD_MAN_HPP_
+#pragma once
 
 #include <fstream>
 #include "BddMan.hpp"
@@ -88,5 +87,3 @@ namespace Bdd
     }
   };
 }
-
-#endif

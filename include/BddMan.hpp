@@ -1,5 +1,4 @@
-#ifndef BDD_MAN_HPP_
-#define BDD_MAN_HPP_
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -207,5 +206,3 @@ namespace Bdd
       }
   }
 }
-
-#endif

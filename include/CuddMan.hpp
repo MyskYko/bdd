@@ -1,5 +1,4 @@
-#ifndef CUDD_MAN_HPP_
-#define CUDD_MAN_HPP_
+#pragma once
 
 #include <fstream>
 #include <string>
@@ -130,6 +129,3 @@ namespace Bdd
     }
   };
 }
-
-
-#endif
