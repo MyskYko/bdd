@@ -113,7 +113,7 @@ namespace Bdd
     AtBddParam param;
     
   public:
-    AtBddMan( int nVars, AtBddParam param, int nVerbose, bool fRef ) : param( param )
+    AtBddMan( int nVars, AtBddParam param, int nVerbose = 0, bool fRef = 0 ) : param( param )
     {
       man = new AtBdd::BddMan( nVars, param.nNodes, param.nUnique, param.nCache, param.nUniqueMinRate, param.nCallThold, NULL, nVerbose );
       if ( param.fGC )
