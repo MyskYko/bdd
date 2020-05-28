@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include "BddMan.hpp"
 
 namespace Bdd {
@@ -60,7 +61,14 @@ namespace Bdd {
   void Bdd2Dot( std::string dotname, BddMan<node> & bdd, std::vector<node> & vNodes, std::vector<std::string> & pi_names, std::vector<std::string> & po_names, bool cedge ) {
     std::ofstream f(dotname);
     f << "digraph bdd {" << std::endl;
+    std::vector<int> vVars;
+    for ( int i = 0; i < vNodes.size(); i++ ) {
+      bdd.Support( vNodes[i], vVars );
+    }
     for ( int i = 0; i < bdd.GetNumVar(); i++ ) {
+      if( std::find( vVars.begin(), vVars.end(), i ) == vVars.end() ) {
+	continue;
+      }
       f << "pi" << i << " [shape = box";
       if ( !pi_names.empty() && !pi_names[i].empty() ) {
 	f << ", label = \"" << pi_names[i] << "\"";
@@ -117,6 +125,9 @@ namespace Bdd {
     }
     f << "}" << std::endl;
     for ( int i = 0; i < bdd.GetNumVar(); i++ ) {
+      if( std::find( vVars.begin(), vVars.end(), i ) == vVars.end() ) {
+	continue;
+      }
       f << "{rank = same;pi" << i << ";";
       for ( int j : levels[i] ) {
 	f << "n" << j << ";";
@@ -136,6 +147,9 @@ namespace Bdd {
       }
       f << "top -> ";
       for ( int i : v ) {
+	if( std::find( vVars.begin(), vVars.end(), i ) == vVars.end() ) {
+	  continue;
+	}
 	f << "pi" << i << " -> ";
       }
       f << "bottom [style = \"invis\"];" << std::endl;
