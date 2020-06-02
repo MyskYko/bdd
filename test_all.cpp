@@ -8,13 +8,17 @@
 
 int main( int argc, char ** argv )
 {
-  if ( argc <= 2 )
+  if ( argc < 2 )
     {
-      std::cout << "usage : aig2bdd <input aig> <output blif>" << std::endl;
+      std::cout << "usage : aig2bdd <input aig> <output blif (optional)>" << std::endl;
       return 1;
     }
   std::string filename = argv[1];
-  std::string filename2 = argv[2];
+  std::string filename2;
+  if ( argc > 2 )
+    {
+      filename2 = argv[2];
+    }
   
   mockturtle::aig_network aig;
   mockturtle::NameMap<mockturtle::aig_network> namemap;
@@ -87,20 +91,23 @@ int main( int argc, char ** argv )
       std::cout << std::endl;
 #endif
       std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count() << " ms" << std::endl;
-      mockturtle::klut_network lut;
-      Bdd2Lut( lut, bdd, vNodes );
-      mockturtle::names_view lut_{lut};
-      for ( int i = 0; i < aig.num_pis(); i++ )
+      if ( !filename2.empty() )
 	{
-	  if(!pi_names[i].empty())
-	    lut_.set_name( lut_.make_signal( lut_.pi_at( i ) ), pi_names[i] );
+	  mockturtle::klut_network lut;
+	  Bdd2Lut( lut, bdd, vNodes );
+	  mockturtle::names_view lut_{lut};
+	  for ( int i = 0; i < aig.num_pis(); i++ )
+	    {
+	      if(!pi_names[i].empty())
+		lut_.set_name( lut_.make_signal( lut_.pi_at( i ) ), pi_names[i] );
+	    }
+	  for ( int i = 0; i < aig.num_pos(); i++ )
+	    {
+	      if(!po_names[i].empty())	  
+		lut_.set_output_name( i, po_names[i] );
+	    }
+	  mockturtle::write_blif( lut_, filename2 );
 	}
-      for ( int i = 0; i < aig.num_pos(); i++ )
-	{
-	  if(!po_names[i].empty())	  
-	    lut_.set_output_name( i, po_names[i] );
-	}
-      mockturtle::write_blif( lut_, filename2 );
     }
   catch ( char const * error )
     {
@@ -109,3 +116,4 @@ int main( int argc, char ** argv )
     }
   return 0;
 }
+
