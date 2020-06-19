@@ -26,6 +26,7 @@ int main( int argc, char ** argv )
   bool fastrnd = 0;
   bool repeat = 0;
   int numand = 1;
+  int timelimit = 0;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -125,6 +126,15 @@ int main( int argc, char ** argv )
 	  return 1;
 	}
 	break;
+      case 'l':
+	try {
+	  timelimit = std::stoi(argv[++i]);
+	}
+	catch(...) {
+	  cout << "-l must be followed by integer" << endl;
+	  return 1;
+	}
+	break;
       case 'h':
 	cout << "usage : iig <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
@@ -142,6 +152,7 @@ int main( int argc, char ** argv )
 	cout << "\t-s <int> : random seed [default = " << seed << "]" << endl;
 	cout << "\t-t       : repeat generation with incrementing seed until success (may cause infinite loop) [default = " << repeat << "]" << endl;
 	cout << "\t-a <int> : number of inductive invariants, where the result is AND of them [default = " << numand << "]" << endl;
+	cout << "\t-l <int> : time limit in sec for each seed (0 = no limit) [default = " << timelimit << "]" << endl;
 	return 1;
       default:
 	cout << "invalid option " << argv[i] << endl;
@@ -180,76 +191,76 @@ int main( int argc, char ** argv )
   case 0:
     if(numand > 1) {
       Bdd::CuddMan bdd( aig.num_cis() );
-      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, numand);
       res = 1;
     }
     else if(!reverse) {
       Bdd::CuddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     else {
       Bdd::CuddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     break;
   case 1:
     if(numand > 1) {
       Bdd::BuddyMan bdd( aig.num_cis() );
-      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, numand);
       res = 1;
     }
     else if(!reverse) {
       Bdd::BuddyMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);  
     }
     else {
       Bdd::BuddyMan bdd( aig.num_cis() + aig.num_registers() );
-      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);  
     }
     break;
   case 2:
     if(numand > 1) {
       Bdd::CacBddMan bdd( aig.num_cis() );
-      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, numand);
       res = 1;
     }
     else if(!reverse) {
       Bdd::CacBddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     else {
       Bdd::CacBddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     break;
   case 3:
     if(numand > 1) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
-      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, numand);
       res = 1;
     }    
     else if(!reverse) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     else {
       Bdd::SimpleBddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     break;
   case 4:
     if(numand > 1) {
       Bdd::AtBddMan bdd( aig.num_cis() );
-      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, numand);
       res = 1;
     }
     else if(!reverse) {
       Bdd::AtBddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     else {
       Bdd::AtBddMan bdd( aig.num_cis() + aig.num_registers() );
-      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
+      res = Bdd::RIIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
     }
     break;
   default:

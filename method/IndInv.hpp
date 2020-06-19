@@ -243,7 +243,7 @@ namespace Bdd {
   }
 
   template <typename node> 
-  int IIG(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
+  int IIG(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, int timelimit, bool fastrnd) {
     int npis = aig_.num_pis();
     int nregs = aig_.num_registers();
     std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -294,6 +294,11 @@ namespace Bdd {
 	break;
       }
       t1 = show_time(t1);
+      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(start-t1).count() > timelimit) {
+	std::cout << "timeout" << std::endl;
+	std::cout << "##### end iig #####" << std::endl << std::endl;
+	return 0;
+      }
     }
     t1 = show_time(t1);
 
@@ -325,7 +330,7 @@ namespace Bdd {
   }
 
   template <typename node> 
-  int RIIG(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd) {
+  int RIIG(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, int timelimit, bool fastrnd) {
     int npis = aig_.num_pis();
     int nregs = aig_.num_registers();
     std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -387,6 +392,11 @@ namespace Bdd {
       if(x == bdd.Const1())
 	break;
       t1 = show_time(t1);
+      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(start-t1).count() > timelimit) {
+	std::cout << "timeout" << std::endl;
+	std::cout << "##### end iig #####" << std::endl << std::endl;
+	return 0;
+      }
     }
     t1 = show_time(t1);
 
@@ -413,7 +423,7 @@ namespace Bdd {
   }
 
   template <typename node> 
-  void IIGAND(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd, int numand) {
+  void IIGAND(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, int timelimit, bool fastrnd, int numand) {
     int npis = aig_.num_pis();
     int nregs = aig_.num_registers();
     std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -456,6 +466,7 @@ namespace Bdd {
     std::cout << std::endl << "##### begin iig #####" << std::endl;
     auto start = t1;
     int itr = 0;
+    bool timeout = 0;
     while(1) {
       std::cout << "iteration " << itr++ << "   ";
       node y = bdd.VecCompose(x, vNodes);
@@ -469,7 +480,19 @@ namespace Bdd {
 	break;
       }
       t1 = show_time(t1);
+      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(start-t1).count() > timelimit) {
+	std::cout << "timeout" << std::endl;
+	std::cout << "##### end iig #####" << std::endl << std::endl;
+	timeout = 1;
+	break;
+      }
     }
+
+    if(timeout) {
+      seed++;
+      continue;
+    }
+    
     t1 = show_time(t1);
 
     std::cout << "total ";
