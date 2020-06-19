@@ -1,3 +1,4 @@
+
 #include <SimpleBddMan.hpp>
 #include <CuddMan.hpp>
 #include <BuddyMan.hpp>
@@ -24,6 +25,7 @@ int main( int argc, char ** argv )
   int seed = 0;
   bool fastrnd = 0;
   bool repeat = 0;
+  int numand = 1;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -110,6 +112,19 @@ int main( int argc, char ** argv )
       case 't':
 	repeat ^= 1;
 	break;
+      case 'a':
+	try {
+	  numand = std::stoi(argv[++i]);
+	}
+	catch(...) {
+	  cout << "-a must be followed by integer" << endl;
+	  return 1;
+	}
+	if(numand <= 0) {
+	  cout << "-a must be followed by natural number" << endl;
+	  return 1;
+	}
+	break;
       case 'h':
 	cout << "usage : iig <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
@@ -126,6 +141,7 @@ int main( int argc, char ** argv )
 	cout << "\t-r       : toggle reverse [default = " << reverse << "]" << endl;
 	cout << "\t-s <int> : random seed [default = " << seed << "]" << endl;
 	cout << "\t-t       : repeat generation with incrementing seed until success (may cause infinite loop) [default = " << repeat << "]" << endl;
+	cout << "\t-a <int> : number of inductive invariants, where the result is AND of them [default = " << numand << "]" << endl;
 	return 1;
       default:
 	cout << "invalid option " << argv[i] << endl;
@@ -136,6 +152,13 @@ int main( int argc, char ** argv )
   if(aigname.empty()) {
     cout << "specify aigname" << endl;
     return 1;
+  }
+  if(numand > 1 && reverse) {
+    cout << "AND of multiple inductive invariants is not supported in reverse method" << endl;
+    return 1;
+  }
+  if(numand > 1 && !repeat) {
+    cout << "when computing multiple invariants, repetition is done with incrementing seed even if -t is not specified" << endl;
   }
   
   mockturtle::aig_network aig;
@@ -155,7 +178,12 @@ int main( int argc, char ** argv )
   while(1) {
   switch(package) {
   case 0:
-    if(!reverse) {
+    if(numand > 1) {
+      Bdd::CuddMan bdd( aig.num_cis() );
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      res = 1;
+    }
+    else if(!reverse) {
       Bdd::CuddMan bdd( aig.num_cis() );
       res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
@@ -165,7 +193,12 @@ int main( int argc, char ** argv )
     }
     break;
   case 1:
-    if(!reverse) {
+    if(numand > 1) {
+      Bdd::BuddyMan bdd( aig.num_cis() );
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      res = 1;
+    }
+    else if(!reverse) {
       Bdd::BuddyMan bdd( aig.num_cis() );
       res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);  
     }
@@ -175,7 +208,12 @@ int main( int argc, char ** argv )
     }
     break;
   case 2:
-    if(!reverse) {
+    if(numand > 1) {
+      Bdd::CacBddMan bdd( aig.num_cis() );
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      res = 1;
+    }
+    else if(!reverse) {
       Bdd::CacBddMan bdd( aig.num_cis() );
       res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
@@ -185,7 +223,12 @@ int main( int argc, char ** argv )
     }
     break;
   case 3:
-    if(!reverse) {
+    if(numand > 1) {
+      Bdd::SimpleBddMan bdd( aig.num_cis() );
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      res = 1;
+    }    
+    else if(!reverse) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
       res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }
@@ -195,7 +238,12 @@ int main( int argc, char ** argv )
     }
     break;
   case 4:
-    if(!reverse) {
+    if(numand > 1) {
+      Bdd::AtBddMan bdd( aig.num_cis() );
+      Bdd::IIGAND(aig, bdd, init, exclude, dumpfilename, seed, fastrnd, numand);
+      res = 1;
+    }
+    else if(!reverse) {
       Bdd::AtBddMan bdd( aig.num_cis() );
       res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, fastrnd);
     }

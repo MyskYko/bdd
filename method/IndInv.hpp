@@ -302,10 +302,12 @@ namespace Bdd {
   
     if(x == bdd.Const0()) {
       std::cout << "fail ... function excluded initial state" << std::endl;
+      std::cout << "##### end iig #####" << std::endl << std::endl;
       return 0;
     }
     if(x == bdd.Const1()) {
       std::cout << "fail ... function is const 1" << std::endl;
+      std::cout << "##### end iig #####" << std::endl << std::endl;
       return 0;
     }
 
@@ -318,6 +320,7 @@ namespace Bdd {
       f->close();
       delete f;
     }
+    std::cout << "##### end iig #####" << std::endl << std::endl;
     return 1;
   }
 
@@ -392,6 +395,7 @@ namespace Bdd {
   
     if(x == bdd.Const1()) {
       std::cout << "fail ... function became const 1" << std::endl;
+      std::cout << "##### end iig #####" << std::endl << std::endl;
       return 0;
     }
   
@@ -404,6 +408,101 @@ namespace Bdd {
       f->close();
       delete f;
     }
+    std::cout << "##### end iig #####" << std::endl << std::endl;
     return 1;
   }
+
+  template <typename node> 
+  void IIGAND(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, bool fastrnd, int numand) {
+    int npis = aig_.num_pis();
+    int nregs = aig_.num_registers();
+    std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
+    mockturtle::aig_network aig;
+    CombNoPo(aig_, aig);
+
+    node pis = bdd.Const1();
+    for(int j = 0; j < npis; j++)
+      pis = bdd.And(pis, bdd.IthVar(j));
+
+    node init = bdd.Const1();
+    for(int i = 0; i < nregs; i++) {
+      if(initstr[i] == '0')
+	init = bdd.And(init, bdd.Not(bdd.IthVar(npis+i)));
+      else
+	init = bdd.And(init, bdd.IthVar(npis+i));
+    }
+
+    node product = bdd.Const1();
+    for(int j = 0; j < numand; j++) {
+    while(1) {
+    auto t1 = std::chrono::system_clock::now();
+    
+    std::cout << "seed is " << seed << std::endl;
+    
+    std::cout << "init rnd func ";
+    node x;
+    if(fastrnd)
+      x = initial_function_fast(bdd, init, nzero, npis, nregs, seed);
+    else
+      x = initial_function(bdd, init, nzero, npis, nregs, seed);
+    t1 = show_time(t1);
+
+    std::cout << "build latch   ";
+    std::vector<node> vNodes = Aig2Bdd( aig, bdd );
+    for(int i = 0; i < npis; i++)
+      vNodes.insert(vNodes.begin(), bdd.Const0());
+    t1 = show_time(t1);
+
+    std::cout << std::endl << "##### begin iig #####" << std::endl;
+    auto start = t1;
+    int itr = 0;
+    while(1) {
+      std::cout << "iteration " << itr++ << "   ";
+      node y = bdd.VecCompose(x, vNodes);
+      node z = bdd.Or(bdd.Not(x), y);
+      if(z == bdd.Const1())
+	break;
+      node k = bdd.Univ(z, pis);
+      x = bdd.And(x, k);
+      if(bdd.And(x, init) == bdd.Const0()) {
+	x = bdd.Const0();
+	break;
+      }
+      t1 = show_time(t1);
+    }
+    t1 = show_time(t1);
+
+    std::cout << "total ";
+    show_time(start);
+    seed++;
+  
+    if(x == bdd.Const0()) {
+      std::cout << "fail ... function excluded initial state" << std::endl;
+      std::cout << "##### end iig #####" << std::endl << std::endl;
+      continue;
+    }
+    if(x == bdd.Const1()) {
+      std::cout << "fail ... function is const 1" << std::endl;
+      std::cout << "##### end iig #####" << std::endl << std::endl;
+      continue;
+    }
+    std::cout << "success" << std::endl;
+    std::cout << "compute AND ";
+    product = bdd.And(product, x);
+    t1 = show_time(t1);
+    std::cout << "##### end iig #####" << std::endl << std::endl;
+    break;
+    }
+    }
+
+    std::ofstream * f = NULL;
+    if(!filename.empty())
+      f = new std::ofstream(filename);
+    show_bdd(bdd, product, npis, nregs, f);
+    if(f) {
+      f->close();
+      delete f;
+    }
+  }
 }
+
