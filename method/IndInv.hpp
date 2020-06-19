@@ -294,7 +294,7 @@ namespace Bdd {
 	break;
       }
       t1 = show_time(t1);
-      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(t1-start).count() > timelimit) {
+      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(t1-start).count() >= timelimit) {
 	std::cout << "timeout" << std::endl;
 	std::cout << "##### end iig #####" << std::endl << std::endl;
 	return 0;
@@ -392,7 +392,7 @@ namespace Bdd {
       if(x == bdd.Const1())
 	break;
       t1 = show_time(t1);
-      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(t1-start).count() > timelimit) {
+      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(t1-start).count() >= timelimit) {
 	std::cout << "timeout" << std::endl;
 	std::cout << "##### end iig #####" << std::endl << std::endl;
 	return 0;
@@ -481,7 +481,7 @@ namespace Bdd {
 	break;
       }
       t1 = show_time(t1);
-      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(t1-start).count() > timelimit) {
+      if(timelimit && std::chrono::duration_cast<std::chrono::seconds>(t1-start).count() >= timelimit) {
 	std::cout << "timeout" << std::endl;
 	std::cout << "##### end iig #####" << std::endl << std::endl;
 	timeout = 1;
