@@ -442,10 +442,17 @@ namespace Bdd {
 	init = bdd.And(init, bdd.IthVar(npis+i));
     }
 
+    auto t1 = std::chrono::system_clock::now();
+    std::cout << "build latch   ";
+    std::vector<node> vNodes = Aig2Bdd( aig, bdd );
+    for(int i = 0; i < npis; i++)
+      vNodes.insert(vNodes.begin(), bdd.Const0());
+    show_time(t1);
+
     node product = bdd.Const1();
     for(int j = 0; j < numand; j++) {
     while(1) {
-    auto t1 = std::chrono::system_clock::now();
+    t1 = std::chrono::system_clock::now();
     
     std::cout << "seed is " << seed << std::endl;
     
@@ -455,12 +462,6 @@ namespace Bdd {
       x = initial_function_fast(bdd, init, nzero, npis, nregs, seed);
     else
       x = initial_function(bdd, init, nzero, npis, nregs, seed);
-    t1 = show_time(t1);
-
-    std::cout << "build latch   ";
-    std::vector<node> vNodes = Aig2Bdd( aig, bdd );
-    for(int i = 0; i < npis; i++)
-      vNodes.insert(vNodes.begin(), bdd.Const0());
     t1 = show_time(t1);
 
     std::cout << std::endl << "##### begin iig #####" << std::endl;
