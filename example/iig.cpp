@@ -1,4 +1,3 @@
-
 #include <SimpleBddMan.hpp>
 #include <CuddMan.hpp>
 #include <BuddyMan.hpp>
@@ -27,6 +26,7 @@ int main( int argc, char ** argv )
   bool repeat = 0;
   int numand = 1;
   int timelimit = 0;
+  std::string initaigname;
   
   for(int i = 1; i < argc; i++) {
     if(argv[i][0] != '-') {
@@ -135,6 +135,13 @@ int main( int argc, char ** argv )
 	  return 1;
 	}
 	break;
+      case 'x':
+	if(i+1 >= argc) {
+	  cout << "-x must be followed by string" << endl;
+	  return 1;
+	}
+	initaigname = argv[++i];
+	break;
       case 'h':
 	cout << "usage : iig <options> your.aig" << endl;
 	cout << "\t-h       : show this usage" << endl;
@@ -153,6 +160,7 @@ int main( int argc, char ** argv )
 	cout << "\t-t       : repeat generation with incrementing seed until success (may cause infinite loop) [default = " << repeat << "]" << endl;
 	cout << "\t-a <int> : number of inductive invariants, where the result is AND of them [default = " << numand << "]" << endl;
 	cout << "\t-l <int> : time limit in sec for each seed (0 = no limit) [default = " << timelimit << "]" << endl;
+	cout << "\t-x <str> : aig representing negation of initial function (ex. miter)" << endl;
 	return 1;
       default:
 	cout << "invalid option " << argv[i] << endl;
@@ -171,6 +179,14 @@ int main( int argc, char ** argv )
   if(numand > 1 && !repeat) {
     cout << "when computing multiple invariants, repetition is done with incrementing seed even if -t is not specified" << endl;
   }
+  if(!initaigname.empty()) {
+    if(exclude != "1" || reverse || seed || fastrnd || repeat || numand != 1) {
+      cout << "options -n -r -s -q -t -a are ignored because initial function is designated by -x" << endl;
+      reverse = 0;
+      repeat = 0;
+      numand = 1;
+    }
+  }
   
   mockturtle::aig_network aig;
   lorina::read_aiger(aigname, mockturtle::aiger_reader(aig));
@@ -185,6 +201,16 @@ int main( int argc, char ** argv )
     return 1;
   }
 
+  mockturtle::aig_network * initaig = NULL;
+  if(!initaigname.empty()) {
+    initaig = new mockturtle::aig_network;
+    lorina::read_aiger(initaigname, mockturtle::aiger_reader(*initaig));
+    if(aig.num_pis() + aig.num_registers() != initaig->num_pis()) {
+      cout << "the number of inputs differs between aig and initaig" << endl;
+      return 1;
+    }
+  }
+
   int res = 0;
   while(1) {
   switch(package) {
@@ -196,7 +222,7 @@ int main( int argc, char ** argv )
     }
     else if(!reverse) {
       Bdd::CuddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, initaig);
     }
     else {
       Bdd::CuddMan bdd( aig.num_cis() + aig.num_registers() );
@@ -211,7 +237,7 @@ int main( int argc, char ** argv )
     }
     else if(!reverse) {
       Bdd::BuddyMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);  
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, initaig);
     }
     else {
       Bdd::BuddyMan bdd( aig.num_cis() + aig.num_registers() );
@@ -226,7 +252,7 @@ int main( int argc, char ** argv )
     }
     else if(!reverse) {
       Bdd::CacBddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, initaig);
     }
     else {
       Bdd::CacBddMan bdd( aig.num_cis() + aig.num_registers() );
@@ -241,7 +267,7 @@ int main( int argc, char ** argv )
     }    
     else if(!reverse) {
       Bdd::SimpleBddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, initaig);
     }
     else {
       Bdd::SimpleBddMan bdd( aig.num_cis() + aig.num_registers() );
@@ -256,7 +282,7 @@ int main( int argc, char ** argv )
     }
     else if(!reverse) {
       Bdd::AtBddMan bdd( aig.num_cis() );
-      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd);
+      res = Bdd::IIG(aig, bdd, init, exclude, dumpfilename, seed, timelimit, fastrnd, initaig);
     }
     else {
       Bdd::AtBddMan bdd( aig.num_cis() + aig.num_registers() );
@@ -273,6 +299,10 @@ int main( int argc, char ** argv )
   else {
     break;
   }
+  }
+
+  if(initaig) {
+    delete initaig;
   }
   
   return 0;

@@ -243,7 +243,7 @@ namespace Bdd {
   }
 
   template <typename node> 
-  int IIG(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, int timelimit, bool fastrnd) {
+  int IIG(mockturtle::aig_network & aig_, BddMan<node> & bdd, std::string initstr, std::string nzero, std::string filename, int seed, int timelimit, bool fastrnd, mockturtle::aig_network * initfunc) {
     int npis = aig_.num_pis();
     int nregs = aig_.num_registers();
     std::cout << "PI : " << npis << " , REG : " << nregs << std::endl;
@@ -264,9 +264,18 @@ namespace Bdd {
 
     auto t1 = std::chrono::system_clock::now();
   
-    std::cout << "init rnd func ";
+    std::cout << "init func    ";
     node x;
-    if(fastrnd)
+    if(initfunc) {
+      std::vector<node> vNodes = Aig2Bdd( *initfunc, bdd );
+      x = vNodes[0];
+      x = bdd.Exist( x, pis );
+      x = bdd.Not( x );
+      if(bdd.And( x, init ) == bdd.Const0()) {
+	x = bdd.Const0();
+      }
+    }
+    else if(fastrnd)
       x = initial_function_fast(bdd, init, nzero, npis, nregs, seed);
     else
       x = initial_function(bdd, init, nzero, npis, nregs, seed);
