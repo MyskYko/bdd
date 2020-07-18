@@ -118,7 +118,7 @@ public:
 
 ***********************************************************************/
   void IncRef( lit x )   { if ( pRefs && Ref( x ) != RefInvalid() ) ++pRefs[Lit2Bvar( x )]; }
-  void DecRef( lit x ) { if ( pRefs && Ref( x ) != RefInvalid() ) assert( --pRefs[Lit2Bvar( x )] != RefInvalid() ); }
+  void DecRef( lit x ) { if ( pRefs && Ref( x ) != RefInvalid() ) if ( --pRefs[Lit2Bvar( x )] == RefInvalid() ) throw "Ref underflow"; }
 
 /**Function*************************************************************
    
@@ -225,10 +225,10 @@ public:
 
   void SetMark( lit x, mark m ) { SetMarkOfBvar( Lit2Bvar( x ), m ); }
   void IncMark( lit x ) { if ( ++pMarks[Lit2Bvar( x )] == MarkInvalid() ) throw "Mark overflow"; }
-  void DecMark( lit x ) { assert( --pMarks[Lit2Bvar( x )] != MarkInvalid() ); }
+  void DecMark( lit x ) { if ( --pMarks[Lit2Bvar( x )] == MarkInvalid() ) throw "Mark underflow"; }
 
   void IncEdge( lit x ) { if ( ++pEdges[Lit2Bvar( x )] == EdgeInvalid() ) throw "Edge overflow"; }
-  void DecEdge( lit x ) { assert( --pEdges[Lit2Bvar( x )] != EdgeInvalid() ); }
+  void DecEdge( lit x ) { if ( --pEdges[Lit2Bvar( x )] == EdgeInvalid() ) throw "Edge underflow"; }
   void IncEdgeNonConst( lit x ) { if ( !LitIsConst( x ) ) IncEdge( x ); }
   void DecEdgeNonConst( lit x ) { if ( !LitIsConst( x ) ) DecEdge( x ); }
 
