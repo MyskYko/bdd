@@ -1,9 +1,9 @@
 # Auto-tuning framework for BDD packages
 ## Requirement
  - modern C compiler and cmake
- - (optional) python3 and Opentuner https://github.com/jansel/opentuner
+ - python3 and Opentuner https://github.com/jansel/opentuner
  
-When you use Opentuner, I recommend to install it by cloning the github repository and running "python3 setup.py install" instead of "pip3 install".
+I recommend to install Opentuner by cloning the github repository and running "python3 setup.py install" instead of "pip3 install".
 ## Get started
 ### Build
 Please clone this repository with option "--recursive" (if you miss it, please run "git submodule update -i" in the project directory).
