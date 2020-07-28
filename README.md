@@ -1,4 +1,4 @@
-# Unified framework for BDD packages
+# Auto-tuning framework for BDD packages
 ## Requirement
  - modern C compiler and cmake
  - (optional) python3 and Opentuner https://github.com/jansel/opentuner
@@ -35,6 +35,42 @@ Shared BDD nodes = 11
 Sum of BDD nodes = 14
 ```
 (option -s turns off reading name of inputs/outputs. Without this, the program will display warnings for AIGs not supporting names.)
+
+### BDD packages
+This framework supports the following BDD packages. () shows the library name used in cmake.
+ - CUDD (cudd)
+ - BuDDy (buddy)
+ - CacBDD (cacbdd)
+ - SimpleBDD (simplebdd)
+ - AtBDD (atbdd)
+
+There is a manager header for each package in "include" directory.
+The packages are placed as submodule in "lib" directory.
+
+AtBDD is a custom BDD package newly created. It is based on SimpleBDD and integrates dynamic cache-management of CacBDD.
+
+The example application "aig2bdd" has option "-p" to switch packages.
+
+ - CUDD (by default)
+```
+./build/example/aig2bdd -s -v 1 your.aig
+```
+ - BuDDy
+```
+./build/example/aig2bdd -s -v 1 -p 1 your.aig
+```
+ - CacBDD
+ ```
+./build/example/aig2bdd -s -v 1 -p 2 your.aig
+```
+ - SimpleBDD
+ ```
+./build/example/aig2bdd -s -v 1 -p 3 your.aig
+```
+ - AtBDD
+```
+./build/example/aig2bdd -s -v 1 -p 4 your.aig
+```
 
 ### Auto-tuning
 Auto-tuning can be performed through "tuner.py", our interface to Opentuner.
@@ -115,6 +151,11 @@ Sum of BDD nodes = 9726501
 ```
 The runtime was reduced by 3.1 sec (7.4 sec -> 4.3 sec).
 
+Please try other packages. For example, BuDDy can be tuned by the following command.
+```
+./tuner.py --test-limit 10 "./build/example/aig2bdd -s -p 1 your.aig" ./include/BuDDyMan.hpp
+```
+
 ## Implement your application
 You can implement your application program just in "example" directory or import this project as a library of your project.
 The former choice would be easier in that you only need to write one C++ code without touching any other files, but I recommend the latter for management and extendability purpose.
@@ -158,7 +199,8 @@ The function "check_xor" recieves the manager in the form of super class "BddMan
 This function can be shared by different BDD packages.
 The member functions of BddMan are listed in "include/BddMan.hpp".
 
-To build this project, we use cmake. It links libraries and sets include directories. 
+To build this project, we use cmake. It links libraries and sets include directories.
+Create "CMakefile.txt" as follows:
 ```
 cmake_minimum_required(VERSION 3.8)
 project(testproject CXX C)
