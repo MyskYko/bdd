@@ -228,4 +228,100 @@ make
 ```
 Make sure you see "Correct" in your screen.
 
-## Implement your BDD package
+## Integrate your BDD package
+Your BDD package can be integrated into our framework by implementing a manager class which inherits the class "BddMan" in "include/BddMan.hpp".
+Then, application implemented before will run on your BDD package without modification.
+
+### Mandatory functions
+Here we list up the mandatory functions.
+
+```
+int GetNumVar();
+```
+This returns the number of variables allocated.
+
+```
+node Const0();
+node Const1();
+node IthVar( int i );
+```
+These are functions to return fundamental nodes. "IthVar" is not subject to variable ordering.
+
+```
+int Var( node const & x );
+node Then( node const & x );
+node Else( node const & x );
+uint64_t Id( node const & x );
+```
+These functions return properties of non-constant nodes.
+"Id" enables users to use std::map containters. In my view, BDD nodes are likely to have ID inside a BDD package, so this should be easily implemented.
+
+```
+node Not( node const & x );
+node And( node const & x, node const & y );
+```
+These two operations must be implemented. The other operations are realized using them unless defined, which may not be efficient.
+As the implementation matures, it is encouraged to overwrite other operations to improve the performance.
+
+### Semi-madatory functions
+Depending on your implementation, the following functions are required to be defined.
+
+```
+node Regular( node const & x ) { return x; }
+bool IsCompl( node const & x ) { (void)x; return 0; }
+```
+If a package adopts negated edges, these two functions must be overwritten. Otherwise, these predefined functions make your package compatible.
+Negated edges are implemented as an extra attribute of "node" to express wether the node is complemented(negated) or not.
+"Regular" returns a non-complimented node. If a node is complimented, the negation of the node will be returned. Otherwise, the node itself will be returned.
+"IsCompl" just returns the attribute of the node.
+
+```
+Level( int i ) { return i; }
+void Reorder() { std::cerr << "Reorder is not implemented" << std::endl; }
+void Dvr() { std::cerr << "Dvr is not implemented" << std::endl; }
+void DvrOff() {}
+```
+If a package is capable of reordering, these function should be implemented. "Level" returns the current position of the variable, where smaller is prior.
+"Dvr" is an abbreviation of dynamic variable reordering, which performs reordering during BDD operation under some criteria.
+
+### Reference count
+For garbage collection and reordering, a package has to maintain(count) external reference to nodes.
+In this framework, this reference task is not imposed on the users. So, a package is required to do it internally.
+As you can see in the manager header of SimpleBDD "include/SimpleBdd.hpp", this can be implemented with a wrapper class of node.
+While a node is actually an index, we wrap the index by a class which registers the node with reference manager in constructor and deregisters it in destructor.
+
+### Auto-tuning
+To apply auto-tuning to your BDD package, you need to write the list of parameters in the header of the manager class.
+
+Between a line "// Param" and a line "// end", the type and range of each paramter is written per line.
+"Int" and "Log" are integer types, but "Log" has a different scaling manner in tuning.
+"Pow" is quiotient of power of 2 and has a similer scaling manner as "Log".
+"Switch" is an integer type and ranges from 0 to the specified value but is not assumed to have gradient characteristic.
+"Bool" is a boolean type (True or False).
+```
+// Param
+// Int 1 100
+// Int -25 30
+// Log 1000 1000000000
+// Pow 10 31
+// Switch 5
+// Bool
+// end
+```
+
+"tuner.py" will find this sequence of parameters and write the values to be tried in a file named "_yourheader.hpp_setting.txt", assuming a name of your header is "yourheader.hpp".
+Your manager is sought to read the file and set the paramaters accordingly, maybe in constructor.
+The values are ordered in the same order as the sequence.
+The following is an example of the assignment for the parameter list above.
+```
+38
+-3
+102143
+1048576
+5
+False
+```
+
+
+## Afterword
+If you have a question/suggestion, please send e-mail to miyasaka at cad.t.u-tokyo.ac.jp
