@@ -30,7 +30,7 @@ namespace Bdd
     virtual void DvrOff() {}
         
     virtual node Not( node const & x ) = 0;
-    virtual node And( node const & x, node const & y );
+    virtual node And( node const & x, node const & y ) = 0;
     virtual node Or( node const & x, node const & y );
     virtual node Xor( node const & x, node const & y );
     virtual node Nand( node const & x, node const & y );
@@ -49,11 +49,6 @@ namespace Bdd
     virtual void PrintStats( std::vector<node> & vNodes ) { (void)vNodes; }
   };
   
-  template <typename node>
-  node BddMan<node>::And( node const & x, node const & y )
-  {
-    return Ite( x, y, Const0() );
-  }
   template <typename node>
   node BddMan<node>::Or( node const & x, node const & y )
   {
