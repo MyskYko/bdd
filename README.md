@@ -116,5 +116,74 @@ Sum of BDD nodes = 9726501
 The runtime was reduced by 3.1 sec (7.4 sec -> 4.3 sec).
 
 ## Implement your application
+You can implement your application program just in "example" directory or import this project as a library of your project.
+The former choice would be easier in that you only need to write one C++ code without touching any other files, but I recommend the latter for management and extendability purpose.
+
+For example, we create a new project in a directory named "testproject" and clone this repository inside.
+```
+mkdir testproject
+cd testproject
+git clone --recursive https://github.com/MyskYko/bdd
+```
+If you use git, you can import this repository by "git submodule add" instead of "git clone".
+
+We create "main.cpp" as shown in below.
+This realizes a very simple application, which checks XOR of *a* and *b* is the same as Or(And(*a*, Not(*b*)), And(Not(*a*), *b*)).
+```
+#include <iostream>
+#include <CuddMan.hpp>
+
+template <typename node>
+void check_xor(Bdd::BddMan<node> & man) {
+  if(man.GetNumVar() < 2) abort();
+  node a = man.IthVar(0);
+  node b = man.IthVar(1);
+  node x = man.Xor(a, b);
+  node y = man.Or(man.And(a, man.Not(b)), man.And(man.Not(a), b));
+  if(x != y) std::cout << "wrong" << std::endl;
+  else std::cout << "Correct" << std::endl;
+}
+
+int main() {
+  int nVars = 2;
+  int nVerbose = 0;
+  Bdd::CuddMan man(nVars, nVerbose);
+  check_xor(man);
+  return 0;
+}
+```
+In the main function, it instanciates CUDD manager included from "CuddMan.hpp" and pass it to the function "check_xor".
+The number of variables and the verbosing level are required to initialize the manager. Note currently there is no function to increase the number of variables.
+The function "check_xor" recieves the manager in the form of super class "BddMan<node>" as reference, where the type "node" representing BDD node is specified as a template parameter.
+This function can be shared by different BDD packages.
+The member functions of BddMan are listed in "include/BddMan.hpp".
+
+To build this project, we use cmake. It links libraries and sets include directories. 
+```
+cmake_minimum_required(VERSION 3.8)
+project(testproject CXX C)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_options(-g -O3)
+
+add_subdirectory(bdd)
+
+add_executable(test main.cpp)
+target_link_libraries(test bdd cudd)
+```
+The former 5 lines are for cmake configuration. Our BDD framework is imported by "add_subdirectory".
+We specify "main.cpp" to be compiled into executable "test", which depends on libraries "bdd" and "cudd".
+The library "cudd" is just a plain CUDD library. The library "bdd" provides our interface franmework.
+When you use a package other than CUDD, you have to modify this "cudd" to the one you use.
+
+Finally, we can compile and run the program as follows:
+```
+mkdir build
+cd build
+cmake ..
+make
+./test
+```
+Make sure you see "Correct" in your screen.
 
 ## Implement your BDD package
