@@ -153,7 +153,7 @@ The runtime was reduced by 3.1 sec (7.4 sec -> 4.3 sec).
 
 Please try other packages. For example, BuDDy can be tuned by the following command.
 ```
-./tuner.py --test-limit 10 "./build/example/aig2bdd -s -p 1 your.aig" ./include/BuDDyMan.hpp
+./tuner.py --test-limit 10 "./build/example/aig2bdd -s -p 1 your.aig" ./include/BuddyMan.hpp
 ```
 
 ## Implement your application
