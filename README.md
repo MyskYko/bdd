@@ -200,7 +200,7 @@ This function can be shared by different BDD packages.
 The member functions of BddMan are listed in "include/BddMan.hpp".
 
 To build this project, we use cmake. It links libraries and sets include directories.
-Create "CMakefile.txt" as follows:
+Create "CMakeLists.txt" as follows:
 ```
 cmake_minimum_required(VERSION 3.8)
 project(testproject CXX C)
