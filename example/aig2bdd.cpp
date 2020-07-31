@@ -19,6 +19,17 @@ void run( Bdd::BddMan<node> & bdd, mockturtle::aig_network & aig, mockturtle::kl
   }
   auto start = std::chrono::system_clock::now();
   auto vNodes = Bdd::Aig2Bdd( aig, bdd, verbose > 1 );
+
+  for(int i = 0; i < vNodes.size(); i++) { // x = i-th FF
+    node x = vNodes[i];
+    std::cout << "computing support of " << i << "-th FF" << std::endl;
+    std::vector<int> vec;
+    bdd.Support( x, vec );
+    for(int j : vec) { // j-th FF is in support
+      std::cout << j << std::endl;
+    }
+  }
+  
   auto end = std::chrono::system_clock::now();
   if(verbose) {
     std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count() << " ms" << std::endl;
