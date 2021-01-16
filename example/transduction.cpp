@@ -145,13 +145,19 @@ int main( int argc, char ** argv )
 		     }
 		     pi_names.push_back(namevec[0]);
 		   });
+    std::map<mockturtle::aig_network::signal, int> m;
+    aig.foreach_po([&](auto po) {
+		     m[po]++;
+		   }
+      );
     aig.foreach_po([&](auto po) {
 		     auto namevec = namemap[po];
 		     if(namevec.empty()) {
 		       po_names.push_back("");
 		       return;
 		     }
-		     po_names.push_back(namevec[namevec.size() - 1]);
+		     po_names.push_back(namevec[namevec.size() - m[po]]);
+		     m[po]--;
 		   });
   }
   else {
