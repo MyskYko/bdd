@@ -340,6 +340,14 @@ namespace Bdd {
       for ( int i = 0; i < vPOs.size(); i++ )
 	{
 	  int id = vPOs[i];
+          if ( vNodes.empty() )
+            {
+              vGs[id] = bdd.Const0();
+            }
+          else
+            {
+              vGs[id] = vNodes[i];
+            }
 	  for ( int j = 0; j < vvFIs[id].size(); j++ )
 	    {
 	      if ( vNodes.empty() )
