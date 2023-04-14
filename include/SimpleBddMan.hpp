@@ -148,6 +148,7 @@ namespace Bdd
 	  count += man->CountNodes( vNodes[i].val );
 	  v.push_back( vNodes[i].val );
 	}
+      std::cout << "Used   BDD nodes = " << man->nTotalUsed << std::endl;
       std::cout << "Shared BDD nodes = " << man->CountNodesArrayShared( v ) << std::endl;
       std::cout << "Sum of BDD nodes = " << count << std::endl;
     }

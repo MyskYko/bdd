@@ -58,6 +58,9 @@ namespace SimpleBdd
 ***********************************************************************/
 class BddMan
 {
+public:
+  size nTotalUsed;
+
 private:
   var    nVars;         // the number of variables
   bvar   nObjs;         // the number of nodes used
@@ -446,6 +449,7 @@ public:
     fReo        = 0;
     nReo        = 0;
     MaxGrowth   = 0;
+    nTotalUsed  = 1;
     nMinRemoved = nObjsAlloc;
     nUniqueMask = nObjsAlloc - 1;
     nCacheMask  = nObjsAlloc - 1;
@@ -537,6 +541,7 @@ public:
     SetNextOfBvar( *q, head );
     if ( nVerbose >= 3 )
       std::cout << "Node " << (size)*q << " : Var = " << (size)v << " Then = " << (size)x1 << " Else = " << (size)x0 << " MinRemoved = " << (size)nMinRemoved << std::endl;
+    nTotalUsed++;
     return Bvar2Lit( *q, 0 );
   }
   lit UniqueCreate( var v, lit x1, lit x0 )
